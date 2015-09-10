@@ -1,4 +1,4 @@
-package io.reactivex.rxdockerclient.utils;
+package io.reactivex.docker.client.utils;
 
 import java.util.function.Predicate;
 

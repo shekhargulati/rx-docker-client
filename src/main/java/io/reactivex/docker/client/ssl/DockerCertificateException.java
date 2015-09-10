@@ -1,4 +1,4 @@
-package io.reactivex.rxdockerclient.ssl;
+package io.reactivex.docker.client.ssl;
 
 public class DockerCertificateException extends RuntimeException {
 

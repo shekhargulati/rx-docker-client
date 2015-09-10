@@ -1,6 +1,6 @@
-package io.reactivex.rxdockerclient;
+package io.reactivex.docker.client;
 
-import static io.reactivex.rxdockerclient.utils.AssertionUtils.check;
+import static io.reactivex.docker.client.utils.AssertionUtils.check;
 
 public final class HostAndPort {
 

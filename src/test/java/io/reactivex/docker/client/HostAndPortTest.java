@@ -1,4 +1,4 @@
-package io.reactivex.rxdockerclient;
+package io.reactivex.docker.client;
 
 import org.junit.Rule;
 import org.junit.Test;

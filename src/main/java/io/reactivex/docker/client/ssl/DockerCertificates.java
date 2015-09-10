@@ -1,4 +1,4 @@
-package io.reactivex.rxdockerclient.ssl;
+package io.reactivex.docker.client.ssl;
 
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContexts;
