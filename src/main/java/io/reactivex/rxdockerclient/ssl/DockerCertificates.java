@@ -1,4 +1,4 @@
-package io.reactivex.rxdockerclient;
+package io.reactivex.rxdockerclient.ssl;
 
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContexts;
@@ -27,7 +27,7 @@ public class DockerCertificates {
   public static final String DEFAULT_CLIENT_CERT_NAME = "cert.pem";
   public static final String DEFAULT_CLIENT_KEY_NAME = "key.pem";
 
-  private static final char[] KEY_STORE_PASSWORD = "changeit".toCharArray();
+    private static final char[] KEY_STORE_PASSWORD = "p@ssw0rd".toCharArray();
 
   private final SSLContext sslContext;
 
@@ -63,7 +63,7 @@ public class DockerCertificates {
       trustStore.setEntry("ca", new KeyStore.TrustedCertificateEntry(caCert), null);
 
       final KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-      keyStore.load(null, null);
+        keyStore.load(null, KEY_STORE_PASSWORD);
       keyStore.setCertificateEntry("client", clientCert);
       keyStore.setKeyEntry("key", clientKey, KEY_STORE_PASSWORD, new Certificate[]{clientCert});
 

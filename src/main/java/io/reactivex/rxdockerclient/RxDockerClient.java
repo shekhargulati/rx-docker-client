@@ -2,19 +2,17 @@ package io.reactivex.rxdockerclient;
 
 
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.buffer.ByteBufAllocator;
 import io.reactivex.netty.RxNetty;
 import io.reactivex.netty.pipeline.ssl.DefaultFactories;
-import io.reactivex.netty.protocol.http.client.FlatResponseOperator;
 import io.reactivex.netty.protocol.http.client.HttpClient;
 import io.reactivex.netty.protocol.http.client.HttpClientResponse;
-import io.reactivex.netty.protocol.http.client.ResponseHolder;
+import io.reactivex.rxdockerclient.ssl.DockerCertificates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
-import rx.functions.Func1;
 
-import java.nio.charset.Charset;
+import javax.net.ssl.SSLEngine;
 import java.nio.file.Paths;
 import java.util.Optional;
 
@@ -40,8 +38,16 @@ public class RxDockerClient {
         apiUri = new StringBuilder(scheme).append("://").append(hostAndPort.getHost()).append(":").append(hostAndPort.getPort()).toString();
         logger.info("Docker API uri {}", apiUri);
 
+        DefaultFactories.SSLContextBasedFactory sslContextBasedFactory = new DefaultFactories.SSLContextBasedFactory(new DockerCertificates(Paths.get(dockerCertPath.get())).sslContext()) {
+            @Override
+            public SSLEngine createSSLEngine(ByteBufAllocator allocator) {
+                SSLEngine sslEngine = super.createSSLEngine(allocator);
+                sslEngine.setUseClientMode(true);
+                return sslEngine;
+            }
+        };
         rxClient = RxNetty.<ByteBuf, ByteBuf>newHttpClientBuilder(hostAndPort.getHost(), hostAndPort.getPort())
-                .withSslEngineFactory(DefaultFactories.fromSSLContext(new DockerCertificates(Paths.get(dockerCertPath.get())).sslContext()))
+                .withSslEngineFactory(sslContextBasedFactory)
                 .build();
 
     }

@@ -26,8 +26,9 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldFetchVersionInformationFromDocker() throws Exception {
+        System.setProperty("javax.net.debug", "ssl:handshake:data");
         String dockerHost = "tcp://192.168.99.100:2376";
-        RxDockerClient client = new RxDockerClient(dockerHost, "/Users/shekhargulati/.docker/machine/machines/dev/");
+        RxDockerClient client = new RxDockerClient(dockerHost, "/Users/shekhargulati/.docker/machine/machines/dev");
         client.version();
 
     }
