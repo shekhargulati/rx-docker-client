@@ -1,9 +1,12 @@
 package io.reactivex.docker.client;
 
+import io.reactivex.docker.client.model.DockerContainer;
 import io.reactivex.docker.client.model.DockerInfo;
 import io.reactivex.docker.client.model.DockerVersion;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -49,5 +52,14 @@ public class RxDockerClientTest {
         assertThat(info.getDockerRootDir(), equalTo("/mnt/sda1/var/lib/docker"));
         assertThat(info.getInitPath(), equalTo("/usr/local/bin/docker"));
         assertThat(info.getId(), equalTo("G7BK:NRSS:QGPA:ECLM:3CT6:OJGJ:KHWZ:OBWS:SQAT:3VGL:TEAT:LO47"));
+    }
+
+    @Test
+    public void shouldListAllContainers() throws Exception {
+        List<DockerContainer> dockerContainers = client.listContainers();
+
+        assertThat(dockerContainers.size(), equalTo(1));
+
+        System.out.println(dockerContainers.get(0));
     }
 }
