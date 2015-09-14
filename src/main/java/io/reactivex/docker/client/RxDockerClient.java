@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.reactivex.docker.client.model.DockerInfo;
 import io.reactivex.docker.client.model.DockerVersion;
 import io.reactivex.docker.client.ssl.DockerCertificates;
 import io.reactivex.netty.RxNetty;
@@ -13,6 +14,7 @@ import io.reactivex.netty.pipeline.ssl.DefaultFactories;
 import io.reactivex.netty.protocol.http.client.FlatResponseOperator;
 import io.reactivex.netty.protocol.http.client.HttpClient;
 import io.reactivex.netty.protocol.http.client.HttpClientResponse;
+import io.reactivex.netty.protocol.http.client.ResponseHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -77,6 +79,24 @@ public class RxDockerClient {
 
     public DockerVersion getServerVersion() {
         return serverVersionObs().
+                toBlocking().
+                first();
+    }
+
+    public Observable<DockerInfo> infoObs() {
+        Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createGet("/info"));
+        Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
+        return observable.
+                lift(FlatResponseOperator.<ByteBuf>flatResponse()).
+                doOnEach(n -> {
+                    ResponseHolder<ByteBuf> value = (ResponseHolder<ByteBuf>) n.getValue();
+                    System.out.println(value.getContent().toString(Charset.defaultCharset()));
+                }).
+                map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), DockerInfo.class));
+    }
+
+    public DockerInfo info() {
+        return infoObs().
                 toBlocking().
                 first();
     }
