@@ -80,7 +80,6 @@ public class QueryParameters {
     }
 
     public String toQuery() {
-        System.out.println("Query >> " + query);
         return query;
     }
 }

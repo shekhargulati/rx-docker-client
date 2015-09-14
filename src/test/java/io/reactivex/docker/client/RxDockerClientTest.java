@@ -72,6 +72,5 @@ public class RxDockerClientTest {
         QueryParameters queryParameters = new QueryParametersBuilder().withAll(true).withLimit(3).withFilter("status", "exited").createQueryParameters();
         List<DockerContainer> containers = client.listContainers(queryParameters);
         assertThat(containers, hasSize(3));
-
     }
 }
