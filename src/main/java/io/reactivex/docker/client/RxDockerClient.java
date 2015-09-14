@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static io.reactivex.docker.client.QueryParametersBuilder.defaultQueryParameters;
 import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createGet;
 
 public class RxDockerClient implements MiscOperations, ContainerOperations {
@@ -105,17 +106,42 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
     // Container operations
 
     @Override
-    public Observable<DockerContainer> listContainerObs() {
-        return _toEndpointObservable("/containers/json", () -> new TypeToken<List<DockerContainer>>() {
-        }.getType());
+    public Observable<List<DockerContainer>> listRunningContainerObs() {
+        return listContainersObs(defaultQueryParameters());
     }
 
     @Override
-    public List<DockerContainer> listContainers() {
-        return listContainerObs().toList().toBlocking().single();
+    public List<DockerContainer> listRunningContainers() {
+        return listRunningContainerObs().flatMap((List<DockerContainer> a) -> Observable.from(a)).toList().toBlocking().single();
+    }
+
+    @Override
+    public Observable<List<DockerContainer>> listAllContainersObs() {
+        return listContainersObs(new QueryParametersBuilder().withAll(true).createQueryParameters());
+    }
+
+    @Override
+    public List<DockerContainer> listAllContainers() {
+        return listAllContainersObs().flatMap((List<DockerContainer> containers) -> Observable.from(containers)).toList().toBlocking().single();
+    }
+
+    @Override
+    public List<DockerContainer> listContainers(QueryParameters queryParameters) {
+        return listContainersObs(queryParameters).flatMap((List<DockerContainer> containers) -> Observable.from(containers)).toList().toBlocking().single();
+    }
+
+    @Override
+    public Observable<List<DockerContainer>> listContainersObs(QueryParameters queryParameters) {
+        final String query = queryParameters.toQuery();
+        return _toEndpointObservable(
+                String.format("/containers/json%s", query),
+                () -> new TypeToken<List<DockerContainer>>() {
+                }.getType()
+        );
     }
 
     private <T> Observable<T> _toEndpointObservable(String uri, Supplier<Type> f) {
+        logger.info("Making request to uri '{}'", uri);
         Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createGet(uri));
         Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
         return observable.

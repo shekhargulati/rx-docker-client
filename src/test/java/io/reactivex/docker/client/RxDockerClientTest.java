@@ -10,6 +10,8 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertThat;
 
 public class RxDockerClientTest {
@@ -51,15 +53,25 @@ public class RxDockerClientTest {
 
         assertThat(info.getDockerRootDir(), equalTo("/mnt/sda1/var/lib/docker"));
         assertThat(info.getInitPath(), equalTo("/usr/local/bin/docker"));
-        assertThat(info.getId(), equalTo("G7BK:NRSS:QGPA:ECLM:3CT6:OJGJ:KHWZ:OBWS:SQAT:3VGL:TEAT:LO47"));
+    }
+
+    @Test
+    public void shouldListRunningContainers() throws Exception {
+        List<DockerContainer> dockerContainers = client.listRunningContainers();
+        assertThat(dockerContainers, hasSize(1));
     }
 
     @Test
     public void shouldListAllContainers() throws Exception {
-        List<DockerContainer> dockerContainers = client.listContainers();
+        List<DockerContainer> dockerContainers = client.listAllContainers();
+        assertThat(dockerContainers, hasSize(greaterThan(1)));
+    }
 
-        assertThat(dockerContainers.size(), equalTo(1));
+    @Test
+    public void shouldQueryContainersByFilters() throws Exception {
+        QueryParameters queryParameters = new QueryParametersBuilder().withAll(true).withLimit(3).withFilter("status", "exited").createQueryParameters();
+        List<DockerContainer> containers = client.listContainers(queryParameters);
+        assertThat(containers, hasSize(3));
 
-        System.out.println(dockerContainers.get(0));
     }
 }
