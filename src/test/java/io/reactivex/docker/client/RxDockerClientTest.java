@@ -36,7 +36,7 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldFetchVersionInformationFromDocker() throws Exception {
-        DockerVersion dockerVersion = client.getServerVersion();
+        DockerVersion dockerVersion = client.serverVersion();
 
         assertThat(dockerVersion.getVersion(), is(equalTo("1.8.1")));
         assertThat(dockerVersion.getApiVersion(), is(equalTo("1.20")));

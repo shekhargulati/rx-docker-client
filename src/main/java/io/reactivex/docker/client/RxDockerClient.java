@@ -76,7 +76,7 @@ public class RxDockerClient {
     }
 
 
-    public DockerVersion getServerVersion() {
+    public DockerVersion serverVersion() {
         return serverVersionObs().
                 toBlocking().
                 first();
