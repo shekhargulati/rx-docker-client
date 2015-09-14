@@ -67,7 +67,7 @@ public class RxDockerClient {
         return new RxDockerClient(Optional.ofNullable(System.getenv("DOCKER_HOST")), Optional.ofNullable(System.getenv("DOCKER_CERT_PATH")));
     }
 
-    public Observable<DockerVersion> versionObs() {
+    public Observable<DockerVersion> serverVersionObs() {
         Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createGet("/version"));
         Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
         return observable.
@@ -75,11 +75,10 @@ public class RxDockerClient {
                 map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), DockerVersion.class));
     }
 
-    public DockerVersion getVersion() {
-        return versionObs().
+    public DockerVersion getServerVersion() {
+        return serverVersionObs().
                 toBlocking().
                 first();
-
     }
 
     public String getApiUri() {

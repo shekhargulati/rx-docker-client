@@ -33,7 +33,7 @@ public class RxDockerClientTest {
         String userHome = System.getenv("HOME");
         RxDockerClient client = new RxDockerClient(dockerHost, String.format("%s/.docker/machine/machines/dev", userHome));
 
-        DockerVersion dockerVersion = client.getVersion();
+        DockerVersion dockerVersion = client.getServerVersion();
         assertThat(dockerVersion.getVersion(), is(equalTo("1.8.1")));
         assertThat(dockerVersion.getApiVersion(), is(equalTo("1.20")));
 
