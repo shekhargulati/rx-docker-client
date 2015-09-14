@@ -1,6 +1,9 @@
 package io.reactivex.docker.client;
 
 
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.reactivex.docker.client.model.DockerVersion;
@@ -10,11 +13,9 @@ import io.reactivex.netty.pipeline.ssl.DefaultFactories;
 import io.reactivex.netty.protocol.http.client.FlatResponseOperator;
 import io.reactivex.netty.protocol.http.client.HttpClient;
 import io.reactivex.netty.protocol.http.client.HttpClientResponse;
-import io.reactivex.netty.protocol.http.client.ResponseHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
-import rx.functions.Func1;
 
 import javax.net.ssl.SSLEngine;
 import java.nio.charset.Charset;
@@ -66,24 +67,19 @@ public class RxDockerClient {
         return new RxDockerClient(Optional.ofNullable(System.getenv("DOCKER_HOST")), Optional.ofNullable(System.getenv("DOCKER_CERT_PATH")));
     }
 
-    public Observable<HttpClientResponse<ByteBuf>> versionObs() {
+    public Observable<DockerVersion> versionObs() {
         Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createGet("/version"));
-        return observable;
+        Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
+        return observable.
+                lift(FlatResponseOperator.<ByteBuf>flatResponse()).
+                map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), DockerVersion.class));
     }
 
     public DockerVersion getVersion() {
-        Observable<HttpClientResponse<ByteBuf>> obs = versionObs();
-        return obs.lift(FlatResponseOperator.<ByteBuf>flatResponse())
-                .map(new Func1<ResponseHolder<ByteBuf>, ResponseHolder<DockerVersion>>() {
-                    @Override
-                    public ResponseHolder<DockerVersion> call(ResponseHolder<ByteBuf> holder) {
-                        System.out.println(holder.getContent().toString(
-                                Charset.defaultCharset()));
-                        System.out.println("=======================");
-                        return null;
-                    }
-                })
-                .toBlocking().single().getContent();
+        return versionObs().
+                toBlocking().
+                first();
+
     }
 
     public String getApiUri() {
