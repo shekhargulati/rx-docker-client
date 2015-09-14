@@ -1,8 +1,8 @@
 package io.reactivex.docker.client;
 
-import io.reactivex.docker.client.model.DockerContainer;
-import io.reactivex.docker.client.model.DockerInfo;
-import io.reactivex.docker.client.model.DockerVersion;
+import io.reactivex.docker.client.representations.DockerContainer;
+import io.reactivex.docker.client.representations.DockerInfo;
+import io.reactivex.docker.client.representations.DockerVersion;
 import org.junit.Before;
 import org.junit.Test;
 

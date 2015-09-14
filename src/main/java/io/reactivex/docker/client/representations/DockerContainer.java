@@ -1,4 +1,4 @@
-package io.reactivex.docker.client.model;
+package io.reactivex.docker.client.representations;
 
 import com.google.gson.annotations.SerializedName;
 

@@ -1,4 +1,4 @@
-package io.reactivex.docker.client.model;
+package io.reactivex.docker.client.representations;
 
 public class DockerVersion {
     String version;

@@ -1,6 +1,6 @@
 package io.reactivex.docker.client;
 
-import io.reactivex.docker.client.model.DockerContainer;
+import io.reactivex.docker.client.representations.DockerContainer;
 import rx.Observable;
 
 import java.util.List;
