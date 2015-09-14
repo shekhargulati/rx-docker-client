@@ -18,115 +18,111 @@ import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 
-/**
- * DockerCertificates holds certificates for connecting to an HTTPS-secured Docker instance with
- * client/server authentication.
- */
 public class DockerCertificates {
-  public static final String DEFAULT_CA_CERT_NAME = "ca.pem";
-  public static final String DEFAULT_CLIENT_CERT_NAME = "cert.pem";
-  public static final String DEFAULT_CLIENT_KEY_NAME = "key.pem";
+    public static final String DEFAULT_CA_CERT_NAME = "ca.pem";
+    public static final String DEFAULT_CLIENT_CERT_NAME = "cert.pem";
+    public static final String DEFAULT_CLIENT_KEY_NAME = "key.pem";
 
     private static final char[] KEY_STORE_PASSWORD = "p@ssw0rd".toCharArray();
 
-  private final SSLContext sslContext;
+    private final SSLContext sslContext;
 
-  public DockerCertificates(final Path dockerCertPath) throws DockerCertificateException {
-    this(new Builder().dockerCertPath(dockerCertPath));
-  }
-
-  private DockerCertificates(final Builder builder) throws DockerCertificateException {
-    if ((builder.caCertPath == null) || (builder.clientCertPath == null) ||
-        (builder.clientKeyPath == null)) {
-      throw new DockerCertificateException(
-          "caCertPath, clientCertPath, and clientKeyPath must all be specified");
+    public DockerCertificates(final Path dockerCertPath) throws DockerCertificateException {
+        this(new Builder().dockerCertPath(dockerCertPath));
     }
 
-    try {
-      final CertificateFactory cf = CertificateFactory.getInstance("X.509");
-      final Certificate caCert = cf.generateCertificate(Files.newInputStream(builder.caCertPath));
-      final Certificate clientCert = cf.generateCertificate(
-          Files.newInputStream(builder.clientCertPath));
+    private DockerCertificates(final Builder builder) throws DockerCertificateException {
+        if ((builder.caCertPath == null) || (builder.clientCertPath == null) ||
+                (builder.clientKeyPath == null)) {
+            throw new DockerCertificateException(
+                    "caCertPath, clientCertPath, and clientKeyPath must all be specified");
+        }
 
-      final PEMKeyPair clientKeyPair = (PEMKeyPair) new PEMParser(
-          Files.newBufferedReader(builder.clientKeyPath,
-                  Charset.defaultCharset()))
-          .readObject();
+        try {
+            final CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            final Certificate caCert = cf.generateCertificate(Files.newInputStream(builder.caCertPath));
+            final Certificate clientCert = cf.generateCertificate(
+                    Files.newInputStream(builder.clientCertPath));
 
-      final PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(
-          clientKeyPair.getPrivateKeyInfo().getEncoded());
-      final KeyFactory kf = KeyFactory.getInstance("RSA");
-      final PrivateKey clientKey = kf.generatePrivate(spec);
+            final PEMKeyPair clientKeyPair = (PEMKeyPair) new PEMParser(
+                    Files.newBufferedReader(builder.clientKeyPath,
+                            Charset.defaultCharset()))
+                    .readObject();
 
-      final KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-      trustStore.load(null, null);
-      trustStore.setEntry("ca", new KeyStore.TrustedCertificateEntry(caCert), null);
+            final PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(
+                    clientKeyPair.getPrivateKeyInfo().getEncoded());
+            final KeyFactory kf = KeyFactory.getInstance("RSA");
+            final PrivateKey clientKey = kf.generatePrivate(spec);
 
-      final KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        keyStore.load(null, KEY_STORE_PASSWORD);
-      keyStore.setCertificateEntry("client", clientCert);
-      keyStore.setKeyEntry("key", clientKey, KEY_STORE_PASSWORD, new Certificate[]{clientCert});
+            final KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            trustStore.load(null, null);
+            trustStore.setEntry("ca", new KeyStore.TrustedCertificateEntry(caCert), null);
 
-      this.sslContext = SSLContexts.custom()
-          .loadTrustMaterial(trustStore)
-          .loadKeyMaterial(keyStore, KEY_STORE_PASSWORD)
-          .useTLS()
-          .build();
-    } catch (
-        CertificateException |
-                IOException |
-                NoSuchAlgorithmException |
-                InvalidKeySpecException |
-                KeyStoreException |
-                UnrecoverableKeyException |
-                KeyManagementException e) {
-      throw new DockerCertificateException(e);
-    }
-  }
+            final KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(null, KEY_STORE_PASSWORD);
+            keyStore.setCertificateEntry("client", clientCert);
+            keyStore.setKeyEntry("key", clientKey, KEY_STORE_PASSWORD, new Certificate[]{clientCert});
 
-  public SSLContext sslContext() {
-    return this.sslContext;
-  }
-
-  public X509HostnameVerifier hostnameVerifier() {
-    return SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
-  }
-
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  public static class Builder {
-
-    private Path caCertPath;
-    private Path clientKeyPath;
-    private Path clientCertPath;
-
-    public Builder dockerCertPath(final Path dockerCertPath) {
-      this.caCertPath = dockerCertPath.resolve(DEFAULT_CA_CERT_NAME);
-      this.clientKeyPath = dockerCertPath.resolve(DEFAULT_CLIENT_KEY_NAME);
-      this.clientCertPath = dockerCertPath.resolve(DEFAULT_CLIENT_CERT_NAME);
-
-      return this;
+            this.sslContext = SSLContexts.custom()
+                    .loadTrustMaterial(trustStore)
+                    .loadKeyMaterial(keyStore, KEY_STORE_PASSWORD)
+                    .useTLS()
+                    .build();
+        } catch (
+                CertificateException |
+                        IOException |
+                        NoSuchAlgorithmException |
+                        InvalidKeySpecException |
+                        KeyStoreException |
+                        UnrecoverableKeyException |
+                        KeyManagementException e) {
+            throw new DockerCertificateException(e);
+        }
     }
 
-    public Builder caCertPath(final Path caCertPath) {
-      this.caCertPath = caCertPath;
-      return this;
+    public SSLContext sslContext() {
+        return this.sslContext;
     }
 
-    public Builder clientKeyPath(final Path clientKeyPath) {
-      this.clientKeyPath = clientKeyPath;
-      return this;
+    public X509HostnameVerifier hostnameVerifier() {
+        return SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
     }
 
-    public Builder clientCertPath(final Path clientCertPath) {
-      this.clientCertPath = clientCertPath;
-      return this;
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public DockerCertificates build() throws DockerCertificateException {
-      return new DockerCertificates(this);
+    public static class Builder {
+
+        private Path caCertPath;
+        private Path clientKeyPath;
+        private Path clientCertPath;
+
+        public Builder dockerCertPath(final Path dockerCertPath) {
+            this.caCertPath = dockerCertPath.resolve(DEFAULT_CA_CERT_NAME);
+            this.clientKeyPath = dockerCertPath.resolve(DEFAULT_CLIENT_KEY_NAME);
+            this.clientCertPath = dockerCertPath.resolve(DEFAULT_CLIENT_CERT_NAME);
+
+            return this;
+        }
+
+        public Builder caCertPath(final Path caCertPath) {
+            this.caCertPath = caCertPath;
+            return this;
+        }
+
+        public Builder clientKeyPath(final Path clientKeyPath) {
+            this.clientKeyPath = clientKeyPath;
+            return this;
+        }
+
+        public Builder clientCertPath(final Path clientCertPath) {
+            this.clientCertPath = clientCertPath;
+            return this;
+        }
+
+        public DockerCertificates build() throws DockerCertificateException {
+            return new DockerCertificates(this);
+        }
     }
-  }
 }

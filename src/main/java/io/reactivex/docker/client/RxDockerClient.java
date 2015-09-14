@@ -13,8 +13,8 @@ import io.reactivex.netty.RxNetty;
 import io.reactivex.netty.pipeline.ssl.DefaultFactories;
 import io.reactivex.netty.protocol.http.client.FlatResponseOperator;
 import io.reactivex.netty.protocol.http.client.HttpClient;
+import io.reactivex.netty.protocol.http.client.HttpClientBuilder;
 import io.reactivex.netty.protocol.http.client.HttpClientResponse;
-import io.reactivex.netty.protocol.http.client.ResponseHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -46,18 +46,20 @@ public class RxDockerClient {
         apiUri = new StringBuilder(scheme).append("://").append(hostAndPort.getHost()).append(":").append(hostAndPort.getPort()).toString();
         logger.info("Docker API uri {}", apiUri);
 
-        DefaultFactories.SSLContextBasedFactory sslContextBasedFactory = new DefaultFactories.SSLContextBasedFactory(new DockerCertificates(Paths.get(dockerCertPath.get())).sslContext()) {
-            @Override
-            public SSLEngine createSSLEngine(ByteBufAllocator allocator) {
-                SSLEngine sslEngine = super.createSSLEngine(allocator);
-                sslEngine.setUseClientMode(true);
-                return sslEngine;
-            }
-        };
-        rxClient = RxNetty.<ByteBuf, ByteBuf>newHttpClientBuilder(hostAndPort.getHost(), hostAndPort.getPort())
-                .withSslEngineFactory(sslContextBasedFactory)
-                .build();
+        HttpClientBuilder<ByteBuf, ByteBuf> builder = RxNetty.<ByteBuf, ByteBuf>newHttpClientBuilder(hostAndPort.getHost(), hostAndPort.getPort());
 
+        if (dockerCertPath.isPresent()) {
+            DefaultFactories.SSLContextBasedFactory sslContextBasedFactory = new DefaultFactories.SSLContextBasedFactory(new DockerCertificates(Paths.get(dockerCertPath.get())).sslContext()) {
+                @Override
+                public SSLEngine createSSLEngine(ByteBufAllocator allocator) {
+                    SSLEngine sslEngine = super.createSSLEngine(allocator);
+                    sslEngine.setUseClientMode(true);
+                    return sslEngine;
+                }
+            };
+            builder.withSslEngineFactory(sslContextBasedFactory);
+        }
+        rxClient = builder.build();
     }
 
     /**
@@ -70,12 +72,9 @@ public class RxDockerClient {
     }
 
     public Observable<DockerVersion> serverVersionObs() {
-        Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createGet("/version"));
-        Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
-        return observable.
-                lift(FlatResponseOperator.<ByteBuf>flatResponse()).
-                map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), DockerVersion.class));
+        return _toEndpointObservable("/version", DockerVersion.class);
     }
+
 
     public DockerVersion getServerVersion() {
         return serverVersionObs().
@@ -84,21 +83,21 @@ public class RxDockerClient {
     }
 
     public Observable<DockerInfo> infoObs() {
-        Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createGet("/info"));
-        Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
-        return observable.
-                lift(FlatResponseOperator.<ByteBuf>flatResponse()).
-                doOnEach(n -> {
-                    ResponseHolder<ByteBuf> value = (ResponseHolder<ByteBuf>) n.getValue();
-                    System.out.println(value.getContent().toString(Charset.defaultCharset()));
-                }).
-                map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), DockerInfo.class));
+        return _toEndpointObservable("/info", DockerInfo.class);
     }
 
     public DockerInfo info() {
         return infoObs().
                 toBlocking().
                 first();
+    }
+
+    private <T> Observable<T> _toEndpointObservable(String uri, Class<T> model) {
+        Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createGet(uri));
+        Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
+        return observable.
+                lift(FlatResponseOperator.<ByteBuf>flatResponse()).
+                map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), model));
     }
 
     public String getApiUri() {
