@@ -81,7 +81,7 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
 
     @Override
     public Observable<DockerVersion> serverVersionObs() {
-        return _toEndpointObservable("/version", () -> DockerVersion.class);
+        return toEndpointObservable(VERSION_ENDPOINT, () -> DockerVersion.class);
     }
 
     @Override
@@ -93,7 +93,7 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
 
     @Override
     public Observable<DockerInfo> infoObs() {
-        return _toEndpointObservable("/info", () -> DockerInfo.class);
+        return toEndpointObservable(INFO_ENDPOINT, () -> DockerInfo.class);
     }
 
     @Override
@@ -133,14 +133,15 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
     @Override
     public Observable<List<DockerContainer>> listContainersObs(QueryParameters queryParameters) {
         final String query = queryParameters.toQuery();
-        return _toEndpointObservable(
-                String.format("/containers/json%s", query),
-                () -> new TypeToken<List<DockerContainer>>() {
-                }.getType()
+        String url = String.format(CONTAINER_ENDPOINT, query);
+        return toEndpointObservable(
+                url, () ->
+                        new TypeToken<List<DockerContainer>>() {
+                        }.getType()
         );
     }
 
-    private <T> Observable<T> _toEndpointObservable(String uri, Supplier<Type> f) {
+    private <T> Observable<T> toEndpointObservable(String uri, Supplier<Type> f) {
         logger.info("Making request to uri '{}'", uri);
         Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createGet(uri));
         Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();

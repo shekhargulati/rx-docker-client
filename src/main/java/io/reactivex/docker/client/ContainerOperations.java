@@ -6,6 +6,8 @@ import rx.Observable;
 import java.util.List;
 
 public interface ContainerOperations {
+    String CONTAINER_ENDPOINT = "/containers/json%s";
+
     Observable<List<DockerContainer>> listRunningContainerObs();
 
     List<DockerContainer> listRunningContainers();
