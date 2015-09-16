@@ -7,9 +7,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.reactivex.docker.client.representations.DockerContainer;
-import io.reactivex.docker.client.representations.DockerInfo;
-import io.reactivex.docker.client.representations.DockerVersion;
+import io.reactivex.docker.client.representations.*;
 import io.reactivex.docker.client.ssl.DockerCertificates;
 import io.reactivex.netty.RxNetty;
 import io.reactivex.netty.pipeline.ssl.DefaultFactories;
@@ -31,6 +29,7 @@ import java.util.function.Supplier;
 
 import static io.reactivex.docker.client.QueryParametersBuilder.defaultQueryParameters;
 import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createGet;
+import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createPost;
 
 public class RxDockerClient implements MiscOperations, ContainerOperations {
 
@@ -81,7 +80,7 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
 
     @Override
     public Observable<DockerVersion> serverVersionObs() {
-        return toEndpointObservable(VERSION_ENDPOINT, () -> DockerVersion.class);
+        return getRequestObservable(VERSION_ENDPOINT, () -> DockerVersion.class);
     }
 
     @Override
@@ -93,7 +92,7 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
 
     @Override
     public Observable<DockerInfo> infoObs() {
-        return toEndpointObservable(INFO_ENDPOINT, () -> DockerInfo.class);
+        return getRequestObservable(INFO_ENDPOINT, () -> DockerInfo.class);
     }
 
     @Override
@@ -134,14 +133,38 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
     public Observable<List<DockerContainer>> listContainersObs(QueryParameters queryParameters) {
         final String query = queryParameters.toQuery();
         String url = String.format(CONTAINER_ENDPOINT, query);
-        return toEndpointObservable(
+        return getRequestObservable(
                 url, () ->
                         new TypeToken<List<DockerContainer>>() {
                         }.getType()
         );
     }
 
-    private <T> Observable<T> toEndpointObservable(String uri, Supplier<Type> f) {
+
+    @Override
+    public DockerContainerResponse createContainer(DockerContainerRequest request, String name) {
+        return createContainerObs(request, Optional.ofNullable(name)).toBlocking().single();
+    }
+
+    @Override
+    public DockerContainerResponse createContainer(DockerContainerRequest request) {
+        return createContainer(request, null);
+    }
+
+    @Override
+    public Observable<DockerContainerResponse> createContainerObs(DockerContainerRequest request, Optional<String> name) {
+        String content = request.toJson();
+        logger.info("Creating container >>\n for json request '{}'", content);
+        final String uri = name.isPresent() ? "/containers/create?name=" + name.get() : "/containers/create";
+        Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createPost(uri).withContent(content).withHeader("Content-Type", "application/json"));
+        Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
+        return observable.
+                lift(FlatResponseOperator.<ByteBuf>flatResponse()).
+                doOnNext(n -> logger.info("Response for {} >>\n '{}'", uri, n.getContent().toString(Charset.defaultCharset()))).
+                map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), DockerContainerResponse.class));
+    }
+
+    private <T> Observable<T> getRequestObservable(String uri, Supplier<Type> f) {
         logger.info("Making request to uri '{}'", uri);
         Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createGet(uri));
         Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();

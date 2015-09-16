@@ -1,15 +1,13 @@
 package io.reactivex.docker.client;
 
-import io.reactivex.docker.client.representations.DockerContainer;
-import io.reactivex.docker.client.representations.DockerInfo;
-import io.reactivex.docker.client.representations.DockerVersion;
+import io.reactivex.docker.client.representations.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertThat;
@@ -72,5 +70,20 @@ public class RxDockerClientTest {
         QueryParameters queryParameters = new QueryParametersBuilder().withAll(true).withLimit(3).withFilter("status", "exited").createQueryParameters();
         List<DockerContainer> containers = client.listContainers(queryParameters);
         assertThat(containers, hasSize(3));
+    }
+
+
+    @Test
+    public void shouldCreateContainer() throws Exception {
+        DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
+        DockerContainerResponse response = client.createContainer(request);
+        assertThat(response.getId(), notNullValue());
+    }
+
+    @Test
+    public void shouldCreateContainerWithName() throws Exception {
+        DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
+        DockerContainerResponse response = client.createContainer(request, "shekhar-test");
+        assertThat(response.getId(), notNullValue());
     }
 }
