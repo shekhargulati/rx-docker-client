@@ -9,6 +9,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.reactivex.docker.client.representations.*;
 import io.reactivex.docker.client.ssl.DockerCertificates;
+import io.reactivex.docker.client.utils.Strings;
 import io.reactivex.netty.RxNetty;
 import io.reactivex.netty.pipeline.ssl.DefaultFactories;
 import io.reactivex.netty.protocol.http.client.FlatResponseOperator;
@@ -28,6 +29,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static io.reactivex.docker.client.QueryParametersBuilder.defaultQueryParameters;
+import static io.reactivex.docker.client.utils.Preconditions.check;
 import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createGet;
 import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createPost;
 
@@ -157,20 +159,32 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
         logger.info("Creating container >>\n for json request '{}'", content);
         final String uri = name.isPresent() ? "/containers/create?name=" + name.get() : "/containers/create";
         Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createPost(uri).withContent(content).withHeader("Content-Type", "application/json"));
-        Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
-        return observable.
-                lift(FlatResponseOperator.<ByteBuf>flatResponse()).
-                doOnNext(n -> logger.info("Response for {} >>\n '{}'", uri, n.getContent().toString(Charset.defaultCharset()))).
-                map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), DockerContainerResponse.class));
+        return getObservable(uri, observable, () -> DockerContainerResponse.class);
+    }
+
+    @Override
+    public ContainerInspectResponse inspectContainer(final String containerId) {
+        return inspectContainerObs(containerId).toBlocking().single();
+    }
+
+    @Override
+    public Observable<ContainerInspectResponse> inspectContainerObs(final String containerId) {
+        check(containerId, Strings::isEmptyOrNull, "containerId can't be null or empty.");
+        String uri = String.format("/containers/%s/json", containerId);
+        return getRequestObservable(uri, () -> ContainerInspectResponse.class);
     }
 
     private <T> Observable<T> getRequestObservable(String uri, Supplier<Type> f) {
         logger.info("Making request to uri '{}'", uri);
         Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createGet(uri));
+        return getObservable(uri, observable, f);
+    }
+
+    private <T> Observable<T> getObservable(String uri, Observable<HttpClientResponse<ByteBuf>> observable, Supplier<Type> f) {
         Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
         return observable.
                 lift(FlatResponseOperator.<ByteBuf>flatResponse()).
-                doOnNext(n -> logger.info("Response for {} >>\n '{}'", uri, n.getContent().toString(Charset.defaultCharset()))).
+                doOnNext(n -> logger.debug("Response for {} >>\n '{}'", uri, n.getContent().toString(Charset.defaultCharset()))).
                 map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), f.get()));
     }
 

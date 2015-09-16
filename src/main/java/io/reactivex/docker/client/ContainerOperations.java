@@ -1,5 +1,6 @@
 package io.reactivex.docker.client;
 
+import io.reactivex.docker.client.representations.ContainerInspectResponse;
 import io.reactivex.docker.client.representations.DockerContainer;
 import io.reactivex.docker.client.representations.DockerContainerRequest;
 import io.reactivex.docker.client.representations.DockerContainerResponse;
@@ -28,4 +29,8 @@ public interface ContainerOperations {
     DockerContainerResponse createContainer(DockerContainerRequest request);
 
     Observable<DockerContainerResponse> createContainerObs(DockerContainerRequest request, Optional<String> name);
+
+    ContainerInspectResponse inspectContainer(String containerId);
+
+    Observable<ContainerInspectResponse> inspectContainerObs(String containerId);
 }

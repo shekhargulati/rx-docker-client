@@ -86,4 +86,13 @@ public class RxDockerClientTest {
         DockerContainerResponse response = client.createContainer(request, "shekhar-test");
         assertThat(response.getId(), notNullValue());
     }
+
+    @Test
+    public void shouldInspectContainer() throws Exception {
+        DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
+        DockerContainerResponse response = client.createContainer(request, "shekhar-test");
+        ContainerInspectResponse containerInspectResponse = client.inspectContainer(response.getId());
+        System.out.println(containerInspectResponse);
+
+    }
 }
