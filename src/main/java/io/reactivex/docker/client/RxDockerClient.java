@@ -136,17 +136,17 @@ class RxDockerClient implements DockerClient {
 
 
     @Override
-    public DockerContainerResponse createContainer(DockerContainerRequest request, String name) {
+    public DockerContainerResponse createContainer(final DockerContainerRequest request, final String name) {
         return createContainerObs(request, Optional.ofNullable(name)).toBlocking().single();
     }
 
     @Override
-    public DockerContainerResponse createContainer(DockerContainerRequest request) {
+    public DockerContainerResponse createContainer(final DockerContainerRequest request) {
         return createContainer(request, null);
     }
 
     @Override
-    public Observable<DockerContainerResponse> createContainerObs(DockerContainerRequest request, Optional<String> name) {
+    public Observable<DockerContainerResponse> createContainerObs(final DockerContainerRequest request, final Optional<String> name) {
         String content = request.toJson();
         logger.info("Creating container >>\n for json request '{}'", content);
         final String uri = name.isPresent() ? CREATE_CONTAINER_ENDPOINT + "?name=" + name.get() : CREATE_CONTAINER_ENDPOINT;
@@ -187,6 +187,19 @@ class RxDockerClient implements DockerClient {
     public Observable<HttpResponseStatus> startContainerObs(final String containerId) {
         check(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_START_ENDPOINT, containerId);
+        Observable<HttpClientResponse<ByteBuf>> responseObservable = postRequestObservable(uri, EMPTY_BODY);
+        return observableHeaderResponse(responseObservable);
+    }
+
+    @Override
+    public HttpResponseStatus stopContainer(final String containerId, final int waitInSecs) {
+        return stopContainerObs(containerId, waitInSecs).toBlocking().single();
+    }
+
+    @Override
+    public Observable<HttpResponseStatus> stopContainerObs(final String containerId, final int waitInSecs) {
+        check(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        final String uri = String.format(CONTAINER_STOP_ENDPOINT, containerId);
         Observable<HttpClientResponse<ByteBuf>> responseObservable = postRequestObservable(uri, EMPTY_BODY);
         return observableHeaderResponse(responseObservable);
     }

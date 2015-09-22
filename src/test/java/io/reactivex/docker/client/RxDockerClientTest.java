@@ -107,8 +107,16 @@ public class RxDockerClientTest {
         DockerContainerResponse response = createContainer();
         HttpResponseStatus httpStatus = client.startContainer(response.getId());
         assertThat(httpStatus.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
-
     }
+
+    @Test
+    public void shouldStopStartedContainer() throws Exception {
+        DockerContainerResponse response = createContainer();
+        client.startContainer(response.getId());
+        HttpResponseStatus status = client.stopContainer(response.getId(), 5);
+        assertThat(status.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
+    }
+
 
     private DockerContainerResponse createContainer() {
         DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();

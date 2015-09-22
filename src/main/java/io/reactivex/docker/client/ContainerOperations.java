@@ -14,6 +14,7 @@ public interface ContainerOperations {
     String CREATE_CONTAINER_ENDPOINT = "/containers/create";
     String CONTAINER_LIST_PROCESS_ENDPOINT = CONTAINERS_ENDPOINT + "/top";
     String CONTAINER_START_ENDPOINT = CONTAINERS_ENDPOINT + "/start";
+    String CONTAINER_STOP_ENDPOINT = CONTAINERS_ENDPOINT + "/stop";
 
     Observable<List<DockerContainer>> listRunningContainerObs();
 
@@ -44,4 +45,8 @@ public interface ContainerOperations {
     Observable<HttpResponseStatus> startContainerObs(String containerId);
 
     HttpResponseStatus startContainer(String containerId);
+
+    HttpResponseStatus stopContainer(String containerId, final int waitInSecs);
+
+    Observable<HttpResponseStatus> stopContainerObs(String containerId, final int waitInSecs);
 }
