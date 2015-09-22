@@ -1,9 +1,6 @@
 package io.reactivex.docker.client;
 
-import io.reactivex.docker.client.representations.ContainerInspectResponse;
-import io.reactivex.docker.client.representations.DockerContainer;
-import io.reactivex.docker.client.representations.DockerContainerRequest;
-import io.reactivex.docker.client.representations.DockerContainerResponse;
+import io.reactivex.docker.client.representations.*;
 import rx.Observable;
 
 import java.util.List;
@@ -11,8 +8,10 @@ import java.util.Optional;
 
 public interface ContainerOperations {
     String CONTAINER_ENDPOINT = "/containers/json%s";
-    String CONTAINERS_JSON = "/containers/%s/json";
-    String CONTAINERS_CREATE = "/containers/create";
+    String CONTAINERS_ENDPOINT = "/containers/%s";
+    String CONTAINER_JSON_ENDPOINT = CONTAINERS_ENDPOINT + "/json";
+    String CREATE_CONTAINER_ENDPOINT = "/containers/create";
+    String CONTAINER_LIST_PROCESS_ENDPOINT = CONTAINERS_ENDPOINT + "/top";
 
     Observable<List<DockerContainer>> listRunningContainerObs();
 
@@ -35,4 +34,8 @@ public interface ContainerOperations {
     ContainerInspectResponse inspectContainer(String containerId);
 
     Observable<ContainerInspectResponse> inspectContainerObs(String containerId);
+
+    ProcessListResponse listProcesses(String containerId);
+
+    Observable<ProcessListResponse> listProcessesObs(String containerId);
 }

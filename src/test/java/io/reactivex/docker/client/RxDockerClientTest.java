@@ -10,6 +10,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class RxDockerClientTest {
@@ -81,16 +82,27 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldCreateContainerWithName() throws Exception {
-        DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
-        DockerContainerResponse response = client.createContainer(request, "shekhar-test");
+        DockerContainerResponse response = createContainer();
         assertThat(response.getId(), notNullValue());
     }
 
+
     @Test
     public void shouldInspectContainer() throws Exception {
-        DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
-        DockerContainerResponse response = client.createContainer(request, "shekhar-test");
+        DockerContainerResponse response = createContainer();
         ContainerInspectResponse containerInspectResponse = client.inspectContainer(response.getId());
         assertThat(containerInspectResponse.path(), is(equalTo("/bin/bash")));
+    }
+
+    @Test
+    public void shouldListProcessesRunningInsideContainer() throws Exception {
+//        DockerContainerResponse response = createContainer();
+        ProcessListResponse processListResponse = client.listProcesses("6bd8ca2769d0");
+        assertNotNull(processListResponse);
+    }
+
+    private DockerContainerResponse createContainer() {
+        DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
+        return client.createContainer(request, "shekhar-test");
     }
 }

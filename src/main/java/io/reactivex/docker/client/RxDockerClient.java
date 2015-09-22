@@ -158,7 +158,7 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
     public Observable<DockerContainerResponse> createContainerObs(DockerContainerRequest request, Optional<String> name) {
         String content = request.toJson();
         logger.info("Creating container >>\n for json request '{}'", content);
-        final String uri = name.isPresent() ? CONTAINERS_CREATE + "?name=" + name.get() : CONTAINERS_CREATE;
+        final String uri = name.isPresent() ? CREATE_CONTAINER_ENDPOINT + "?name=" + name.get() : CREATE_CONTAINER_ENDPOINT;
         Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createPost(uri).withContent(content).withHeader("Content-Type", "application/json"));
         return getObservable(uri, observable, () -> DockerContainerResponse.class);
     }
@@ -170,9 +170,21 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
 
     @Override
     public Observable<ContainerInspectResponse> inspectContainerObs(final String containerId) {
-        check(containerId, Strings::isEmptyOrNull, "containerId can't be null or empty.");
-        String uri = String.format(CONTAINERS_JSON, containerId);
+        check(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        final String uri = String.format(CONTAINER_JSON_ENDPOINT, containerId);
         return getRequestObservable(uri, () -> ContainerInspectResponse.class);
+    }
+
+    @Override
+    public ProcessListResponse listProcesses(final String containerId) {
+        return listProcessesObs(containerId).toBlocking().single();
+    }
+
+    @Override
+    public Observable<ProcessListResponse> listProcessesObs(final String containerId) {
+        check(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        final String uri = String.format(CONTAINER_LIST_PROCESS_ENDPOINT, containerId);
+        return getRequestObservable(uri, () -> ProcessListResponse.class);
     }
 
     private <T> Observable<T> getRequestObservable(String uri, Supplier<Type> f) {
