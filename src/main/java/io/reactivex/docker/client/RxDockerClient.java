@@ -34,7 +34,7 @@ import static io.reactivex.docker.client.utils.Preconditions.check;
 import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createGet;
 import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createPost;
 
-public class RxDockerClient implements MiscOperations, ContainerOperations {
+class RxDockerClient implements DockerClient {
 
     public static final String DEFAULT_DOCKER_HOST = "localhost";
     public static final int DEFAULT_DOCKER_PORT = 2375;
@@ -68,15 +68,6 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
             builder.withSslEngineFactory(sslContextBasedFactory);
         }
         rxClient = builder.build();
-    }
-
-    /**
-     * Builds the client using DOCKER_HOST and DOCKER_CERT_PATH environment variables
-     *
-     * @return a new instance of RxDockerClient
-     */
-    public static RxDockerClient fromDefaultEnv() {
-        return new RxDockerClient(Optional.ofNullable(System.getenv("DOCKER_HOST")), Optional.ofNullable(System.getenv("DOCKER_CERT_PATH")));
     }
 
     // Misc operations
