@@ -11,6 +11,8 @@ import java.util.Optional;
 
 public interface ContainerOperations {
     String CONTAINER_ENDPOINT = "/containers/json%s";
+    String CONTAINERS_JSON = "/containers/%s/json";
+    String CONTAINERS_CREATE = "/containers/create";
 
     Observable<List<DockerContainer>> listRunningContainerObs();
 

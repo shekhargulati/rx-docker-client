@@ -1,7 +1,6 @@
 package io.reactivex.docker.client;
 
 
-import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -28,7 +27,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
 import static io.reactivex.docker.client.QueryParametersBuilder.defaultQueryParameters;
+import static io.reactivex.docker.client.utils.Dates.DOCKER_DATE_TIME_FORMAT;
 import static io.reactivex.docker.client.utils.Preconditions.check;
 import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createGet;
 import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createPost;
@@ -157,7 +158,7 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
     public Observable<DockerContainerResponse> createContainerObs(DockerContainerRequest request, Optional<String> name) {
         String content = request.toJson();
         logger.info("Creating container >>\n for json request '{}'", content);
-        final String uri = name.isPresent() ? "/containers/create?name=" + name.get() : "/containers/create";
+        final String uri = name.isPresent() ? CONTAINERS_CREATE + "?name=" + name.get() : CONTAINERS_CREATE;
         Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createPost(uri).withContent(content).withHeader("Content-Type", "application/json"));
         return getObservable(uri, observable, () -> DockerContainerResponse.class);
     }
@@ -170,7 +171,7 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
     @Override
     public Observable<ContainerInspectResponse> inspectContainerObs(final String containerId) {
         check(containerId, Strings::isEmptyOrNull, "containerId can't be null or empty.");
-        String uri = String.format("/containers/%s/json", containerId);
+        String uri = String.format(CONTAINERS_JSON, containerId);
         return getRequestObservable(uri, () -> ContainerInspectResponse.class);
     }
 
@@ -181,10 +182,14 @@ public class RxDockerClient implements MiscOperations, ContainerOperations {
     }
 
     private <T> Observable<T> getObservable(String uri, Observable<HttpClientResponse<ByteBuf>> observable, Supplier<Type> f) {
-        Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
+        Gson gson = new GsonBuilder()
+                .setFieldNamingPolicy(UPPER_CAMEL_CASE)
+                .setDateFormat(DOCKER_DATE_TIME_FORMAT)
+                .setPrettyPrinting()
+                .create();
         return observable.
                 lift(FlatResponseOperator.<ByteBuf>flatResponse()).
-                doOnNext(n -> logger.debug("Response for {} >>\n '{}'", uri, n.getContent().toString(Charset.defaultCharset()))).
+                doOnNext(n -> logger.info("Response for {} >>\n '{}'", uri, n.getContent().toString(Charset.defaultCharset()))).
                 map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), f.get()));
     }
 

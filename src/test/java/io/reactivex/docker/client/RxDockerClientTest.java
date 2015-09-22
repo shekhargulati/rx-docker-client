@@ -7,8 +7,8 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertThat;
 
@@ -48,7 +48,6 @@ public class RxDockerClientTest {
     @Test
     public void shouldFetchDockerInformation() throws Exception {
         DockerInfo info = client.info();
-
         assertThat(info.getDockerRootDir(), equalTo("/mnt/sda1/var/lib/docker"));
         assertThat(info.getInitPath(), equalTo("/usr/local/bin/docker"));
     }
@@ -92,7 +91,6 @@ public class RxDockerClientTest {
         DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
         DockerContainerResponse response = client.createContainer(request, "shekhar-test");
         ContainerInspectResponse containerInspectResponse = client.inspectContainer(response.getId());
-        System.out.println(containerInspectResponse);
-
+        assertThat(containerInspectResponse.path(), is(equalTo("/bin/bash")));
     }
 }
