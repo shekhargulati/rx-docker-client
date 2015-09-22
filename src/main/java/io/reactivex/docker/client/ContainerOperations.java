@@ -1,5 +1,6 @@
 package io.reactivex.docker.client;
 
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.docker.client.representations.*;
 import rx.Observable;
 
@@ -12,6 +13,7 @@ public interface ContainerOperations {
     String CONTAINER_JSON_ENDPOINT = CONTAINERS_ENDPOINT + "/json";
     String CREATE_CONTAINER_ENDPOINT = "/containers/create";
     String CONTAINER_LIST_PROCESS_ENDPOINT = CONTAINERS_ENDPOINT + "/top";
+    String CONTAINER_START_ENDPOINT = CONTAINERS_ENDPOINT + "/start";
 
     Observable<List<DockerContainer>> listRunningContainerObs();
 
@@ -38,4 +40,8 @@ public interface ContainerOperations {
     ProcessListResponse listProcesses(String containerId);
 
     Observable<ProcessListResponse> listProcessesObs(String containerId);
+
+    Observable<HttpResponseStatus> startContainerObs(String containerId);
+
+    HttpResponseStatus startContainer(String containerId);
 }

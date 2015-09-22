@@ -1,5 +1,6 @@
 package io.reactivex.docker.client;
 
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.docker.client.representations.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -7,27 +8,27 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class RxDockerClientTest {
 
-    private RxDockerClient client;
+    private DockerClient client;
 
     @Before
     public void setUp() throws Exception {
         String dockerHost = "tcp://192.168.99.100:2376";
         String userHome = System.getenv("HOME");
-        client = new RxDockerClient(dockerHost, String.format("%s/.docker/machine/machines/dev", userHome));
+        client = DockerClient.newDockerClient(dockerHost, String.format("%s/.docker/machine/machines/dev", userHome));
     }
 
     @Test
     public void shouldConstructHttpDockerAPIUriWhenCertificateNotPresent() throws Exception {
         String dockerHost = "tcp://192.168.99.100:2375";
-        RxDockerClient client = new RxDockerClient(dockerHost, null);
+        RxDockerClient client = DockerClient.newDockerClient(dockerHost, null);
         String apiUri = client.getApiUri();
         assertThat(apiUri, equalTo("http://192.168.99.100:2375"));
     }
@@ -99,6 +100,14 @@ public class RxDockerClientTest {
 //        DockerContainerResponse response = createContainer();
         ProcessListResponse processListResponse = client.listProcesses("6bd8ca2769d0");
         assertNotNull(processListResponse);
+    }
+
+    @Test
+    public void shouldStartCreatedContainer() throws Exception {
+        DockerContainerResponse response = createContainer();
+        HttpResponseStatus httpStatus = client.startContainer(response.getId());
+        assertThat(httpStatus.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
+
     }
 
     private DockerContainerResponse createContainer() {

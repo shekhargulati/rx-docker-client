@@ -8,6 +8,12 @@ public interface DockerClient extends MiscOperations, ContainerOperations {
      * @return a new instance of RxDockerClient
      */
     public static DockerClient fromDefaultEnv() {
-        return new RxDockerClient(System.getenv("DOCKER_HOST"), System.getenv("DOCKER_CERT_PATH"));
+        return newDockerClient(System.getenv("DOCKER_HOST"), System.getenv("DOCKER_CERT_PATH"));
     }
+
+    public static RxDockerClient newDockerClient(final String dockerHost, final String dockerCertPath) {
+        return new RxDockerClient(dockerHost, dockerCertPath);
+    }
+
+    String getApiUri();
 }

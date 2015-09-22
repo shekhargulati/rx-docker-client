@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.docker.client.representations.*;
 import io.reactivex.docker.client.ssl.DockerCertificates;
 import io.reactivex.docker.client.utils.Strings;
@@ -38,12 +39,13 @@ class RxDockerClient implements DockerClient {
 
     public static final String DEFAULT_DOCKER_HOST = "localhost";
     public static final int DEFAULT_DOCKER_PORT = 2375;
+    public static final String EMPTY_BODY = "";
 
     private final Logger logger = LoggerFactory.getLogger(RxDockerClient.class);
     private final String apiUri;
     private final HttpClient<ByteBuf, ByteBuf> rxClient;
 
-    public RxDockerClient(final String dockerHost, final String dockerCertPath) {
+    RxDockerClient(final String dockerHost, final String dockerCertPath) {
         this(Optional.ofNullable(dockerHost), Optional.ofNullable(dockerCertPath));
     }
 
@@ -71,7 +73,6 @@ class RxDockerClient implements DockerClient {
     }
 
     // Misc operations
-
     @Override
     public Observable<DockerVersion> serverVersionObs() {
         return getRequestObservable(VERSION_ENDPOINT, () -> DockerVersion.class);
@@ -97,7 +98,6 @@ class RxDockerClient implements DockerClient {
     }
 
     // Container operations
-
     @Override
     public Observable<List<DockerContainer>> listRunningContainerObs() {
         return listContainersObs(defaultQueryParameters());
@@ -150,8 +150,8 @@ class RxDockerClient implements DockerClient {
         String content = request.toJson();
         logger.info("Creating container >>\n for json request '{}'", content);
         final String uri = name.isPresent() ? CREATE_CONTAINER_ENDPOINT + "?name=" + name.get() : CREATE_CONTAINER_ENDPOINT;
-        Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createPost(uri).withContent(content).withHeader("Content-Type", "application/json"));
-        return getObservable(uri, observable, () -> DockerContainerResponse.class);
+        Observable<HttpClientResponse<ByteBuf>> observable = postRequestObservable(uri, content);
+        return observableResponse(uri, observable, () -> DockerContainerResponse.class);
     }
 
     @Override
@@ -178,13 +178,37 @@ class RxDockerClient implements DockerClient {
         return getRequestObservable(uri, () -> ProcessListResponse.class);
     }
 
+    @Override
+    public HttpResponseStatus startContainer(final String containerId) {
+        return startContainerObs(containerId).toBlocking().single();
+    }
+
+    @Override
+    public Observable<HttpResponseStatus> startContainerObs(final String containerId) {
+        check(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        final String uri = String.format(CONTAINER_START_ENDPOINT, containerId);
+        Observable<HttpClientResponse<ByteBuf>> responseObservable = postRequestObservable(uri, EMPTY_BODY);
+        return observableHeaderResponse(responseObservable);
+    }
+
+    // internal methods
+    private Observable<HttpClientResponse<ByteBuf>> postRequestObservable(String uri, String content) {
+        return rxClient.submit(createPost(uri).withContent(content).withHeader("Content-Type", "application/json"));
+    }
+
     private <T> Observable<T> getRequestObservable(String uri, Supplier<Type> f) {
         logger.info("Making request to uri '{}'", uri);
         Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createGet(uri));
-        return getObservable(uri, observable, f);
+        return observableResponse(uri, observable, f);
     }
 
-    private <T> Observable<T> getObservable(String uri, Observable<HttpClientResponse<ByteBuf>> observable, Supplier<Type> f) {
+    private Observable<HttpResponseStatus> observableHeaderResponse(Observable<HttpClientResponse<ByteBuf>> observable) {
+        return observable.
+                lift(FlatResponseOperator.<ByteBuf>flatResponse()).
+                map(resp -> resp.getResponse().getStatus());
+    }
+
+    private <T> Observable<T> observableResponse(String uri, Observable<HttpClientResponse<ByteBuf>> observable, Supplier<Type> supplier) {
         Gson gson = new GsonBuilder()
                 .setFieldNamingPolicy(UPPER_CAMEL_CASE)
                 .setDateFormat(DOCKER_DATE_TIME_FORMAT)
@@ -193,9 +217,10 @@ class RxDockerClient implements DockerClient {
         return observable.
                 lift(FlatResponseOperator.<ByteBuf>flatResponse()).
                 doOnNext(n -> logger.info("Response for {} >>\n '{}'", uri, n.getContent().toString(Charset.defaultCharset()))).
-                map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), f.get()));
+                map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), supplier.get()));
     }
 
+    @Override
     public String getApiUri() {
         return apiUri;
     }
