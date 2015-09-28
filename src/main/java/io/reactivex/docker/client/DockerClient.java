@@ -2,6 +2,9 @@ package io.reactivex.docker.client;
 
 public interface DockerClient extends MiscOperations, ContainerOperations {
 
+    String DEFAULT_DOCKER_HOST = "localhost";
+    int DEFAULT_DOCKER_PORT = 2375;
+
     /**
      * Builds the client using DOCKER_HOST and DOCKER_CERT_PATH environment variables
      *

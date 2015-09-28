@@ -37,8 +37,6 @@ import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createPo
 
 class RxDockerClient implements DockerClient {
 
-    public static final String DEFAULT_DOCKER_HOST = "localhost";
-    public static final int DEFAULT_DOCKER_PORT = 2375;
     public static final String EMPTY_BODY = "";
 
     private final Logger logger = LoggerFactory.getLogger(RxDockerClient.class);
