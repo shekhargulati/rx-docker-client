@@ -2,27 +2,56 @@ package io.reactivex.docker.client;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.docker.client.representations.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.Matchers.greaterThan;
+import static java.util.stream.Collectors.toMap;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class RxDockerClientTest {
 
+    private static final String DOCKER_MACHINE_NAME = "rx-docker-test";
+
     private DockerClient client;
+    private String dockerHost;
+    private static Map<String, String> dockerConfiguration;
+
+
+    @BeforeClass
+    public static void setupInfra() throws Exception {
+//        createAndWaitForProcessExecution(new String[]{"docker-machine", "create", "--driver", "virtualbox", DOCKER_MACHINE_NAME});
+        createAndWaitForProcessExecution(new String[]{"docker-machine", "start", DOCKER_MACHINE_NAME});
+        createAndWaitForProcessExecution(new String[]{"docker-machine", "env", DOCKER_MACHINE_NAME});
+        readOutputFileAndSetDockerProperties();
+
+    }
+
+    @AfterClass
+    public static void tearDownInfra() throws Exception {
+//        createAndWaitForProcessExecution(new String[]{"docker-machine", "stop", DOCKER_MACHINE_NAME});
+//        createAndWaitForProcessExecution(new String[]{"docker-machine", "rm", DOCKER_MACHINE_NAME});
+    }
+
 
     @Before
     public void setUp() throws Exception {
-        String dockerHost = "tcp://192.168.99.100:2376";
-        String userHome = System.getenv("HOME");
-        client = DockerClient.newDockerClient(dockerHost, String.format("%s/.docker/machine/machines/dev", userHome));
+        dockerHost = dockerConfiguration.get("DOCKER_HOST");
+        client = DockerClient.newDockerClient(dockerHost, dockerConfiguration.get("DOCKER_CERT_PATH"));
     }
 
     @Test
@@ -36,7 +65,8 @@ public class RxDockerClientTest {
     @Test
     public void shouldConstructHttspDockerAPIUriWhenCertificatePresent() throws Exception {
         String apiUri = client.getApiUri();
-        assertThat(apiUri, equalTo("https://192.168.99.100:2376"));
+        assertThat(apiUri, startsWith("https://"));
+        assertThat(apiUri, containsString(":2376"));
     }
 
     @Test
@@ -55,26 +85,6 @@ public class RxDockerClientTest {
     }
 
     @Test
-    public void shouldListRunningContainers() throws Exception {
-        List<DockerContainer> dockerContainers = client.listRunningContainers();
-        assertThat(dockerContainers, hasSize(1));
-    }
-
-    @Test
-    public void shouldListAllContainers() throws Exception {
-        List<DockerContainer> dockerContainers = client.listAllContainers();
-        assertThat(dockerContainers, hasSize(greaterThan(1)));
-    }
-
-    @Test
-    public void shouldQueryContainersByFilters() throws Exception {
-        QueryParameters queryParameters = new QueryParametersBuilder().withAll(true).withLimit(3).withFilter("status", "exited").createQueryParameters();
-        List<DockerContainer> containers = client.listContainers(queryParameters);
-        assertThat(containers, hasSize(3));
-    }
-
-
-    @Test
     public void shouldCreateContainer() throws Exception {
         DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
         DockerContainerResponse response = client.createContainer(request);
@@ -83,43 +93,90 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldCreateContainerWithName() throws Exception {
-        DockerContainerResponse response = createContainer();
+        DockerContainerResponse response = createContainer("rx-docker-client-test-1");
         assertThat(response.getId(), notNullValue());
     }
 
 
     @Test
+    public void shouldListAllContainers() throws Exception {
+        createContainer("rx-docker-client-test-2");
+        createContainer("rx-docker-client-test-3");
+        List<DockerContainer> dockerContainers = client.listAllContainers();
+        assertThat(dockerContainers, hasSize(greaterThan(2)));
+    }
+
+    @Test
     public void shouldInspectContainer() throws Exception {
-        DockerContainerResponse response = createContainer();
+        DockerContainerResponse response = createContainer("rx-docker-client-test-4");
         ContainerInspectResponse containerInspectResponse = client.inspectContainer(response.getId());
         assertThat(containerInspectResponse.path(), is(equalTo("/bin/bash")));
     }
 
     @Test
-    public void shouldListProcessesRunningInsideContainer() throws Exception {
-//        DockerContainerResponse response = createContainer();
-        ProcessListResponse processListResponse = client.listProcesses("6bd8ca2769d0");
-        assertNotNull(processListResponse);
-    }
-
-    @Test
     public void shouldStartCreatedContainer() throws Exception {
-        DockerContainerResponse response = createContainer();
+        DockerContainerResponse response = createContainer("rx-docker-client-test-5");
         HttpResponseStatus httpStatus = client.startContainer(response.getId());
         assertThat(httpStatus.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
     }
 
     @Test
     public void shouldStopStartedContainer() throws Exception {
-        DockerContainerResponse response = createContainer();
+        DockerContainerResponse response = createContainer("rx-docker-client-test-6");
         client.startContainer(response.getId());
         HttpResponseStatus status = client.stopContainer(response.getId(), 5);
         assertThat(status.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
     }
 
+    @Test
+    public void shouldQueryContainersByFilters() throws Exception {
+        createContainer("rx-docker-client-test-7");
+        createContainer("rx-docker-client-test-8");
+        QueryParameters queryParameters = new QueryParametersBuilder().withAll(true).withLimit(3).withFilter("status", "exited").createQueryParameters();
+        List<DockerContainer> containers = client.listContainers(queryParameters);
+        assertThat(containers.size(), greaterThanOrEqualTo(2));
+    }
 
-    private DockerContainerResponse createContainer() {
+    @Test
+    public void shouldRestartAContainer() throws Exception {
+        DockerContainerResponse response = createContainer("rx-docker-client-test-9");
+        HttpResponseStatus status = client.restartContainer(response.getId(), 5);
+        assertThat(status.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
+    }
+
+    @Ignore
+    public void shouldListProcessesRunningInsideContainer() throws Exception {
+        DockerContainerResponse response = createContainer("rx-docker-client-test-X");
+        client.startContainer(response.getId());
+        ProcessListResponse processListResponse = client.listProcesses(response.getId());
+        assertNotNull(processListResponse);
+    }
+
+    @Ignore
+    public void shouldListRunningContainers() throws Exception {
+        List<DockerContainer> dockerContainers = client.listRunningContainers();
+        assertThat(dockerContainers.size(), greaterThanOrEqualTo(2));
+    }
+
+    private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
-        return client.createContainer(request, "shekhar-test");
+        return client.createContainer(request, containerName);
+    }
+
+    private static void createAndWaitForProcessExecution(String[] cmd) throws IOException, InterruptedException {
+        ProcessBuilder builder = new ProcessBuilder(cmd);
+        builder.redirectErrorStream(true);
+        builder.redirectError(Paths.get("build/error.txt").toFile());
+        builder.redirectOutput(Paths.get("build/output.txt").toFile());
+        Process createMchProcess = builder.start();
+        int createMchExitValue = createMchProcess.waitFor();
+        System.out.println(createMchExitValue);
+    }
+
+    private static void readOutputFileAndSetDockerProperties() throws Exception {
+        dockerConfiguration = Files.lines(Paths.get("build/output.txt")).filter(line -> line.contains("DOCKER_HOST") || line.contains("DOCKER_CERT_PATH")).map(line -> line.split("\\s")[1]).map(line -> {
+            String[] split = line.split("=");
+            return new SimpleEntry<>(split[0], split[1].replace("\"", ""));
+        }).collect(toMap(SimpleEntry::getKey, SimpleEntry::getValue));
     }
 }

@@ -31,13 +31,13 @@ import java.util.function.Supplier;
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
 import static io.reactivex.docker.client.QueryParametersBuilder.defaultQueryParameters;
 import static io.reactivex.docker.client.utils.Dates.DOCKER_DATE_TIME_FORMAT;
-import static io.reactivex.docker.client.utils.Preconditions.check;
+import static io.reactivex.docker.client.utils.Validations.validate;
 import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createGet;
 import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createPost;
 
 class RxDockerClient implements DockerClient {
 
-    public static final String EMPTY_BODY = "";
+    private static final String EMPTY_BODY = "";
 
     private final Logger logger = LoggerFactory.getLogger(RxDockerClient.class);
     private final String apiUri;
@@ -68,6 +68,11 @@ class RxDockerClient implements DockerClient {
             builder.withSslEngineFactory(sslContextBasedFactory);
         }
         rxClient = builder.build();
+    }
+
+    @Override
+    public String getApiUri() {
+        return apiUri;
     }
 
     // Misc operations
@@ -159,7 +164,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<ContainerInspectResponse> inspectContainerObs(final String containerId) {
-        check(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_JSON_ENDPOINT, containerId);
         return getRequestObservable(uri, () -> ContainerInspectResponse.class);
     }
@@ -171,7 +176,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<ProcessListResponse> listProcessesObs(final String containerId) {
-        check(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_LIST_PROCESS_ENDPOINT, containerId);
         return getRequestObservable(uri, () -> ProcessListResponse.class);
     }
@@ -183,10 +188,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpResponseStatus> startContainerObs(final String containerId) {
-        check(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
-        final String uri = String.format(CONTAINER_START_ENDPOINT, containerId);
-        Observable<HttpClientResponse<ByteBuf>> responseObservable = postRequestObservable(uri, EMPTY_BODY);
-        return observableHeaderResponse(responseObservable);
+        return containerLifecycle(containerId, CONTAINER_START_ENDPOINT);
     }
 
     @Override
@@ -196,10 +198,17 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpResponseStatus> stopContainerObs(final String containerId, final int waitInSecs) {
-        check(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
-        final String uri = String.format(CONTAINER_STOP_ENDPOINT, containerId);
-        Observable<HttpClientResponse<ByteBuf>> responseObservable = postRequestObservable(uri, EMPTY_BODY);
-        return observableHeaderResponse(responseObservable);
+        return containerLifecycle(containerId, CONTAINER_STOP_ENDPOINT);
+    }
+
+    @Override
+    public HttpResponseStatus restartContainer(final String containerId, final int waitInSecs) {
+        return restartContainerObs(containerId, waitInSecs).toBlocking().single();
+    }
+
+    @Override
+    public Observable<HttpResponseStatus> restartContainerObs(final String containerId, final int waitInSecs) {
+        return containerLifecycle(containerId, CONTAINER_RESTART_ENDPOINT);
     }
 
     // internal methods
@@ -228,11 +237,15 @@ class RxDockerClient implements DockerClient {
         return observable.
                 lift(FlatResponseOperator.<ByteBuf>flatResponse()).
                 doOnNext(n -> logger.info("Response for {} >>\n '{}'", uri, n.getContent().toString(Charset.defaultCharset()))).
+                doOnError(error -> logger.error("Exception >>> ", error)).
                 map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), supplier.get()));
     }
 
-    @Override
-    public String getApiUri() {
-        return apiUri;
+    private Observable<HttpResponseStatus> containerLifecycle(final String containerId, final String endpoint) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        final String uri = String.format(endpoint, containerId);
+        Observable<HttpClientResponse<ByteBuf>> responseObservable = postRequestObservable(uri, EMPTY_BODY);
+        return observableHeaderResponse(responseObservable);
     }
+
 }

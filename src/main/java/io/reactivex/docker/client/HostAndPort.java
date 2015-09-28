@@ -1,8 +1,7 @@
 package io.reactivex.docker.client;
 
 import io.reactivex.docker.client.utils.Strings;
-
-import static io.reactivex.docker.client.utils.Preconditions.check;
+import io.reactivex.docker.client.utils.Validations;
 
 public final class HostAndPort {
 
@@ -19,10 +18,10 @@ public final class HostAndPort {
     }
 
     public static HostAndPort from(String hostPortString) {
-        check(hostPortString, Strings::isEmptyOrNull, "hostPortString can't be null");
+        Validations.validate(hostPortString, Strings::isEmptyOrNull, "hostPortString can't be null");
         String endpointWithoutScheme = hostPortString.replaceAll(".*://", "");
         String[] split = endpointWithoutScheme.split(":");
-        check(split, arr -> arr.length != 2, String.format("%s should be of format host:port for example 192.168.99.100:2376", hostPortString));
+        Validations.validate(split, arr -> arr.length != 2, String.format("%s should be of format host:port for example 192.168.99.100:2376", hostPortString));
         return new HostAndPort(split[0], Integer.parseInt(split[1]));
     }
 
