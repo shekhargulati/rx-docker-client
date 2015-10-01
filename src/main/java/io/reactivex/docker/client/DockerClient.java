@@ -19,4 +19,5 @@ public interface DockerClient extends MiscOperations, ContainerOperations {
     }
 
     String getApiUri();
+
 }

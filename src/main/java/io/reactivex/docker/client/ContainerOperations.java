@@ -16,6 +16,7 @@ public interface ContainerOperations {
     String CONTAINER_START_ENDPOINT = CONTAINERS_ENDPOINT + "/start";
     String CONTAINER_STOP_ENDPOINT = CONTAINERS_ENDPOINT + "/stop";
     String CONTAINER_RESTART_ENDPOINT = CONTAINERS_ENDPOINT + "/restart";
+    String CONTAINER_KILL_ENDPOINT = CONTAINERS_ENDPOINT + "/kill";
 
     Observable<List<DockerContainer>> listRunningContainerObs();
 
@@ -54,4 +55,18 @@ public interface ContainerOperations {
     HttpResponseStatus restartContainer(String containerId, int waitInSecs);
 
     Observable<HttpResponseStatus> restartContainerObs(String containerId, int waitInSecs);
+
+    HttpResponseStatus killRunningContainer(String containerId);
+
+    Observable<HttpResponseStatus> killRunningContainerObs(String containerId);
+
+    default void killAllRunningContainers() {
+        listContainers(new QueryParameters()).forEach(container -> {
+            String containerId = container.getId();
+            System.out.println(String.format("killing running container with id %s", containerId));
+            killRunningContainer(containerId);
+        });
+    }
+
+
 }

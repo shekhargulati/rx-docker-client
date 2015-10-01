@@ -211,6 +211,16 @@ class RxDockerClient implements DockerClient {
         return containerLifecycle(containerId, CONTAINER_RESTART_ENDPOINT);
     }
 
+    @Override
+    public HttpResponseStatus killRunningContainer(final String containerId) {
+        return killRunningContainerObs(containerId).toBlocking().single();
+    }
+
+    @Override
+    public Observable<HttpResponseStatus> killRunningContainerObs(final String containerId) {
+        return containerLifecycle(containerId, CONTAINER_KILL_ENDPOINT);
+    }
+
     // internal methods
     private Observable<HttpClientResponse<ByteBuf>> postRequestObservable(String uri, String content) {
         return rxClient.submit(createPost(uri).withContent(content).withHeader("Content-Type", "application/json"));
@@ -225,6 +235,7 @@ class RxDockerClient implements DockerClient {
     private Observable<HttpResponseStatus> observableHeaderResponse(Observable<HttpClientResponse<ByteBuf>> observable) {
         return observable.
                 lift(FlatResponseOperator.<ByteBuf>flatResponse()).
+                doOnError(error -> logger.error("Exception >>> ", error)).
                 map(resp -> resp.getResponse().getStatus());
     }
 
@@ -244,6 +255,7 @@ class RxDockerClient implements DockerClient {
     private Observable<HttpResponseStatus> containerLifecycle(final String containerId, final String endpoint) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(endpoint, containerId);
+        logger.info("Making POST request to {}", uri);
         Observable<HttpClientResponse<ByteBuf>> responseObservable = postRequestObservable(uri, EMPTY_BODY);
         return observableHeaderResponse(responseObservable);
     }

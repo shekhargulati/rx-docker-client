@@ -2,7 +2,10 @@ package io.reactivex.docker.client;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.docker.client.representations.*;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,8 +30,8 @@ public class RxDockerClientTest {
 
     private static final String DOCKER_MACHINE_NAME = "rx-docker-test";
 
-    private DockerClient client;
-    private String dockerHost;
+    private static DockerClient client;
+    private static String dockerHost;
     private static Map<String, String> dockerConfiguration;
 
 
@@ -38,20 +41,17 @@ public class RxDockerClientTest {
         createAndWaitForProcessExecution(new String[]{"docker-machine", "start", DOCKER_MACHINE_NAME});
         createAndWaitForProcessExecution(new String[]{"docker-machine", "env", DOCKER_MACHINE_NAME});
         readOutputFileAndSetDockerProperties();
+        dockerHost = dockerConfiguration.get("DOCKER_HOST");
+        client = DockerClient.newDockerClient(dockerHost, dockerConfiguration.get("DOCKER_CERT_PATH"));
 
     }
 
     @AfterClass
     public static void tearDownInfra() throws Exception {
-//        createAndWaitForProcessExecution(new String[]{"docker-machine", "stop", DOCKER_MACHINE_NAME});
+        client.killAllRunningContainers();
+//        assertThat(client.listAllContainers().size(), equalTo(0));
+        createAndWaitForProcessExecution(new String[]{"docker-machine", "stop", DOCKER_MACHINE_NAME});
 //        createAndWaitForProcessExecution(new String[]{"docker-machine", "rm", DOCKER_MACHINE_NAME});
-    }
-
-
-    @Before
-    public void setUp() throws Exception {
-        dockerHost = dockerConfiguration.get("DOCKER_HOST");
-        client = DockerClient.newDockerClient(dockerHost, dockerConfiguration.get("DOCKER_CERT_PATH"));
     }
 
     @Test
@@ -141,6 +141,14 @@ public class RxDockerClientTest {
     public void shouldRestartAContainer() throws Exception {
         DockerContainerResponse response = createContainer("rx-docker-client-test-9");
         HttpResponseStatus status = client.restartContainer(response.getId(), 5);
+        assertThat(status.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
+    }
+
+    @Test
+    public void shouldKillARunningContainer() throws Exception {
+        DockerContainerResponse response = createContainer("rx-docker-client-test-11");
+        client.startContainer(response.getId());
+        HttpResponseStatus status = client.killRunningContainer(response.getId());
         assertThat(status.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
     }
 
