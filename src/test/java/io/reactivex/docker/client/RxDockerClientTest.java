@@ -6,6 +6,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import rx.Observable;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,8 +15,10 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.NO_CONTENT;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -174,6 +177,18 @@ public class RxDockerClientTest {
         assertThat(status.code(), is(equalTo(NO_CONTENT.code())));
     }
 
+
+    @Test
+    public void shouldWaitForARunningDockerContainer() throws Exception {
+        DockerContainerResponse response = createContainer("rx-docker-client-test-15");
+        client.startContainer(response.getId());
+        Observable.timer(10, TimeUnit.SECONDS).forEach(t -> {
+            System.out.println("Stopping container after 10 seconds..");
+            client.stopContainer(response.getId(), 5);
+        });
+        HttpResponseStatus status = client.waitContainer(response.getId());
+        assertThat(status.code(), is(equalTo(OK.code())));
+    }
 
     @Ignore
     public void shouldListProcessesRunningInsideContainer() throws Exception {

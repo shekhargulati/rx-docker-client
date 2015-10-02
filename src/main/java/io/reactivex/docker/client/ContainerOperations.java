@@ -19,6 +19,7 @@ public interface ContainerOperations {
     String CONTAINER_KILL_ENDPOINT = CONTAINERS_ENDPOINT + "/kill";
     String CONTAINER_REMOVE_ENDPOINT = CONTAINERS_ENDPOINT;
     String CONTAINER_RENAME_ENDPOINT = CONTAINERS_ENDPOINT + "/rename";
+    String CONTAINER_WAIT_ENDPOINT = CONTAINERS_ENDPOINT + "/wait";
 
     Observable<List<DockerContainer>> listRunningContainerObs();
 
@@ -89,4 +90,8 @@ public interface ContainerOperations {
     HttpResponseStatus renameContainer(String containerId, String newName);
 
     Observable<HttpResponseStatus> renameContainerObs(String containerId, String newName);
+
+    HttpResponseStatus waitContainer(String containerId);
+
+    Observable<HttpResponseStatus> waitContainerObs(String containerId);
 }

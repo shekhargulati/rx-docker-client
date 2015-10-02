@@ -252,6 +252,16 @@ class RxDockerClient implements DockerClient {
         return containerPostAction(containerId, CONTAINER_RENAME_ENDPOINT, "name=" + newName);
     }
 
+    @Override
+    public HttpResponseStatus waitContainer(final String containerId) {
+        return waitContainerObs(containerId).toBlocking().single();
+    }
+
+    @Override
+    public Observable<HttpResponseStatus> waitContainerObs(final String containerId) {
+        return containerPostAction(containerId, CONTAINER_WAIT_ENDPOINT);
+    }
+
     // internal methods
 
     private <T> Observable<T> getRequestObservable(String uri, Supplier<Type> f) {
