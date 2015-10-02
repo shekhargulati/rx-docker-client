@@ -25,7 +25,6 @@ import javax.net.ssl.SSLEngine;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -200,7 +199,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpResponseStatus> stopContainerObs(final String containerId, final int waitInSecs) {
-        return containerPostAction(containerId, CONTAINER_STOP_ENDPOINT);
+        return containerPostAction(containerId, CONTAINER_STOP_ENDPOINT, "t=" + waitInSecs);
     }
 
     @Override
@@ -210,7 +209,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpResponseStatus> restartContainerObs(final String containerId, final int waitInSecs) {
-        return containerPostAction(containerId, CONTAINER_RESTART_ENDPOINT);
+        return containerPostAction(containerId, CONTAINER_RESTART_ENDPOINT, "t=" + waitInSecs);
     }
 
     @Override
@@ -240,7 +239,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpResponseStatus> removeContainerObs(final String containerId, final boolean removeVolume, final boolean force) {
-        return containerRemoveAction(containerId, CONTAINER_REMOVE_ENDPOINT, "v=" + removeVolume, "f=" + force);
+        return containerRemoveAction(containerId, CONTAINER_REMOVE_ENDPOINT, "v=" + removeVolume, "force=" + force);
     }
 
     // internal methods
@@ -271,7 +270,7 @@ class RxDockerClient implements DockerClient {
                 map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), supplier.get()));
     }
 
-    private Observable<HttpResponseStatus> containerPostAction(final String containerId, final String endpoint) {
+    private Observable<HttpResponseStatus> containerPostAction(final String containerId, final String endpoint, final String... queryParameters) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         ContainerEndpointUriFunction cFx = this::toRestEndpoint;
         TriFunction<String, String, String[], Observable<HttpClientResponse<ByteBuf>>> fx = cFx.andThen(EMPTY_BODY, httpPostExecutionFunction());
@@ -293,9 +292,12 @@ class RxDockerClient implements DockerClient {
     private String toRestEndpoint(String endpoint, String containerId, String... queryParameters) {
         String baseUrl = String.format(endpoint, containerId);
         if (queryParameters == null || queryParameters.length == 0) {
+            logger.info("Making request to {}", baseUrl);
             return baseUrl;
         }
-        return baseUrl + "?" + Arrays.toString(queryParameters);
+        String uri = String.format("%s?%s", baseUrl, String.join("&", queryParameters));
+        logger.info("Making request to {}", uri);
+        return uri;
     }
 
 

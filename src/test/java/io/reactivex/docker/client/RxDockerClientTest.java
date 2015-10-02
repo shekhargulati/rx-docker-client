@@ -48,9 +48,9 @@ public class RxDockerClientTest {
 
     @AfterClass
     public static void tearDownInfra() throws Exception {
-        client.killAllRunningContainers();
-//        assertThat(client.listAllContainers().size(), equalTo(0));
-        createAndWaitForProcessExecution(new String[]{"docker-machine", "stop", DOCKER_MACHINE_NAME});
+        client.removeAllContainers();
+        assertThat(client.listAllContainers().size(), equalTo(0));
+//        createAndWaitForProcessExecution(new String[]{"docker-machine", "stop", DOCKER_MACHINE_NAME});
 //        createAndWaitForProcessExecution(new String[]{"docker-machine", "rm", DOCKER_MACHINE_NAME});
     }
 
@@ -152,6 +152,21 @@ public class RxDockerClientTest {
         assertThat(status.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
     }
 
+    @Test
+    public void shouldRemoveDockerContainer() throws Exception {
+        DockerContainerResponse response = createContainer("rx-docker-client-test-12");
+        HttpResponseStatus status = client.removeContainer(response.getId());
+        assertThat(status.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
+    }
+
+    @Test
+    public void shouldRemoveDockerContainerWithQueryParameters() throws Exception {
+        DockerContainerResponse response = createContainer("rx-docker-client-test-13");
+        HttpResponseStatus status = client.removeContainer(response.getId(), true, true);
+        assertThat(status.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
+    }
+
+
     @Ignore
     public void shouldListProcessesRunningInsideContainer() throws Exception {
         DockerContainerResponse response = createContainer("rx-docker-client-test-X");
@@ -167,7 +182,12 @@ public class RxDockerClientTest {
     }
 
     private DockerContainerResponse createContainer(String containerName) {
-        DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
+        DockerContainerRequest request = new DockerContainerRequestBuilder()
+                .setImage("ubuntu")
+                .setCmd(Arrays.asList("/bin/bash"))
+                .setAttachStdin(true)
+                .setTty(true)
+                .createDockerContainerRequest();
         return client.createContainer(request, containerName);
     }
 
