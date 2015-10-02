@@ -198,6 +198,16 @@ public class RxDockerClientTest {
         assertTrue(Paths.get(filepath).toFile().exists());
     }
 
+    @Test
+    public void shouldShowContainerStats() throws Exception {
+        DockerContainerResponse response = createContainer("rx-docker-client-test-17");
+        String containerId = response.getId();
+        client.startContainer(containerId);
+        ContainerStats containerStats = client.containerStats(containerId);
+        System.out.println(containerStats);
+        assertNotNull(containerStats);
+    }
+
     @Ignore
     public void shouldListProcessesRunningInsideContainer() throws Exception {
         DockerContainerResponse response = createContainer("rx-docker-client-test-X");

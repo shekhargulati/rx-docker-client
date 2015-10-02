@@ -267,7 +267,7 @@ class RxDockerClient implements DockerClient {
         try (FileOutputStream out = new FileOutputStream(filepath)) {
             String uri = "/containers/" + containerId + "/export";
             rxClient.submit(createGet(uri).withHeader("Accept", "application/octet-stream"))
-                    .flatMap((HttpClientResponse<ByteBuf> resp) -> resp.getContent().map(bb -> new ByteBufInputStream(bb)))
+                    .flatMap((HttpClientResponse<ByteBuf> resp) -> resp.getContent().map(ByteBufInputStream::new))
                     .toBlocking()
                     .forEach(str -> {
                         try {
@@ -278,15 +278,24 @@ class RxDockerClient implements DockerClient {
                                 out.write(buffer, 0, n);
                             }
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            throw new RuntimeException(e);
                         }
 
                     });
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
+    }
 
+    @Override
+    public ContainerStats containerStats(final String containerId) {
+        return containerStatsObs(containerId).toBlocking().single();
+    }
 
+    @Override
+    public Observable<ContainerStats> containerStatsObs(final String containerId) {
+        String uri = "/containers/" + containerId + "/stats";
+        return getRequestObservable(uri, () -> ContainerStats.class);
     }
 
     // internal methods

@@ -94,4 +94,10 @@ public interface ContainerOperations {
     HttpResponseStatus waitContainer(String containerId);
 
     Observable<HttpResponseStatus> waitContainerObs(String containerId);
+
+    void exportContainer(String containerId, String filepath);
+
+    ContainerStats containerStats(String containerId);
+
+    Observable<ContainerStats> containerStatsObs(String containerId);
 }
