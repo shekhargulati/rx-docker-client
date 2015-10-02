@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static io.netty.handler.codec.http.HttpResponseStatus.NO_CONTENT;
 import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -117,7 +118,7 @@ public class RxDockerClientTest {
     public void shouldStartCreatedContainer() throws Exception {
         DockerContainerResponse response = createContainer("rx-docker-client-test-5");
         HttpResponseStatus httpStatus = client.startContainer(response.getId());
-        assertThat(httpStatus.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
+        assertThat(httpStatus.code(), is(equalTo(NO_CONTENT.code())));
     }
 
     @Test
@@ -125,7 +126,7 @@ public class RxDockerClientTest {
         DockerContainerResponse response = createContainer("rx-docker-client-test-6");
         client.startContainer(response.getId());
         HttpResponseStatus status = client.stopContainer(response.getId(), 5);
-        assertThat(status.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
+        assertThat(status.code(), is(equalTo(NO_CONTENT.code())));
     }
 
     @Test
@@ -141,7 +142,7 @@ public class RxDockerClientTest {
     public void shouldRestartAContainer() throws Exception {
         DockerContainerResponse response = createContainer("rx-docker-client-test-9");
         HttpResponseStatus status = client.restartContainer(response.getId(), 5);
-        assertThat(status.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
+        assertThat(status.code(), is(equalTo(NO_CONTENT.code())));
     }
 
     @Test
@@ -149,21 +150,28 @@ public class RxDockerClientTest {
         DockerContainerResponse response = createContainer("rx-docker-client-test-11");
         client.startContainer(response.getId());
         HttpResponseStatus status = client.killRunningContainer(response.getId());
-        assertThat(status.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
+        assertThat(status.code(), is(equalTo(NO_CONTENT.code())));
     }
 
     @Test
     public void shouldRemoveDockerContainer() throws Exception {
         DockerContainerResponse response = createContainer("rx-docker-client-test-12");
         HttpResponseStatus status = client.removeContainer(response.getId());
-        assertThat(status.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
+        assertThat(status.code(), is(equalTo(NO_CONTENT.code())));
     }
 
     @Test
     public void shouldRemoveDockerContainerWithQueryParameters() throws Exception {
         DockerContainerResponse response = createContainer("rx-docker-client-test-13");
         HttpResponseStatus status = client.removeContainer(response.getId(), true, true);
-        assertThat(status.code(), is(equalTo(HttpResponseStatus.NO_CONTENT.code())));
+        assertThat(status.code(), is(equalTo(NO_CONTENT.code())));
+    }
+
+    @Test
+    public void shouldRenameDockerContainer() throws Exception {
+        DockerContainerResponse response = createContainer("rx-docker-client-test-14");
+        HttpResponseStatus status = client.renameContainer(response.getId(), "rx-docker-client-test-14-renamed");
+        assertThat(status.code(), is(equalTo(NO_CONTENT.code())));
     }
 
 

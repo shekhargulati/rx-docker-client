@@ -242,6 +242,16 @@ class RxDockerClient implements DockerClient {
         return containerRemoveAction(containerId, CONTAINER_REMOVE_ENDPOINT, "v=" + removeVolume, "force=" + force);
     }
 
+    @Override
+    public HttpResponseStatus renameContainer(final String containerId, final String newName) {
+        return renameContainerObs(containerId, newName).toBlocking().single();
+    }
+
+    @Override
+    public Observable<HttpResponseStatus> renameContainerObs(final String containerId, final String newName) {
+        return containerPostAction(containerId, CONTAINER_RENAME_ENDPOINT, "name=" + newName);
+    }
+
     // internal methods
 
     private <T> Observable<T> getRequestObservable(String uri, Supplier<Type> f) {
@@ -274,7 +284,7 @@ class RxDockerClient implements DockerClient {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         ContainerEndpointUriFunction cFx = this::toRestEndpoint;
         TriFunction<String, String, String[], Observable<HttpClientResponse<ByteBuf>>> fx = cFx.andThen(EMPTY_BODY, httpPostExecutionFunction());
-        return containerAction(HttpMethod.POST, containerId, endpoint, new String[0], fx);
+        return containerAction(HttpMethod.POST, containerId, endpoint, queryParameters, fx);
     }
 
     private Observable<HttpResponseStatus> containerRemoveAction(final String containerId, final String endpoint, final String... queryParameters) {
