@@ -53,7 +53,7 @@ public class RxDockerClientTest {
     public static void tearDownInfra() throws Exception {
         client.removeAllContainers();
         assertThat(client.listAllContainers().size(), equalTo(0));
-//        createAndWaitForProcessExecution(new String[]{"docker-machine", "stop", DOCKER_MACHINE_NAME});
+        createAndWaitForProcessExecution(new String[]{"docker-machine", "stop", DOCKER_MACHINE_NAME});
 //        createAndWaitForProcessExecution(new String[]{"docker-machine", "rm", DOCKER_MACHINE_NAME});
     }
 
