@@ -20,4 +20,5 @@ public interface DockerClient extends MiscOperations, ContainerOperations {
 
     String getApiUri();
 
+    void exportContainer(String containerId, final String filepath);
 }

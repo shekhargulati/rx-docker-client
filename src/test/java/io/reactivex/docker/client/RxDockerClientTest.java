@@ -27,8 +27,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 public class RxDockerClientTest {
 
@@ -190,6 +189,15 @@ public class RxDockerClientTest {
         assertThat(status.code(), is(equalTo(OK.code())));
     }
 
+    @Test
+    public void shouldExportContainer() throws Exception {
+        DockerContainerResponse response = createContainer("rx-docker-client-test-16");
+        String containerId = response.getId();
+        String filepath = "/tmp/" + containerId + ".tar";
+        client.exportContainer(containerId, filepath);
+        assertTrue(Paths.get(filepath).toFile().exists());
+    }
+
     @Ignore
     public void shouldListProcessesRunningInsideContainer() throws Exception {
         DockerContainerResponse response = createContainer("rx-docker-client-test-X");
@@ -221,7 +229,7 @@ public class RxDockerClientTest {
         builder.redirectOutput(Paths.get("build/output.txt").toFile());
         Process createMchProcess = builder.start();
         int createMchExitValue = createMchProcess.waitFor();
-        System.out.println(createMchExitValue);
+        System.out.println(String.format("%s >> %d", Arrays.toString(cmd), createMchExitValue));
     }
 
     private static void readOutputFileAndSetDockerProperties() throws Exception {

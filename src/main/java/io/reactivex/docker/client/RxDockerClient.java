@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufInputStream;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.docker.client.representations.*;
@@ -13,15 +14,14 @@ import io.reactivex.docker.client.ssl.DockerCertificates;
 import io.reactivex.docker.client.utils.Strings;
 import io.reactivex.netty.RxNetty;
 import io.reactivex.netty.pipeline.ssl.DefaultFactories;
-import io.reactivex.netty.protocol.http.client.FlatResponseOperator;
-import io.reactivex.netty.protocol.http.client.HttpClient;
-import io.reactivex.netty.protocol.http.client.HttpClientBuilder;
-import io.reactivex.netty.protocol.http.client.HttpClientResponse;
+import io.reactivex.netty.protocol.http.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 
 import javax.net.ssl.SSLEngine;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
@@ -69,7 +69,7 @@ class RxDockerClient implements DockerClient {
             };
             builder.withSslEngineFactory(sslContextBasedFactory);
         }
-        rxClient = builder.build();
+        rxClient = builder.pipelineConfigurator(new HttpClientPipelineConfigurator<>()).build();
     }
 
     @Override
@@ -260,6 +260,33 @@ class RxDockerClient implements DockerClient {
     @Override
     public Observable<HttpResponseStatus> waitContainerObs(final String containerId) {
         return containerPostAction(containerId, CONTAINER_WAIT_ENDPOINT);
+    }
+
+    @Override
+    public void exportContainer(final String containerId, final String filepath) {
+        try (FileOutputStream out = new FileOutputStream(filepath)) {
+            String uri = "/containers/" + containerId + "/export";
+            rxClient.submit(createGet(uri).withHeader("Accept", "application/octet-stream"))
+                    .flatMap((HttpClientResponse<ByteBuf> resp) -> resp.getContent().map(bb -> new ByteBufInputStream(bb)))
+                    .toBlocking()
+                    .forEach(str -> {
+                        try {
+                            logger.info("Processing...");
+                            final byte[] buffer = new byte[1024];
+                            int n = 0;
+                            while (-1 != (n = str.read(buffer))) {
+                                out.write(buffer, 0, n);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                    });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     // internal methods
