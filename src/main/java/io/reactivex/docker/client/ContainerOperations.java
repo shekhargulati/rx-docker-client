@@ -17,6 +17,7 @@ public interface ContainerOperations {
     String CONTAINER_STOP_ENDPOINT = CONTAINERS_ENDPOINT + "/stop";
     String CONTAINER_RESTART_ENDPOINT = CONTAINERS_ENDPOINT + "/restart";
     String CONTAINER_KILL_ENDPOINT = CONTAINERS_ENDPOINT + "/kill";
+    String CONTAINER_REMOVE_ENDPOINT = CONTAINERS_ENDPOINT + "?v=%s&f=%s";
 
     Observable<List<DockerContainer>> listRunningContainerObs();
 
@@ -68,5 +69,11 @@ public interface ContainerOperations {
         });
     }
 
+    HttpResponseStatus removeContainer(String containerId);
 
+    HttpResponseStatus removeContainer(String containerId, boolean removeVolume, boolean force);
+
+    Observable<HttpResponseStatus> removeContainerObs(String containerId);
+
+    Observable<HttpResponseStatus> removeContainerObs(String containerId, boolean removeVolume, boolean force);
 }

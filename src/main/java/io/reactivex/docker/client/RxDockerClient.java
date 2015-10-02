@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.docker.client.representations.*;
 import io.reactivex.docker.client.ssl.DockerCertificates;
@@ -24,16 +25,18 @@ import javax.net.ssl.SSLEngine;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
 import static io.reactivex.docker.client.QueryParametersBuilder.defaultQueryParameters;
 import static io.reactivex.docker.client.utils.Dates.DOCKER_DATE_TIME_FORMAT;
 import static io.reactivex.docker.client.utils.Validations.validate;
-import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createGet;
-import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createPost;
+import static io.reactivex.netty.protocol.http.client.HttpClientRequest.*;
 
 class RxDockerClient implements DockerClient {
 
@@ -48,10 +51,10 @@ class RxDockerClient implements DockerClient {
     }
 
     private RxDockerClient(final Optional<String> dockerHost, final Optional<String> dockerCertPath) {
-        final HostAndPort hostAndPort = dockerHost.map(endpoint -> HostAndPort.from(endpoint)).orElse(HostAndPort.using(DEFAULT_DOCKER_HOST, DEFAULT_DOCKER_PORT));
+        final HostAndPort hostAndPort = dockerHost.map(HostAndPort::from).orElse(HostAndPort.using(DEFAULT_DOCKER_HOST, DEFAULT_DOCKER_PORT));
         final String scheme = dockerCertPath.isPresent() ? "https" : "http";
 
-        apiUri = new StringBuilder(scheme).append("://").append(hostAndPort.getHost()).append(":").append(hostAndPort.getPort()).toString();
+        apiUri = scheme + "://" + hostAndPort.getHost() + ":" + hostAndPort.getPort();
         logger.info("Docker API uri {}", apiUri);
 
         HttpClientBuilder<ByteBuf, ByteBuf> builder = RxNetty.<ByteBuf, ByteBuf>newHttpClientBuilder(hostAndPort.getHost(), hostAndPort.getPort());
@@ -108,7 +111,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public List<DockerContainer> listRunningContainers() {
-        return listRunningContainerObs().flatMap((List<DockerContainer> a) -> Observable.from(a)).toList().toBlocking().single();
+        return listRunningContainerObs().flatMap(Observable::from).toList().toBlocking().single();
     }
 
     @Override
@@ -118,12 +121,12 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public List<DockerContainer> listAllContainers() {
-        return listAllContainersObs().flatMap((List<DockerContainer> containers) -> Observable.from(containers)).toList().toBlocking().single();
+        return listAllContainersObs().flatMap(Observable::from).toList().toBlocking().single();
     }
 
     @Override
     public List<DockerContainer> listContainers(QueryParameters queryParameters) {
-        return listContainersObs(queryParameters).flatMap((List<DockerContainer> containers) -> Observable.from(containers)).toList().toBlocking().single();
+        return listContainersObs(queryParameters).flatMap(Observable::from).toList().toBlocking().single();
     }
 
     @Override
@@ -137,6 +140,10 @@ class RxDockerClient implements DockerClient {
         );
     }
 
+    @Override
+    public DockerContainerResponse createContainer(final DockerContainerRequest request) {
+        return createContainer(request, null);
+    }
 
     @Override
     public DockerContainerResponse createContainer(final DockerContainerRequest request, final String name) {
@@ -144,16 +151,11 @@ class RxDockerClient implements DockerClient {
     }
 
     @Override
-    public DockerContainerResponse createContainer(final DockerContainerRequest request) {
-        return createContainer(request, null);
-    }
-
-    @Override
     public Observable<DockerContainerResponse> createContainerObs(final DockerContainerRequest request, final Optional<String> name) {
         String content = request.toJson();
         logger.info("Creating container >>\n for json request '{}'", content);
         final String uri = name.isPresent() ? CREATE_CONTAINER_ENDPOINT + "?name=" + name.get() : CREATE_CONTAINER_ENDPOINT;
-        Observable<HttpClientResponse<ByteBuf>> observable = postRequestObservable(uri, content);
+        Observable<HttpClientResponse<ByteBuf>> observable = httpPostExecutionFunction().apply(uri, content);
         return observableResponse(uri, observable, () -> DockerContainerResponse.class);
     }
 
@@ -188,7 +190,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpResponseStatus> startContainerObs(final String containerId) {
-        return containerLifecycle(containerId, CONTAINER_START_ENDPOINT);
+        return containerPostAction(containerId, CONTAINER_START_ENDPOINT);
     }
 
     @Override
@@ -198,7 +200,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpResponseStatus> stopContainerObs(final String containerId, final int waitInSecs) {
-        return containerLifecycle(containerId, CONTAINER_STOP_ENDPOINT);
+        return containerPostAction(containerId, CONTAINER_STOP_ENDPOINT);
     }
 
     @Override
@@ -208,7 +210,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpResponseStatus> restartContainerObs(final String containerId, final int waitInSecs) {
-        return containerLifecycle(containerId, CONTAINER_RESTART_ENDPOINT);
+        return containerPostAction(containerId, CONTAINER_RESTART_ENDPOINT);
     }
 
     @Override
@@ -218,13 +220,30 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpResponseStatus> killRunningContainerObs(final String containerId) {
-        return containerLifecycle(containerId, CONTAINER_KILL_ENDPOINT);
+        return containerPostAction(containerId, CONTAINER_KILL_ENDPOINT);
+    }
+
+    @Override
+    public HttpResponseStatus removeContainer(final String containerId) {
+        return removeContainer(containerId, false, false);
+    }
+
+    @Override
+    public HttpResponseStatus removeContainer(final String containerId, final boolean removeVolume, final boolean force) {
+        return removeContainerObs(containerId, removeVolume, force).toBlocking().single();
+    }
+
+    @Override
+    public Observable<HttpResponseStatus> removeContainerObs(final String containerId) {
+        return removeContainerObs(containerId, false, false);
+    }
+
+    @Override
+    public Observable<HttpResponseStatus> removeContainerObs(final String containerId, final boolean removeVolume, final boolean force) {
+        return containerRemoveAction(containerId, CONTAINER_REMOVE_ENDPOINT, "v=" + removeVolume, "f=" + force);
     }
 
     // internal methods
-    private Observable<HttpClientResponse<ByteBuf>> postRequestObservable(String uri, String content) {
-        return rxClient.submit(createPost(uri).withContent(content).withHeader("Content-Type", "application/json"));
-    }
 
     private <T> Observable<T> getRequestObservable(String uri, Supplier<Type> f) {
         logger.info("Making request to uri '{}'", uri);
@@ -252,12 +271,61 @@ class RxDockerClient implements DockerClient {
                 map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), supplier.get()));
     }
 
-    private Observable<HttpResponseStatus> containerLifecycle(final String containerId, final String endpoint) {
+    private Observable<HttpResponseStatus> containerPostAction(final String containerId, final String endpoint) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
-        final String uri = String.format(endpoint, containerId);
-        logger.info("Making POST request to {}", uri);
-        Observable<HttpClientResponse<ByteBuf>> responseObservable = postRequestObservable(uri, EMPTY_BODY);
-        return observableHeaderResponse(responseObservable);
+        ContainerEndpointUriFunction cFx = this::toRestEndpoint;
+        TriFunction<String, String, String[], Observable<HttpClientResponse<ByteBuf>>> fx = cFx.andThen(EMPTY_BODY, httpPostExecutionFunction());
+        return containerAction(HttpMethod.POST, containerId, endpoint, new String[0], fx);
     }
 
+    private Observable<HttpResponseStatus> containerRemoveAction(final String containerId, final String endpoint, final String... queryParameters) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        ContainerEndpointUriFunction cFx = this::toRestEndpoint;
+        TriFunction<String, String, String[], Observable<HttpClientResponse<ByteBuf>>> fx = cFx.andThen(EMPTY_BODY, httpDeleteExecutionFunction());
+        return containerAction(HttpMethod.DELETE, containerId, endpoint, queryParameters, fx);
+    }
+
+    private Observable<HttpResponseStatus> containerAction(final HttpMethod httpMethod, final String containerId, final String endpoint, final String[] queryParameters, final TriFunction<String, String, String[], Observable<HttpClientResponse<ByteBuf>>> fx) {
+        logger.info("Making {} request", httpMethod.name());
+        return observableHeaderResponse(fx.apply(endpoint, containerId, queryParameters));
+    }
+
+    private String toRestEndpoint(String endpoint, String containerId, String... queryParameters) {
+        String baseUrl = String.format(endpoint, containerId);
+        if (queryParameters == null || queryParameters.length == 0) {
+            return baseUrl;
+        }
+        return baseUrl + "?" + Arrays.toString(queryParameters);
+    }
+
+
+    private HttpExecutionFunction httpPostExecutionFunction() {
+        return (uri, content) -> rxClient.submit(createPost(uri).withContent(content).withHeader("Content-Type", "application/json"));
+    }
+
+    private HttpExecutionFunction httpDeleteExecutionFunction() {
+        return (uri, content) -> rxClient.submit(createDelete(uri).withHeader("Content-Type", "application/json"));
+    }
+
+}
+
+@FunctionalInterface
+interface HttpExecutionFunction extends BiFunction<String, String, Observable<HttpClientResponse<ByteBuf>>> {
+}
+
+
+@FunctionalInterface
+interface ContainerEndpointUriFunction extends TriFunction<String, String, String[], String> {
+
+}
+
+@FunctionalInterface
+interface TriFunction<T, U, V, R> {
+
+    R apply(T t, U u, V v);
+
+    default <X, Y> TriFunction<T, U, V, X> andThen(Y y, BiFunction<? super R, Y, ? extends X> after) {
+        Objects.requireNonNull(after);
+        return (T t, U u, V v) -> after.apply(apply(t, u, v), y);
+    }
 }
