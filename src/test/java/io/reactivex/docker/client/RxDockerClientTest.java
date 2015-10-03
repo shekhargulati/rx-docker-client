@@ -1,7 +1,9 @@
 package io.reactivex.docker.client;
 
+import com.squareup.okhttp.*;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.docker.client.representations.*;
+import io.reactivex.docker.client.ssl.DockerCertificates;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -53,7 +55,7 @@ public class RxDockerClientTest {
     public static void tearDownInfra() throws Exception {
         client.removeAllContainers();
         assertThat(client.listAllContainers().size(), equalTo(0));
-        createAndWaitForProcessExecution(new String[]{"docker-machine", "stop", DOCKER_MACHINE_NAME});
+//        createAndWaitForProcessExecution(new String[]{"docker-machine", "stop", DOCKER_MACHINE_NAME});
 //        createAndWaitForProcessExecution(new String[]{"docker-machine", "rm", DOCKER_MACHINE_NAME});
     }
 
@@ -206,6 +208,18 @@ public class RxDockerClientTest {
         ContainerStats containerStats = client.containerStats(containerId);
         System.out.println(containerStats);
         assertNotNull(containerStats);
+    }
+
+    @Test
+    public void shouldPullImageFromDockerRegistry() throws Exception {
+        OkHttpClient client = new OkHttpClient();
+        client.setReadTimeout(2, TimeUnit.MINUTES);
+        client.setSslSocketFactory(new DockerCertificates(Paths.get("/Users/shekhargulati/.docker/machine/machines/rx-docker-test")).sslContext().getSocketFactory());
+        Request request = new Request.Builder()
+                .url("https://192.168.99.100:2376/images/create?fromImage=busybox")
+                .header("Content-Type", "application/json").post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "")).build();
+        Response response = client.newCall(request).execute();
+        System.out.println(response.body().string());
     }
 
     @Ignore

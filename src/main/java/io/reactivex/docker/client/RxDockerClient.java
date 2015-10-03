@@ -9,6 +9,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.logging.LogLevel;
 import io.reactivex.docker.client.function.ContainerEndpointUriFunction;
 import io.reactivex.docker.client.function.HttpExecutionFunction;
 import io.reactivex.docker.client.function.TriFunction;
@@ -70,7 +71,7 @@ class RxDockerClient implements DockerClient {
             };
             builder.withSslEngineFactory(sslContextBasedFactory);
         }
-        rxClient = builder.pipelineConfigurator(new HttpClientPipelineConfigurator<>()).build();
+        rxClient = builder.pipelineConfigurator(new HttpClientPipelineConfigurator<>()).enableWireLogging(LogLevel.DEBUG).build();
     }
 
     @Override
@@ -299,6 +300,20 @@ class RxDockerClient implements DockerClient {
         return getRequestObservable(uri, () -> ContainerStats.class);
     }
 
+    @Override
+    public HttpResponseStatus pullImage(final String fromImage) {
+        return null;
+    }
+
+    @Override
+    public Observable<HttpClientResponse<ByteBuf>> pullImageObs(final String fromImage) {
+        String uri = "/images/create?fromImage=" + fromImage;
+        Observable<HttpClientResponse<ByteBuf>> observable = rxClient.submit(createPost(uri).withContent(EMPTY_BODY)
+                .withHeader("Content-Type", "application/json"));
+        return observable;
+    }
+
+
     // internal methods
 
     private <T> Observable<T> getRequestObservable(String uri, Supplier<Type> f) {
@@ -310,6 +325,7 @@ class RxDockerClient implements DockerClient {
     private Observable<HttpResponseStatus> observableHeaderResponse(Observable<HttpClientResponse<ByteBuf>> observable) {
         return observable.
                 lift(FlatResponseOperator.<ByteBuf>flatResponse()).
+                doOnNext(msg -> logger.info("Received msg {}", msg.getContent().toString(Charset.defaultCharset()))).
                 doOnError(error -> logger.error("Exception >>> ", error)).
                 map(resp -> resp.getResponse().getStatus());
     }

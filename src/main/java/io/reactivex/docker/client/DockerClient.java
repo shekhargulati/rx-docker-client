@@ -1,6 +1,10 @@
 package io.reactivex.docker.client;
 
-public interface DockerClient extends MiscOperations, ContainerOperations {
+import io.netty.buffer.ByteBuf;
+import io.reactivex.netty.protocol.http.client.HttpClientResponse;
+import rx.Observable;
+
+public interface DockerClient extends MiscOperations, ContainerOperations, ImageOperations {
 
     String DEFAULT_DOCKER_HOST = "localhost";
     int DEFAULT_DOCKER_PORT = 2375;
@@ -20,4 +24,5 @@ public interface DockerClient extends MiscOperations, ContainerOperations {
 
     String getApiUri();
 
+    Observable<HttpClientResponse<ByteBuf>> pullImageObs(String fromImage);
 }
