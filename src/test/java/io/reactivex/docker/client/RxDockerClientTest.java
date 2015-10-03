@@ -4,6 +4,8 @@ import com.squareup.okhttp.*;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.docker.client.representations.*;
 import io.reactivex.docker.client.ssl.DockerCertificates;
+import okio.Buffer;
+import okio.BufferedSource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -12,6 +14,7 @@ import rx.Observable;
 import rx.Subscriber;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
@@ -241,7 +244,7 @@ public class RxDockerClientTest {
         OkHttpClient client = new OkHttpClient();
         client.setReadTimeout(2, TimeUnit.MINUTES);
         client.setSslSocketFactory(new DockerCertificates(Paths.get("/Users/shekhargulati/.docker/machine/machines/rx-docker-test")).sslContext().getSocketFactory());
-        Observable<String> pullImageObservable = Observable.create(sub -> {
+        Observable<Buffer> pullImageObservable = Observable.create(sub -> {
             Request request = new Request.Builder()
                     .url("https://192.168.99.100:2376/images/create?fromImage=busybox")
                     .header("Content-Type", "application/json")
@@ -254,7 +257,10 @@ public class RxDockerClientTest {
                 System.out.println(response.headers());
                 if (response.isSuccessful()) {
                     System.out.println("Downloading chunk");
-                    sub.onNext(response.body().string());
+                    BufferedSource source = response.body().source();
+                    while (!source.exhausted()) {
+                        sub.onNext(source.buffer());
+                    }
                     sub.onCompleted();
                 } else {
                     sub.onError(new RuntimeException(String.format("Unable to complete request %d and message %s", response.code(), response.message())));
@@ -265,7 +271,7 @@ public class RxDockerClientTest {
 
         });
 
-        Subscriber<String> httpSubscriber = new Subscriber<String>() {
+        Subscriber<Buffer> httpSubscriber = new Subscriber<Buffer>() {
             @Override
             public void onCompleted() {
                 System.out.println("Successfully recieved all data");
@@ -278,8 +284,8 @@ public class RxDockerClientTest {
             }
 
             @Override
-            public void onNext(String res) {
-                System.out.println("Received message >> " + res);
+            public void onNext(Buffer res) {
+                System.out.println("Received message >> " + res.readString(Charset.defaultCharset()));
             }
         };
 
