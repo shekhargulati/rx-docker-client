@@ -9,6 +9,9 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.reactivex.docker.client.function.ContainerEndpointUriFunction;
+import io.reactivex.docker.client.function.HttpExecutionFunction;
+import io.reactivex.docker.client.function.TriFunction;
 import io.reactivex.docker.client.representations.*;
 import io.reactivex.docker.client.ssl.DockerCertificates;
 import io.reactivex.docker.client.utils.Strings;
@@ -26,9 +29,7 @@ import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
@@ -367,23 +368,4 @@ class RxDockerClient implements DockerClient {
 
 }
 
-@FunctionalInterface
-interface HttpExecutionFunction extends BiFunction<String, String, Observable<HttpClientResponse<ByteBuf>>> {
-}
 
-
-@FunctionalInterface
-interface ContainerEndpointUriFunction extends TriFunction<String, String, String[], String> {
-
-}
-
-@FunctionalInterface
-interface TriFunction<T, U, V, R> {
-
-    R apply(T t, U u, V v);
-
-    default <X, Y> TriFunction<T, U, V, X> andThen(Y y, BiFunction<? super R, Y, ? extends X> after) {
-        Objects.requireNonNull(after);
-        return (T t, U u, V v) -> after.apply(apply(t, u, v), y);
-    }
-}
