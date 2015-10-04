@@ -120,10 +120,11 @@ public class RxDockerClientTest {
         assertThat(response.getId(), notNullValue());
     }
 
-    //    @Test
+    @Test
     public void shouldInspectContainer() throws Exception {
         DockerContainerResponse response = createContainer("rx-docker-client-test-4");
         ContainerInspectResponse containerInspectResponse = client.inspectContainer(response.getId());
+        System.out.println(containerInspectResponse);
         assertThat(containerInspectResponse.path(), is(equalTo("/bin/bash")));
     }
 

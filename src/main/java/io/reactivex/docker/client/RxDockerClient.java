@@ -44,6 +44,11 @@ class RxDockerClient implements DockerClient {
     private final HttpClient<ByteBuf, ByteBuf> rxClient = null;
     private final RxHttpClient httpClient;
 
+    private final Gson gson = new GsonBuilder()
+            .setFieldNamingPolicy(UPPER_CAMEL_CASE)
+            .setDateFormat(DOCKER_DATE_TIME_FORMAT)
+            .setPrettyPrinting().create();
+
     RxDockerClient(final String dockerHost, final String dockerCertPath) {
         this(Optional.ofNullable(dockerHost), Optional.ofNullable(dockerCertPath));
     }
@@ -67,7 +72,7 @@ class RxDockerClient implements DockerClient {
     public Observable<DockerVersion> serverVersionObs() {
         return httpClient
                 .get(VERSION_ENDPOINT,
-                        json -> new Gson().fromJson(json, DockerVersion.class));
+                        json -> gson.fromJson(json, DockerVersion.class));
     }
 
     @Override
@@ -81,7 +86,7 @@ class RxDockerClient implements DockerClient {
     public Observable<DockerInfo> infoObs() {
         return httpClient
                 .get(INFO_ENDPOINT,
-                        json -> new Gson().fromJson(json, DockerInfo.class));
+                        json -> gson.fromJson(json, DockerInfo.class));
     }
 
     @Override
@@ -121,11 +126,6 @@ class RxDockerClient implements DockerClient {
     public Observable<List<DockerContainer>> listContainersObs(QueryParameters queryParameters) {
         final String query = queryParameters.toQuery();
         String url = String.format(CONTAINER_ENDPOINT, query);
-        Gson gson = new GsonBuilder()
-                .setFieldNamingPolicy(UPPER_CAMEL_CASE)
-                .setDateFormat(DOCKER_DATE_TIME_FORMAT)
-                .setPrettyPrinting()
-                .create();
         return httpClient.get(url,
                 json -> gson.fromJson(json, new TypeToken<List<DockerContainer>>() {
                 }.getType()));
@@ -146,11 +146,6 @@ class RxDockerClient implements DockerClient {
         String content = request.toJson();
         logger.info("Creating container >>\n for json request '{}'", content);
         final String uri = name.isPresent() ? CREATE_CONTAINER_ENDPOINT + "?name=" + name.get() : CREATE_CONTAINER_ENDPOINT;
-        Gson gson = new GsonBuilder()
-                .setFieldNamingPolicy(UPPER_CAMEL_CASE)
-                .setDateFormat(DOCKER_DATE_TIME_FORMAT)
-                .setPrettyPrinting()
-                .create();
         return httpClient.post(uri, content, (ResponseBody body) -> gson.fromJson(body.string(), DockerContainerResponse.class));
     }
 
@@ -163,7 +158,9 @@ class RxDockerClient implements DockerClient {
     public Observable<ContainerInspectResponse> inspectContainerObs(final String containerId) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_JSON_ENDPOINT, containerId);
-        return getRequestObservable(uri, () -> ContainerInspectResponse.class);
+        return httpClient
+                .get(uri,
+                        json -> gson.fromJson(json, ContainerInspectResponse.class));
     }
 
     @Override

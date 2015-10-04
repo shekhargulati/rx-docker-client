@@ -174,4 +174,32 @@ public class DockerContainerRequest {
         }.getType();
         return gson.toJson(this, type);
     }
+
+    @Override
+    public String toString() {
+        return "DockerContainerRequest{" +
+                "hostname='" + hostname + '\'' +
+                ", domainname='" + domainname + '\'' +
+                ", user='" + user + '\'' +
+                ", attachStdin=" + attachStdin +
+                ", attachStdout=" + attachStdout +
+                ", attachStderr=" + attachStderr +
+                ", portSpecs=" + portSpecs +
+                ", exposedPorts=" + exposedPorts +
+                ", tty=" + tty +
+                ", openStdin=" + openStdin +
+                ", stdinOnce=" + stdinOnce +
+                ", env=" + env +
+                ", cmd=" + cmd +
+                ", image='" + image + '\'' +
+                ", volumes=" + volumes +
+                ", workingDir='" + workingDir + '\'' +
+                ", entrypoint=" + entrypoint +
+                ", networkDisabled=" + networkDisabled +
+                ", onBuild=" + onBuild +
+                ", labels=" + labels +
+                ", macAddress='" + macAddress + '\'' +
+                ", hostConfig=" + hostConfig +
+                '}';
+    }
 }
