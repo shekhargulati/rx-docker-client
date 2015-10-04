@@ -4,6 +4,7 @@ package io.reactivex.docker.client;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.squareup.okhttp.ResponseBody;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.handler.codec.http.HttpMethod;
@@ -145,8 +146,12 @@ class RxDockerClient implements DockerClient {
         String content = request.toJson();
         logger.info("Creating container >>\n for json request '{}'", content);
         final String uri = name.isPresent() ? CREATE_CONTAINER_ENDPOINT + "?name=" + name.get() : CREATE_CONTAINER_ENDPOINT;
-        Observable<HttpClientResponse<ByteBuf>> observable = httpPostExecutionFunction().apply(uri, content);
-        return observableResponse(uri, observable, () -> DockerContainerResponse.class);
+        Gson gson = new GsonBuilder()
+                .setFieldNamingPolicy(UPPER_CAMEL_CASE)
+                .setDateFormat(DOCKER_DATE_TIME_FORMAT)
+                .setPrettyPrinting()
+                .create();
+        return httpClient.post(uri, content, (ResponseBody body) -> gson.fromJson(body.string(), DockerContainerResponse.class));
     }
 
     @Override

@@ -6,8 +6,8 @@ import rx.Observable;
 
 public interface MiscOperations {
 
-    String VERSION_ENDPOINT = "/version";
-    String INFO_ENDPOINT = "/info";
+    String VERSION_ENDPOINT = "version";
+    String INFO_ENDPOINT = "info";
 
     Observable<DockerVersion> serverVersionObs();
 

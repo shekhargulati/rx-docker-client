@@ -107,14 +107,14 @@ public class RxDockerClientTest {
         assertThat(dockerContainers.size(), greaterThanOrEqualTo(1));
     }
 
-    //    @Test
+    @Test
     public void shouldCreateContainer() throws Exception {
         DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
         DockerContainerResponse response = client.createContainer(request);
         assertThat(response.getId(), notNullValue());
     }
 
-    //    @Test
+    @Test
     public void shouldCreateContainerWithName() throws Exception {
         DockerContainerResponse response = createContainer("rx-docker-client-test-1");
         assertThat(response.getId(), notNullValue());

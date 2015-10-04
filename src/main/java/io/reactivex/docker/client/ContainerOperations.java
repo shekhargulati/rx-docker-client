@@ -11,7 +11,7 @@ public interface ContainerOperations {
     String CONTAINER_ENDPOINT = "/containers/json%s";
     String CONTAINERS_ENDPOINT = "/containers/%s";
     String CONTAINER_JSON_ENDPOINT = CONTAINERS_ENDPOINT + "/json";
-    String CREATE_CONTAINER_ENDPOINT = "/containers/create";
+    String CREATE_CONTAINER_ENDPOINT = "containers/create";
     String CONTAINER_LIST_PROCESS_ENDPOINT = CONTAINERS_ENDPOINT + "/top";
     String CONTAINER_START_ENDPOINT = CONTAINERS_ENDPOINT + "/start";
     String CONTAINER_STOP_ENDPOINT = CONTAINERS_ENDPOINT + "/stop";
