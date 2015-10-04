@@ -1,6 +1,5 @@
 package io.reactivex.docker.client;
 
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.docker.client.representations.*;
 import rx.Observable;
 
@@ -8,8 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ContainerOperations {
-    String CONTAINER_ENDPOINT = "/containers/json%s";
-    String CONTAINERS_ENDPOINT = "/containers/%s";
+    String CONTAINER_ENDPOINT = "containers/json%s";
+    String CONTAINERS_ENDPOINT = "containers/%s";
     String CONTAINER_JSON_ENDPOINT = CONTAINERS_ENDPOINT + "/json";
     String CREATE_CONTAINER_ENDPOINT = "containers/create";
     String CONTAINER_LIST_PROCESS_ENDPOINT = CONTAINERS_ENDPOINT + "/top";
@@ -47,21 +46,21 @@ public interface ContainerOperations {
 
     Observable<ProcessListResponse> listProcessesObs(String containerId);
 
-    Observable<HttpResponseStatus> startContainerObs(String containerId);
+    Observable<HttpStatus> startContainerObs(String containerId);
 
-    HttpResponseStatus startContainer(String containerId);
+    HttpStatus startContainer(String containerId);
 
-    HttpResponseStatus stopContainer(String containerId, final int waitInSecs);
+    HttpStatus stopContainer(String containerId, final int waitInSecs);
 
-    Observable<HttpResponseStatus> stopContainerObs(String containerId, final int waitInSecs);
+    Observable<HttpStatus> stopContainerObs(String containerId, final int waitInSecs);
 
-    HttpResponseStatus restartContainer(String containerId, int waitInSecs);
+    HttpStatus restartContainer(String containerId, int waitInSecs);
 
-    Observable<HttpResponseStatus> restartContainerObs(String containerId, int waitInSecs);
+    Observable<HttpStatus> restartContainerObs(String containerId, int waitInSecs);
 
-    HttpResponseStatus killRunningContainer(String containerId);
+    HttpStatus killRunningContainer(String containerId);
 
-    Observable<HttpResponseStatus> killRunningContainerObs(String containerId);
+    Observable<HttpStatus> killRunningContainerObs(String containerId);
 
     default void killAllRunningContainers() {
         listContainers(new QueryParameters()).forEach(container -> {
@@ -71,13 +70,13 @@ public interface ContainerOperations {
         });
     }
 
-    HttpResponseStatus removeContainer(String containerId);
+    HttpStatus removeContainer(String containerId);
 
-    HttpResponseStatus removeContainer(String containerId, boolean removeVolume, boolean force);
+    HttpStatus removeContainer(String containerId, boolean removeVolume, boolean force);
 
-    Observable<HttpResponseStatus> removeContainerObs(String containerId);
+    Observable<HttpStatus> removeContainerObs(String containerId);
 
-    Observable<HttpResponseStatus> removeContainerObs(String containerId, boolean removeVolume, boolean force);
+    Observable<HttpStatus> removeContainerObs(String containerId, boolean removeVolume, boolean force);
 
     default void removeAllContainers() {
         listAllContainers().forEach(container -> {
@@ -87,13 +86,13 @@ public interface ContainerOperations {
         });
     }
 
-    HttpResponseStatus renameContainer(String containerId, String newName);
+    HttpStatus renameContainer(String containerId, String newName);
 
-    Observable<HttpResponseStatus> renameContainerObs(String containerId, String newName);
+    Observable<HttpStatus> renameContainerObs(String containerId, String newName);
 
-    HttpResponseStatus waitContainer(String containerId);
+    HttpStatus waitContainer(String containerId);
 
-    Observable<HttpResponseStatus> waitContainerObs(String containerId);
+    Observable<HttpStatus> waitContainerObs(String containerId);
 
     void exportContainer(String containerId, String filepath);
 

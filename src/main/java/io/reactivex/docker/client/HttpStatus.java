@@ -10,11 +10,11 @@ public class HttpStatus {
         this.message = message;
     }
 
-    public int getCode() {
+    public int code() {
         return code;
     }
 
-    public String getMessage() {
+    public String message() {
         return message;
     }
 }

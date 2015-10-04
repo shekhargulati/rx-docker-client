@@ -30,4 +30,6 @@ public interface RxHttpClient {
     <R> Observable<R> post(String endpoint, ResponseBodyTransformer<R> bodyTransformer);
 
     <R> Observable<R> post(String endpoint, String postBody, ResponseBodyTransformer<R> bodyTransformer);
+
+    Observable<HttpStatus> delete(final String endpoint);
 }

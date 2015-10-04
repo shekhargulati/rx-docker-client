@@ -108,4 +108,30 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
         return post(endpoint, postBody, ResponseTransformer.fromBody(bodyTransformer));
     }
 
+    @Override
+    public Observable<HttpStatus> delete(String endpoint) {
+        return Observable.create(subscriber -> {
+            try {
+                final String url = String.format("%s/%s", apiUri, endpoint);
+                Request deleteRequest = new Request.Builder()
+                        .header("Content-Type", "application/json")
+                        .url(url)
+                        .delete()
+                        .build();
+                logger.info("Making DELETE request to {}", url);
+                Call call = client.newCall(deleteRequest);
+                Response response = call.execute();
+                if (response.isSuccessful()) {
+                    subscriber.onNext(new HttpStatus(response.code(), response.message()));
+                    subscriber.onCompleted();
+                } else {
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message())));
+                }
+            } catch (IOException e) {
+                logger.error("Encountered error while making {} call", endpoint, e);
+                subscriber.onError(new RestServiceCommunicationException(e));
+            }
+        });
+    }
+
 }

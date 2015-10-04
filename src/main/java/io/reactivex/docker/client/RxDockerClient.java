@@ -31,9 +31,11 @@ import java.util.function.Supplier;
 
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
 import static io.reactivex.docker.client.QueryParametersBuilder.defaultQueryParameters;
+import static io.reactivex.docker.client.function.ResponseTransformer.httpStatus;
 import static io.reactivex.docker.client.utils.Dates.DOCKER_DATE_TIME_FORMAT;
 import static io.reactivex.docker.client.utils.Validations.validate;
-import static io.reactivex.netty.protocol.http.client.HttpClientRequest.*;
+import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createGet;
+import static io.reactivex.netty.protocol.http.client.HttpClientRequest.createPost;
 
 class RxDockerClient implements DockerClient {
 
@@ -172,87 +174,96 @@ class RxDockerClient implements DockerClient {
     public Observable<ProcessListResponse> listProcessesObs(final String containerId) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_LIST_PROCESS_ENDPOINT, containerId);
-        return getRequestObservable(uri, () -> ProcessListResponse.class);
+        return httpClient
+                .get(uri,
+                        json -> gson.fromJson(json, ProcessListResponse.class));
     }
 
     @Override
-    public HttpResponseStatus startContainer(final String containerId) {
+    public HttpStatus startContainer(final String containerId) {
         return startContainerObs(containerId).toBlocking().single();
     }
 
     @Override
-    public Observable<HttpResponseStatus> startContainerObs(final String containerId) {
-        return containerPostAction(containerId, CONTAINER_START_ENDPOINT);
+    public Observable<HttpStatus> startContainerObs(final String containerId) {
+        final String uri = String.format(CONTAINER_START_ENDPOINT, containerId);
+        return httpClient.post(uri, EMPTY_BODY, httpStatus());
     }
 
     @Override
-    public HttpResponseStatus stopContainer(final String containerId, final int waitInSecs) {
+    public HttpStatus stopContainer(final String containerId, final int waitInSecs) {
         return stopContainerObs(containerId, waitInSecs).toBlocking().single();
     }
 
     @Override
-    public Observable<HttpResponseStatus> stopContainerObs(final String containerId, final int waitInSecs) {
-        return containerPostAction(containerId, CONTAINER_STOP_ENDPOINT, "t=" + waitInSecs);
+    public Observable<HttpStatus> stopContainerObs(final String containerId, final int waitInSecs) {
+        final String uri = String.format(CONTAINER_STOP_ENDPOINT, containerId) + "?t=" + waitInSecs;
+        return httpClient.post(uri, EMPTY_BODY, httpStatus());
     }
 
     @Override
-    public HttpResponseStatus restartContainer(final String containerId, final int waitInSecs) {
+    public HttpStatus restartContainer(final String containerId, final int waitInSecs) {
         return restartContainerObs(containerId, waitInSecs).toBlocking().single();
     }
 
     @Override
-    public Observable<HttpResponseStatus> restartContainerObs(final String containerId, final int waitInSecs) {
-        return containerPostAction(containerId, CONTAINER_RESTART_ENDPOINT, "t=" + waitInSecs);
+    public Observable<HttpStatus> restartContainerObs(final String containerId, final int waitInSecs) {
+        final String uri = String.format(CONTAINER_RESTART_ENDPOINT, containerId) + "?t=" + waitInSecs;
+        return httpClient.post(uri, EMPTY_BODY, httpStatus());
     }
 
     @Override
-    public HttpResponseStatus killRunningContainer(final String containerId) {
+    public HttpStatus killRunningContainer(final String containerId) {
         return killRunningContainerObs(containerId).toBlocking().single();
     }
 
     @Override
-    public Observable<HttpResponseStatus> killRunningContainerObs(final String containerId) {
-        return containerPostAction(containerId, CONTAINER_KILL_ENDPOINT);
+    public Observable<HttpStatus> killRunningContainerObs(final String containerId) {
+        final String uri = String.format(CONTAINER_KILL_ENDPOINT, containerId);
+        return httpClient.post(uri, EMPTY_BODY, httpStatus());
     }
 
     @Override
-    public HttpResponseStatus removeContainer(final String containerId) {
+    public HttpStatus removeContainer(final String containerId) {
         return removeContainer(containerId, false, false);
     }
 
     @Override
-    public HttpResponseStatus removeContainer(final String containerId, final boolean removeVolume, final boolean force) {
+    public HttpStatus removeContainer(final String containerId, final boolean removeVolume, final boolean force) {
         return removeContainerObs(containerId, removeVolume, force).toBlocking().single();
     }
 
     @Override
-    public Observable<HttpResponseStatus> removeContainerObs(final String containerId) {
+    public Observable<HttpStatus> removeContainerObs(final String containerId) {
         return removeContainerObs(containerId, false, false);
     }
 
     @Override
-    public Observable<HttpResponseStatus> removeContainerObs(final String containerId, final boolean removeVolume, final boolean force) {
-        return containerRemoveAction(containerId, CONTAINER_REMOVE_ENDPOINT, "v=" + removeVolume, "force=" + force);
+    public Observable<HttpStatus> removeContainerObs(final String containerId, final boolean removeVolume, final boolean force) {
+        final String uri = String.format(CONTAINER_REMOVE_ENDPOINT, containerId) + "?v=" + removeVolume + "force=" + force;
+        return httpClient.delete(uri);
     }
 
     @Override
-    public HttpResponseStatus renameContainer(final String containerId, final String newName) {
+    public HttpStatus renameContainer(final String containerId, final String newName) {
         return renameContainerObs(containerId, newName).toBlocking().single();
     }
 
     @Override
-    public Observable<HttpResponseStatus> renameContainerObs(final String containerId, final String newName) {
-        return containerPostAction(containerId, CONTAINER_RENAME_ENDPOINT, "name=" + newName);
+    public Observable<HttpStatus> renameContainerObs(final String containerId, final String newName) {
+        final String uri = String.format(CONTAINER_RENAME_ENDPOINT, containerId) + "?name=" + newName;
+        return httpClient.post(uri, EMPTY_BODY, httpStatus());
     }
 
     @Override
-    public HttpResponseStatus waitContainer(final String containerId) {
+    public HttpStatus waitContainer(final String containerId) {
         return waitContainerObs(containerId).toBlocking().single();
     }
 
     @Override
-    public Observable<HttpResponseStatus> waitContainerObs(final String containerId) {
-        return containerPostAction(containerId, CONTAINER_WAIT_ENDPOINT);
+    public Observable<HttpStatus> waitContainerObs(final String containerId) {
+        final String uri = String.format(CONTAINER_WAIT_ENDPOINT, containerId);
+        return httpClient.post(uri, EMPTY_BODY, httpStatus());
     }
 
     @Override
@@ -334,23 +345,23 @@ class RxDockerClient implements DockerClient {
                 map(resp -> gson.fromJson(resp.getContent().toString(Charset.defaultCharset()), supplier.get()));
     }
 
-    private Observable<HttpResponseStatus> containerPostAction(final String containerId, final String endpoint, final String... queryParameters) {
+    private Observable<HttpStatus> containerPostAction(final String containerId, final String endpoint, final String... queryParameters) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         ContainerEndpointUriFunction cFx = this::toRestEndpoint;
-        TriFunction<String, String, String[], Observable<HttpClientResponse<ByteBuf>>> fx = cFx.andThen(EMPTY_BODY, httpPostExecutionFunction());
+        TriFunction<String, String, String[], Observable<HttpStatus>> fx = cFx.andThen(EMPTY_BODY, httpPostExecutionFunction());
         return containerAction(HttpMethod.POST, containerId, endpoint, queryParameters, fx);
     }
 
-    private Observable<HttpResponseStatus> containerRemoveAction(final String containerId, final String endpoint, final String... queryParameters) {
+    private Observable<HttpStatus> containerRemoveAction(final String containerId, final String endpoint, final String... queryParameters) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         ContainerEndpointUriFunction cFx = this::toRestEndpoint;
-        TriFunction<String, String, String[], Observable<HttpClientResponse<ByteBuf>>> fx = cFx.andThen(EMPTY_BODY, httpDeleteExecutionFunction());
+        TriFunction<String, String, String[], Observable<HttpStatus>> fx = cFx.andThen(EMPTY_BODY, httpDeleteExecutionFunction());
         return containerAction(HttpMethod.DELETE, containerId, endpoint, queryParameters, fx);
     }
 
-    private Observable<HttpResponseStatus> containerAction(final HttpMethod httpMethod, final String containerId, final String endpoint, final String[] queryParameters, final TriFunction<String, String, String[], Observable<HttpClientResponse<ByteBuf>>> fx) {
+    private Observable<HttpStatus> containerAction(final HttpMethod httpMethod, final String containerId, final String endpoint, final String[] queryParameters, final TriFunction<String, String, String[], Observable<HttpStatus>> fx) {
         logger.info("Making {} request", httpMethod.name());
-        return observableHeaderResponse(fx.apply(endpoint, containerId, queryParameters));
+        return fx.apply(endpoint, containerId, queryParameters);
     }
 
     private String toRestEndpoint(String endpoint, String containerId, String... queryParameters) {
@@ -366,11 +377,11 @@ class RxDockerClient implements DockerClient {
 
 
     private HttpExecutionFunction httpPostExecutionFunction() {
-        return (uri, content) -> rxClient.submit(createPost(uri).withContent(content).withHeader("Content-Type", "application/json"));
+        return (uri, content) -> httpClient.post(uri);
     }
 
     private HttpExecutionFunction httpDeleteExecutionFunction() {
-        return (uri, content) -> rxClient.submit(createDelete(uri).withHeader("Content-Type", "application/json"));
+        return (uri, content) -> httpClient.delete(uri);
     }
 
 }
