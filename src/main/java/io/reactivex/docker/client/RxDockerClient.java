@@ -46,6 +46,7 @@ class RxDockerClient implements DockerClient {
     private final Logger logger = LoggerFactory.getLogger(RxDockerClient.class);
     private final String apiUri;
     private final HttpClient<ByteBuf, ByteBuf> rxClient;
+    private final RxHttpClient httpClient;
 
     RxDockerClient(final String dockerHost, final String dockerCertPath) {
         this(Optional.ofNullable(dockerHost), Optional.ofNullable(dockerCertPath));
@@ -72,6 +73,7 @@ class RxDockerClient implements DockerClient {
             builder.withSslEngineFactory(sslContextBasedFactory);
         }
         rxClient = builder.pipelineConfigurator(new HttpClientPipelineConfigurator<>()).enableWireLogging(LogLevel.DEBUG).build();
+        httpClient = RxHttpClient.newRxClient(hostAndPort.getHost(), hostAndPort.getPort(), dockerCertPath.get());
     }
 
     @Override
@@ -82,7 +84,8 @@ class RxDockerClient implements DockerClient {
     // Misc operations
     @Override
     public Observable<DockerVersion> serverVersionObs() {
-        return getRequestObservable(VERSION_ENDPOINT, () -> DockerVersion.class);
+//        return getRequestObservable(VERSION_ENDPOINT, () -> DockerVersion.class);
+        return httpClient.get(VERSION_ENDPOINT, json -> new Gson().fromJson(json, DockerVersion.class));
     }
 
     @Override
@@ -94,7 +97,8 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<DockerInfo> infoObs() {
-        return getRequestObservable(INFO_ENDPOINT, () -> DockerInfo.class);
+        return httpClient.get(INFO_ENDPOINT, json -> new Gson().fromJson(json, DockerInfo.class));
+//        return getRequestObservable(INFO_ENDPOINT, () -> DockerInfo.class);
     }
 
     @Override

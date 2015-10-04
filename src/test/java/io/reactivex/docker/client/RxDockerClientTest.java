@@ -82,15 +82,15 @@ public class RxDockerClientTest {
     public void shouldFetchVersionInformationFromDocker() throws Exception {
         DockerVersion dockerVersion = client.serverVersion();
 
-        assertThat(dockerVersion.getVersion(), is(equalTo("1.8.1")));
-        assertThat(dockerVersion.getApiVersion(), is(equalTo("1.20")));
+        assertThat(dockerVersion.version(), is(equalTo("1.8.1")));
+        assertThat(dockerVersion.apiVersion(), is(equalTo("1.20")));
     }
 
     @Test
     public void shouldFetchDockerInformation() throws Exception {
         DockerInfo info = client.info();
-        assertThat(info.getDockerRootDir(), equalTo("/mnt/sda1/var/lib/docker"));
-        assertThat(info.getInitPath(), equalTo("/usr/local/bin/docker"));
+        assertThat(info.dockerRootDir(), equalTo("/mnt/sda1/var/lib/docker"));
+        assertThat(info.initPath(), equalTo("/usr/local/bin/docker"));
     }
 
     @Test

@@ -1,90 +1,111 @@
 package io.reactivex.docker.client.representations;
 
+import com.google.gson.annotations.SerializedName;
+
 public class DockerVersion {
-    String version;
-    String os;
-    String kernelVersion;
-    String goVersion;
-    String gitCommit;
-    String arch;
-    String apiVersion;
-    boolean experimental;
+    @SerializedName("ApiVersion")
+    private String apiVersion;
+    @SerializedName("Arch")
+    private String arch;
+    @SerializedName("GitCommit")
+    private String gitCommit;
+    @SerializedName("GoVersion")
+    private String goVersion;
+    @SerializedName("KernelVersion")
+    private String kernelVersion;
+    @SerializedName("Os")
+    private String os;
+    @SerializedName("Version")
+    private String version;
 
-    public String getVersion() {
-        return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-    public String getOs() {
-        return os;
-    }
-
-    public void setOs(String os) {
-        this.os = os;
-    }
-
-    public String getKernelVersion() {
-        return kernelVersion;
-    }
-
-    public void setKernelVersion(String kernelVersion) {
-        this.kernelVersion = kernelVersion;
-    }
-
-    public String getGoVersion() {
-        return goVersion;
-    }
-
-    public void setGoVersion(String goVersion) {
-        this.goVersion = goVersion;
-    }
-
-    public String getGitCommit() {
-        return gitCommit;
-    }
-
-    public void setGitCommit(String gitCommit) {
-        this.gitCommit = gitCommit;
-    }
-
-    public String getArch() {
-        return arch;
-    }
-
-    public void setArch(String arch) {
-        this.arch = arch;
-    }
-
-    public String getApiVersion() {
+    public String apiVersion() {
         return apiVersion;
     }
 
-    public void setApiVersion(String apiVersion) {
-        this.apiVersion = apiVersion;
+    public String arch() {
+        return arch;
     }
 
-    public boolean isExperimental() {
-        return experimental;
+    public String gitCommit() {
+        return gitCommit;
     }
 
-    public void setExperimental(boolean experimental) {
-        this.experimental = experimental;
+    public String goVersion() {
+        return goVersion;
+    }
+
+    public String kernelVersion() {
+        return kernelVersion;
+    }
+
+    public String os() {
+        return os;
+    }
+
+    public String version() {
+        return version;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final DockerVersion version1 = (DockerVersion) o;
+
+        if (apiVersion != null ? !apiVersion.equals(version1.apiVersion)
+                : version1.apiVersion != null) {
+            return false;
+        }
+        if (arch != null ? !arch.equals(version1.arch) : version1.arch != null) {
+            return false;
+        }
+        if (gitCommit != null ? !gitCommit.equals(version1.gitCommit) : version1.gitCommit != null) {
+            return false;
+        }
+        if (goVersion != null ? !goVersion.equals(version1.goVersion) : version1.goVersion != null) {
+            return false;
+        }
+        if (kernelVersion != null ? !kernelVersion.equals(version1.kernelVersion)
+                : version1.kernelVersion != null) {
+            return false;
+        }
+        if (os != null ? !os.equals(version1.os) : version1.os != null) {
+            return false;
+        }
+        if (version != null ? !version.equals(version1.version) : version1.version != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = apiVersion != null ? apiVersion.hashCode() : 0;
+        result = 31 * result + (arch != null ? arch.hashCode() : 0);
+        result = 31 * result + (gitCommit != null ? gitCommit.hashCode() : 0);
+        result = 31 * result + (goVersion != null ? goVersion.hashCode() : 0);
+        result = 31 * result + (kernelVersion != null ? kernelVersion.hashCode() : 0);
+        result = 31 * result + (os != null ? os.hashCode() : 0);
+        result = 31 * result + (version != null ? version.hashCode() : 0);
+        return result;
     }
 
     @Override
     public String toString() {
         return "DockerVersion{" +
-                "version='" + version + '\'' +
-                ", os='" + os + '\'' +
-                ", kernelVersion='" + kernelVersion + '\'' +
-                ", goVersion='" + goVersion + '\'' +
-                ", gitCommit='" + gitCommit + '\'' +
+                "apiVersion='" + apiVersion + '\'' +
                 ", arch='" + arch + '\'' +
-                ", apiVersion='" + apiVersion + '\'' +
-                ", experimental=" + experimental +
+                ", gitCommit='" + gitCommit + '\'' +
+                ", goVersion='" + goVersion + '\'' +
+                ", kernelVersion='" + kernelVersion + '\'' +
+                ", os='" + os + '\'' +
+                ", version='" + version + '\'' +
                 '}';
     }
 }
