@@ -11,8 +11,8 @@ public interface RxHttpClient {
         return new OkHttpBasedRxHttpClient(host, port);
     }
 
-    static RxHttpClient newRxClient(final String host, final int port, String certPath) {
-        return new OkHttpBasedRxHttpClient(host, port, Optional.ofNullable(certPath));
+    static RxHttpClient newRxClient(final String host, final int port, Optional<String> certPath) {
+        return new OkHttpBasedRxHttpClient(host, port, certPath);
     }
 
     <R> Observable<R> get(String endpointPath, JsonTransformer<R> transformer);

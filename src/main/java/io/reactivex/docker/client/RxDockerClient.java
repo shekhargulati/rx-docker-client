@@ -5,30 +5,25 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.logging.LogLevel;
 import io.reactivex.docker.client.function.ContainerEndpointUriFunction;
 import io.reactivex.docker.client.function.HttpExecutionFunction;
 import io.reactivex.docker.client.function.TriFunction;
 import io.reactivex.docker.client.representations.*;
-import io.reactivex.docker.client.ssl.DockerCertificates;
 import io.reactivex.docker.client.utils.Strings;
-import io.reactivex.netty.RxNetty;
-import io.reactivex.netty.pipeline.ssl.DefaultFactories;
-import io.reactivex.netty.protocol.http.client.*;
+import io.reactivex.netty.protocol.http.client.FlatResponseOperator;
+import io.reactivex.netty.protocol.http.client.HttpClient;
+import io.reactivex.netty.protocol.http.client.HttpClientResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 
-import javax.net.ssl.SSLEngine;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -45,7 +40,7 @@ class RxDockerClient implements DockerClient {
 
     private final Logger logger = LoggerFactory.getLogger(RxDockerClient.class);
     private final String apiUri;
-    private final HttpClient<ByteBuf, ByteBuf> rxClient;
+    private final HttpClient<ByteBuf, ByteBuf> rxClient = null;
     private final RxHttpClient httpClient;
 
     RxDockerClient(final String dockerHost, final String dockerCertPath) {
@@ -58,22 +53,7 @@ class RxDockerClient implements DockerClient {
 
         apiUri = scheme + "://" + hostAndPort.getHost() + ":" + hostAndPort.getPort();
         logger.info("Docker API uri {}", apiUri);
-
-        HttpClientBuilder<ByteBuf, ByteBuf> builder = RxNetty.<ByteBuf, ByteBuf>newHttpClientBuilder(hostAndPort.getHost(), hostAndPort.getPort());
-
-        if (dockerCertPath.isPresent()) {
-            DefaultFactories.SSLContextBasedFactory sslContextBasedFactory = new DefaultFactories.SSLContextBasedFactory(new DockerCertificates(Paths.get(dockerCertPath.get())).sslContext()) {
-                @Override
-                public SSLEngine createSSLEngine(ByteBufAllocator allocator) {
-                    SSLEngine sslEngine = super.createSSLEngine(allocator);
-                    sslEngine.setUseClientMode(true);
-                    return sslEngine;
-                }
-            };
-            builder.withSslEngineFactory(sslContextBasedFactory);
-        }
-        rxClient = builder.pipelineConfigurator(new HttpClientPipelineConfigurator<>()).enableWireLogging(LogLevel.DEBUG).build();
-        httpClient = RxHttpClient.newRxClient(hostAndPort.getHost(), hostAndPort.getPort(), dockerCertPath.get());
+        httpClient = RxHttpClient.newRxClient(hostAndPort.getHost(), hostAndPort.getPort(), dockerCertPath);
     }
 
     @Override
@@ -84,8 +64,9 @@ class RxDockerClient implements DockerClient {
     // Misc operations
     @Override
     public Observable<DockerVersion> serverVersionObs() {
-//        return getRequestObservable(VERSION_ENDPOINT, () -> DockerVersion.class);
-        return httpClient.get(VERSION_ENDPOINT, json -> new Gson().fromJson(json, DockerVersion.class));
+        return httpClient
+                .get(VERSION_ENDPOINT,
+                        json -> new Gson().fromJson(json, DockerVersion.class));
     }
 
     @Override
@@ -97,8 +78,9 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<DockerInfo> infoObs() {
-        return httpClient.get(INFO_ENDPOINT, json -> new Gson().fromJson(json, DockerInfo.class));
-//        return getRequestObservable(INFO_ENDPOINT, () -> DockerInfo.class);
+        return httpClient
+                .get(INFO_ENDPOINT,
+                        json -> new Gson().fromJson(json, DockerInfo.class));
     }
 
     @Override

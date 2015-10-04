@@ -28,11 +28,9 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
         final String scheme = certPath.isPresent() ? "https" : "http";
         apiUri = scheme + "://" + host + ":" + port;
         logger.info("Base API uri {}", apiUri);
-        client
-                .setSslSocketFactory(
-                        new DockerCertificates(
-                                certPath.map(p -> Paths.get(p)).orElseGet(() -> Paths.get(DEFAULT_CERT_PATH)))
-                                .sslContext().getSocketFactory());
+        if (certPath.isPresent()) {
+            client.setSslSocketFactory(new DockerCertificates(Paths.get(certPath.get())).sslContext().getSocketFactory());
+        }
     }
 
     @Override
