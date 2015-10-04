@@ -81,7 +81,6 @@ public class RxDockerClientTest {
     @Test
     public void shouldFetchVersionInformationFromDocker() throws Exception {
         DockerVersion dockerVersion = client.serverVersion();
-
         assertThat(dockerVersion.version(), is(equalTo("1.8.1")));
         assertThat(dockerVersion.apiVersion(), is(equalTo("1.20")));
     }
@@ -91,6 +90,21 @@ public class RxDockerClientTest {
         DockerInfo info = client.info();
         assertThat(info.dockerRootDir(), equalTo("/mnt/sda1/var/lib/docker"));
         assertThat(info.initPath(), equalTo("/usr/local/bin/docker"));
+    }
+
+    @Test
+    public void shouldListAllContainers() throws Exception {
+//        createContainer("rx-docker-client-test-2");
+//        createContainer("rx-docker-client-test-3");
+        List<DockerContainer> dockerContainers = client.listAllContainers();
+        dockerContainers.forEach(container -> System.out.println("Docker Container >> \n " + container));
+        assertThat(dockerContainers, hasSize(greaterThanOrEqualTo(1)));
+    }
+
+    @Test
+    public void shouldListRunningContainers() throws Exception {
+        List<DockerContainer> dockerContainers = client.listRunningContainers();
+        assertThat(dockerContainers.size(), greaterThanOrEqualTo(1));
     }
 
     //    @Test
@@ -104,15 +118,6 @@ public class RxDockerClientTest {
     public void shouldCreateContainerWithName() throws Exception {
         DockerContainerResponse response = createContainer("rx-docker-client-test-1");
         assertThat(response.getId(), notNullValue());
-    }
-
-
-    //    @Test
-    public void shouldListAllContainers() throws Exception {
-        createContainer("rx-docker-client-test-2");
-        createContainer("rx-docker-client-test-3");
-        List<DockerContainer> dockerContainers = client.listAllContainers();
-        assertThat(dockerContainers, hasSize(greaterThan(2)));
     }
 
     //    @Test
@@ -303,11 +308,6 @@ public class RxDockerClientTest {
         assertNotNull(processListResponse);
     }
 
-    @Ignore
-    public void shouldListRunningContainers() throws Exception {
-        List<DockerContainer> dockerContainers = client.listRunningContainers();
-        assertThat(dockerContainers.size(), greaterThanOrEqualTo(2));
-    }
 
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()

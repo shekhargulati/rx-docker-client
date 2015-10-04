@@ -120,11 +120,14 @@ class RxDockerClient implements DockerClient {
     public Observable<List<DockerContainer>> listContainersObs(QueryParameters queryParameters) {
         final String query = queryParameters.toQuery();
         String url = String.format(CONTAINER_ENDPOINT, query);
-        return getRequestObservable(
-                url, () ->
-                        new TypeToken<List<DockerContainer>>() {
-                        }.getType()
-        );
+        Gson gson = new GsonBuilder()
+                .setFieldNamingPolicy(UPPER_CAMEL_CASE)
+                .setDateFormat(DOCKER_DATE_TIME_FORMAT)
+                .setPrettyPrinting()
+                .create();
+        return httpClient.get(url,
+                json -> gson.fromJson(json, new TypeToken<List<DockerContainer>>() {
+                }.getType()));
     }
 
     @Override
