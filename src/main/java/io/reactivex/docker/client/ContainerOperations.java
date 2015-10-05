@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +22,7 @@ public interface ContainerOperations {
     String CONTAINER_REMOVE_ENDPOINT = CONTAINERS_ENDPOINT;
     String CONTAINER_RENAME_ENDPOINT = CONTAINERS_ENDPOINT + "/rename";
     String CONTAINER_WAIT_ENDPOINT = CONTAINERS_ENDPOINT + "/wait";
+    String CONTAINER_EXPORT_ENDPOINT = CONTAINERS_ENDPOINT + "/export";
 
     Logger logger = LoggerFactory.getLogger(ContainerOperations.class);
 
@@ -98,7 +100,7 @@ public interface ContainerOperations {
 
     Observable<HttpStatus> waitContainerObs(String containerId);
 
-    void exportContainer(String containerId, String filepath);
+    void exportContainer(String containerId, Path pathToExportTo);
 
     ContainerStats containerStats(String containerId);
 

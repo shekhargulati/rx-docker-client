@@ -5,6 +5,8 @@ import io.reactivex.docker.client.function.JsonTransformer;
 import io.reactivex.docker.client.function.ResponseBodyTransformer;
 import io.reactivex.docker.client.function.ResponseTransformer;
 import io.reactivex.docker.client.ssl.DockerCertificates;
+import okio.Buffer;
+import okio.BufferedSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -46,9 +48,38 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                 logger.info("Making GET request to {}", url);
                 Call call = client.newCall(getRequest);
                 Response response = call.execute();
+                logger.info("Received response >> {} with headers >> {}", response.code(), response.headers());
                 if (response.isSuccessful()) {
                     try (ResponseBody body = response.body()) {
                         subscriber.onNext(transformer.apply(body.string()));
+                        subscriber.onCompleted();
+                    }
+                } else {
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message())));
+                }
+            } catch (IOException e) {
+                logger.error("Encountered error while making {} call", endpoint, e);
+                subscriber.onError(new RestServiceCommunicationException(e));
+            }
+        });
+    }
+
+    @Override
+    public Observable<Buffer> getBuffer(final String endpoint) {
+        return Observable.create(subscriber -> {
+            try {
+                final String url = String.format("%s/%s", apiUri, endpoint);
+                Request getRequest = new Request.Builder().url(url).build();
+                logger.info("Making GET request to {}", url);
+                Call call = client.newCall(getRequest);
+                Response response = call.execute();
+                logger.info("Received response >> {} with headers >> {}", response.code(), response.headers());
+                if (response.isSuccessful()) {
+                    try (ResponseBody body = response.body()) {
+                        BufferedSource source = body.source();
+                        while (!source.exhausted()) {
+                            subscriber.onNext(source.buffer());
+                        }
                         subscriber.onCompleted();
                     }
                 } else {

@@ -5,16 +5,15 @@ import io.reactivex.docker.client.representations.*;
 import io.reactivex.docker.client.ssl.DockerCertificates;
 import okio.Buffer;
 import okio.BufferedSource;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
 import rx.Observable;
 import rx.Subscriber;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
@@ -35,10 +34,15 @@ import static org.junit.Assert.*;
 public class RxDockerClientTest {
 
     private static final String DOCKER_MACHINE_NAME = "rx-docker-test";
+    public static final String CONTAINER_NAME = "my_first_container";
+    public static final String SECOND_CONTAINER_NAME = "my_second_container";
 
     private static DockerClient client;
     private static String dockerHost;
     private static Map<String, String> dockerConfiguration;
+
+    @Rule
+    public TemporaryFolder tmp = new TemporaryFolder();
 
 
     @BeforeClass
@@ -98,14 +102,14 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldCreateContainerWithName() throws Exception {
-        DockerContainerResponse response = createContainer("my_first_container");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
         assertThat(response.getId(), notNullValue());
     }
 
     @Test
     public void shouldListAllContainers() throws Exception {
-        createContainer("my_first_container");
-        createContainer("my_second_container");
+        createContainer(CONTAINER_NAME);
+        createContainer(SECOND_CONTAINER_NAME);
         List<DockerContainer> dockerContainers = client.listAllContainers();
         dockerContainers.forEach(container -> System.out.println("Docker Container >> \n " + container));
         assertThat(dockerContainers, hasSize(greaterThanOrEqualTo(2)));
@@ -113,7 +117,7 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldInspectContainer() throws Exception {
-        DockerContainerResponse response = createContainer("my_first_container");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
         ContainerInspectResponse containerInspectResponse = client.inspectContainer(response.getId());
         System.out.println(containerInspectResponse);
         assertThat(containerInspectResponse.path(), is(equalTo("/bin/bash")));
@@ -121,14 +125,14 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldStartCreatedContainer() throws Exception {
-        DockerContainerResponse response = createContainer("my_first_container");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
         HttpStatus httpStatus = client.startContainer(response.getId());
         assertThat(httpStatus.code(), is(equalTo(204)));
     }
 
     @Test
     public void shouldStopStartedContainer() throws Exception {
-        DockerContainerResponse response = createContainer("my_first_container");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
         client.startContainer(response.getId());
         HttpStatus status = client.stopContainer(response.getId(), 5);
         assertThat(status.code(), is(equalTo(204)));
@@ -136,8 +140,8 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldQueryContainersByFilters() throws Exception {
-        createContainer("my_first_container");
-        createContainer("my_second_container");
+        createContainer(CONTAINER_NAME);
+        createContainer(SECOND_CONTAINER_NAME);
         QueryParameters queryParameters = new QueryParametersBuilder().withAll(true).withLimit(3).withFilter("status", "exited").createQueryParameters();
         List<DockerContainer> containers = client.listContainers(queryParameters);
         assertThat(containers.size(), greaterThanOrEqualTo(2));
@@ -145,14 +149,14 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldRestartAContainer() throws Exception {
-        DockerContainerResponse response = createContainer("my_first_container");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
         HttpStatus status = client.restartContainer(response.getId(), 5);
         assertThat(status.code(), is(equalTo(204)));
     }
 
     @Test
     public void shouldKillARunningContainer() throws Exception {
-        DockerContainerResponse response = createContainer("my_first_container");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
         client.startContainer(response.getId());
         HttpStatus status = client.killRunningContainer(response.getId());
         assertThat(status.code(), is(equalTo(204)));
@@ -160,28 +164,28 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldRemoveDockerContainer() throws Exception {
-        DockerContainerResponse response = createContainer("my_first_container");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
         HttpStatus status = client.removeContainer(response.getId());
         assertThat(status.code(), is(equalTo(204)));
     }
 
     @Test
     public void shouldRemoveDockerContainerWithQueryParameters() throws Exception {
-        DockerContainerResponse response = createContainer("my_first_container");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
         HttpStatus status = client.removeContainer(response.getId(), true, true);
         assertThat(status.code(), is(equalTo(204)));
     }
 
     @Test
     public void shouldRenameDockerContainer() throws Exception {
-        DockerContainerResponse response = createContainer("my_first_container");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
         HttpStatus status = client.renameContainer(response.getId(), "my_first_container-renamed");
         assertThat(status.code(), is(equalTo(204)));
     }
 
     @Test
     public void shouldWaitForARunningDockerContainer() throws Exception {
-        DockerContainerResponse response = createContainer("my_first_container");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
         client.startContainer(response.getId());
         Observable.timer(1, TimeUnit.SECONDS).forEach(t -> {
             System.out.println("Stopping container after 1 second..");
@@ -191,13 +195,13 @@ public class RxDockerClientTest {
         assertThat(status.code(), is(equalTo(200)));
     }
 
-    //    @Test
+    @Test
     public void shouldExportContainer() throws Exception {
-        DockerContainerResponse response = createContainer("rx-docker-client-test-16");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
         String containerId = response.getId();
-        String filepath = "/tmp/" + containerId + ".tar";
-        client.exportContainer(containerId, filepath);
-        assertTrue(Paths.get(filepath).toFile().exists());
+        Path pathToExportTo = tmp.newFolder().toPath();
+        client.exportContainer(containerId, pathToExportTo);
+        assertTrue(Files.newDirectoryStream(pathToExportTo, p -> p.toFile().isFile()).iterator().hasNext());
     }
 
     //    @Test

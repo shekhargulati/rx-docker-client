@@ -3,6 +3,7 @@ package io.reactivex.docker.client;
 import io.reactivex.docker.client.function.JsonTransformer;
 import io.reactivex.docker.client.function.ResponseBodyTransformer;
 import io.reactivex.docker.client.function.ResponseTransformer;
+import okio.Buffer;
 import rx.Observable;
 
 import java.util.Optional;
@@ -20,6 +21,8 @@ public interface RxHttpClient {
     }
 
     <R> Observable<R> get(String endpointPath, JsonTransformer<R> transformer);
+
+    Observable<Buffer> getBuffer(String endpoint);
 
     Observable<String> get(String endpointPath);
 

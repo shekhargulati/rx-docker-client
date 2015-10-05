@@ -7,10 +7,15 @@ import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.ResponseBody;
 import io.reactivex.docker.client.representations.*;
 import io.reactivex.docker.client.utils.Strings;
+import okio.Buffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
+import rx.Subscriber;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -249,7 +254,42 @@ class RxDockerClient implements DockerClient {
     }
 
     @Override
-    public void exportContainer(final String containerId, final String filepath) {
+    public void exportContainer(final String containerId, final Path pathToExportTo) {
+        final String endpointUri = String.format(CONTAINER_EXPORT_ENDPOINT, containerId);
+        Observable<Buffer> bufferStream = httpClient.getBuffer(endpointUri);
+
+        String exportFilePath = pathToExportTo.toString() + "/" + containerId + ".tar";
+        try (FileOutputStream out = new FileOutputStream(exportFilePath)) {
+            Subscriber<Buffer> httpSubscriber = new Subscriber<Buffer>() {
+                @Override
+                public void onCompleted() {
+                    logger.info("Exported container to path {}", exportFilePath);
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    logger.error("Error encountered >> ", e);
+                }
+
+                @Override
+                public void onNext(Buffer res) {
+                    try {
+                        logger.info("Exporting to path {}", exportFilePath);
+                        final byte[] buffer = new byte[1024];
+                        int n = 0;
+                        while (-1 != (n = res.read(buffer))) {
+                            out.write(buffer, 0, n);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+            bufferStream.subscribe(httpSubscriber);
+            httpSubscriber.unsubscribe();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
