@@ -5,7 +5,7 @@ import io.reactivex.docker.client.representations.*;
 import io.reactivex.docker.client.ssl.DockerCertificates;
 import okio.Buffer;
 import okio.BufferedSource;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -52,10 +52,10 @@ public class RxDockerClientTest {
 
     }
 
-    @AfterClass
-    public static void tearDownInfra() throws Exception {
-//        client.removeAllContainers();
-//        assertThat(client.listAllContainers().size(), equalTo(0));
+    @After
+    public void tearDownInfra() throws Exception {
+        client.removeAllContainers();
+        assertThat(client.listAllContainers().size(), equalTo(0));
 //        createAndWaitForProcessExecution(new String[]{"docker-machine", "stop", DOCKER_MACHINE_NAME});
 //        createAndWaitForProcessExecution(new String[]{"docker-machine", "rm", DOCKER_MACHINE_NAME});
     }
@@ -90,21 +90,6 @@ public class RxDockerClientTest {
     }
 
     @Test
-    public void shouldListAllContainers() throws Exception {
-//        createContainer("rx-docker-client-test-2");
-//        createContainer("rx-docker-client-test-3");
-        List<DockerContainer> dockerContainers = client.listAllContainers();
-        dockerContainers.forEach(container -> System.out.println("Docker Container >> \n " + container));
-        assertThat(dockerContainers, hasSize(greaterThanOrEqualTo(1)));
-    }
-
-    @Test
-    public void shouldListRunningContainers() throws Exception {
-        List<DockerContainer> dockerContainers = client.listRunningContainers();
-        assertThat(dockerContainers.size(), greaterThanOrEqualTo(1));
-    }
-
-    @Test
     public void shouldCreateContainer() throws Exception {
         DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
         DockerContainerResponse response = client.createContainer(request);
@@ -113,13 +98,22 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldCreateContainerWithName() throws Exception {
-        DockerContainerResponse response = createContainer("rx-docker-client-test-1");
+        DockerContainerResponse response = createContainer("my_first_container");
         assertThat(response.getId(), notNullValue());
     }
 
     @Test
+    public void shouldListAllContainers() throws Exception {
+        createContainer("my_first_container");
+        createContainer("my_second_container");
+        List<DockerContainer> dockerContainers = client.listAllContainers();
+        dockerContainers.forEach(container -> System.out.println("Docker Container >> \n " + container));
+        assertThat(dockerContainers, hasSize(greaterThanOrEqualTo(2)));
+    }
+
+    @Test
     public void shouldInspectContainer() throws Exception {
-        DockerContainerResponse response = createContainer("rx-docker-client-test-4");
+        DockerContainerResponse response = createContainer("my_first_container");
         ContainerInspectResponse containerInspectResponse = client.inspectContainer(response.getId());
         System.out.println(containerInspectResponse);
         assertThat(containerInspectResponse.path(), is(equalTo("/bin/bash")));
@@ -127,14 +121,14 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldStartCreatedContainer() throws Exception {
-        DockerContainerResponse response = createContainer("rx-docker-client-test-5");
+        DockerContainerResponse response = createContainer("my_first_container");
         HttpStatus httpStatus = client.startContainer(response.getId());
         assertThat(httpStatus.code(), is(equalTo(204)));
     }
 
     @Test
     public void shouldStopStartedContainer() throws Exception {
-        DockerContainerResponse response = createContainer("rx-docker-client-test-6");
+        DockerContainerResponse response = createContainer("my_first_container");
         client.startContainer(response.getId());
         HttpStatus status = client.stopContainer(response.getId(), 5);
         assertThat(status.code(), is(equalTo(204)));
@@ -142,8 +136,8 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldQueryContainersByFilters() throws Exception {
-        createContainer("rx-docker-client-test-7");
-        createContainer("rx-docker-client-test-8");
+        createContainer("my_first_container");
+        createContainer("my_second_container");
         QueryParameters queryParameters = new QueryParametersBuilder().withAll(true).withLimit(3).withFilter("status", "exited").createQueryParameters();
         List<DockerContainer> containers = client.listContainers(queryParameters);
         assertThat(containers.size(), greaterThanOrEqualTo(2));
@@ -151,14 +145,14 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldRestartAContainer() throws Exception {
-        DockerContainerResponse response = createContainer("rx-docker-client-test-9");
+        DockerContainerResponse response = createContainer("my_first_container");
         HttpStatus status = client.restartContainer(response.getId(), 5);
         assertThat(status.code(), is(equalTo(204)));
     }
 
     @Test
     public void shouldKillARunningContainer() throws Exception {
-        DockerContainerResponse response = createContainer("rx-docker-client-test-11");
+        DockerContainerResponse response = createContainer("my_first_container");
         client.startContainer(response.getId());
         HttpStatus status = client.killRunningContainer(response.getId());
         assertThat(status.code(), is(equalTo(204)));
@@ -166,27 +160,26 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldRemoveDockerContainer() throws Exception {
-        DockerContainerResponse response = createContainer("rx-docker-client-test-12");
+        DockerContainerResponse response = createContainer("my_first_container");
         HttpStatus status = client.removeContainer(response.getId());
         assertThat(status.code(), is(equalTo(204)));
     }
 
     @Test
     public void shouldRemoveDockerContainerWithQueryParameters() throws Exception {
-        DockerContainerResponse response = createContainer("rx-docker-client-test-13");
+        DockerContainerResponse response = createContainer("my_first_container");
         HttpStatus status = client.removeContainer(response.getId(), true, true);
         assertThat(status.code(), is(equalTo(204)));
     }
 
     @Test
     public void shouldRenameDockerContainer() throws Exception {
-        DockerContainerResponse response = createContainer("rx-docker-client-test-14");
-        HttpStatus status = client.renameContainer(response.getId(), "rx-docker-client-test-14-renamed");
+        DockerContainerResponse response = createContainer("my_first_container");
+        HttpStatus status = client.renameContainer(response.getId(), "my_first_container-renamed");
         assertThat(status.code(), is(equalTo(204)));
     }
 
-
-    @Test
+    @Ignore
     public void shouldWaitForARunningDockerContainer() throws Exception {
         DockerContainerResponse response = createContainer("rx-docker-client-test-15");
         client.startContainer(response.getId());

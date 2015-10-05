@@ -1,7 +1,5 @@
 package io.reactivex.docker.client;
 
-import io.netty.buffer.ByteBuf;
-import io.reactivex.netty.protocol.http.client.HttpClientResponse;
 import rx.Observable;
 
 public interface DockerClient extends MiscOperations, ContainerOperations, ImageOperations {
@@ -24,5 +22,5 @@ public interface DockerClient extends MiscOperations, ContainerOperations, Image
 
     String getApiUri();
 
-    Observable<HttpClientResponse<ByteBuf>> pullImageObs(String fromImage);
+    Observable<HttpStatus> pullImageObs(String fromImage);
 }

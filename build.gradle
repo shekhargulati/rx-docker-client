@@ -9,7 +9,6 @@ repositories {
 
 dependencies {
     compile 'io.reactivex:rxjava:1.0.14'
-    compile 'io.reactivex:rxnetty:0.4.11'
     compile 'org.apache.httpcomponents:httpclient:4.3.5'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.51'
     compile 'com.google.code.gson:gson:2.3.1'
