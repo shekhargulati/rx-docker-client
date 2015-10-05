@@ -128,7 +128,7 @@ class RxDockerClient implements DockerClient {
     @Override
     public Observable<DockerContainerResponse> createContainerObs(final DockerContainerRequest request, final Optional<String> name) {
         String content = request.toJson();
-        logger.info("Creating container >>\n for json request '{}'", content);
+        logger.info("Creating container for json request >>\n'{}'", content);
         final String uri = name.isPresent() ? CREATE_CONTAINER_ENDPOINT + "?name=" + name.get() : CREATE_CONTAINER_ENDPOINT;
         return httpClient.post(uri, content, (ResponseBody body) -> gson.fromJson(body.string(), DockerContainerResponse.class));
     }

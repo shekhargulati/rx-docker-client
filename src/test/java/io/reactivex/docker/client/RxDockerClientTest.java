@@ -179,12 +179,12 @@ public class RxDockerClientTest {
         assertThat(status.code(), is(equalTo(204)));
     }
 
-    @Ignore
+    @Test
     public void shouldWaitForARunningDockerContainer() throws Exception {
-        DockerContainerResponse response = createContainer("rx-docker-client-test-15");
+        DockerContainerResponse response = createContainer("my_first_container");
         client.startContainer(response.getId());
-        Observable.timer(10, TimeUnit.SECONDS).forEach(t -> {
-            System.out.println("Stopping container after 10 seconds..");
+        Observable.timer(1, TimeUnit.SECONDS).forEach(t -> {
+            System.out.println("Stopping container after 1 second..");
             client.stopContainer(response.getId(), 5);
         });
         HttpStatus status = client.waitContainer(response.getId());
