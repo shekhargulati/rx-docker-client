@@ -1,6 +1,8 @@
 package io.reactivex.docker.client;
 
 import io.reactivex.docker.client.representations.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 
 import java.util.List;
@@ -19,6 +21,8 @@ public interface ContainerOperations {
     String CONTAINER_REMOVE_ENDPOINT = CONTAINERS_ENDPOINT;
     String CONTAINER_RENAME_ENDPOINT = CONTAINERS_ENDPOINT + "/rename";
     String CONTAINER_WAIT_ENDPOINT = CONTAINERS_ENDPOINT + "/wait";
+
+    Logger logger = LoggerFactory.getLogger(ContainerOperations.class);
 
     Observable<List<DockerContainer>> listRunningContainerObs();
 
@@ -65,7 +69,7 @@ public interface ContainerOperations {
     default void killAllRunningContainers() {
         listContainers(new QueryParameters()).forEach(container -> {
             String containerId = container.getId();
-            System.out.println(String.format("killing running container with id %s", containerId));
+            logger.info("killing running container with id {}", containerId);
             killRunningContainer(containerId);
         });
     }
@@ -81,7 +85,7 @@ public interface ContainerOperations {
     default void removeAllContainers() {
         listAllContainers().forEach(container -> {
             String containerId = container.getId();
-            System.out.println(String.format("removing container with id %s", containerId));
+            logger.info("removing container with id {}", containerId);
             removeContainer(containerId, true, true);
         });
     }

@@ -1,7 +1,5 @@
 package io.reactivex.docker.client;
 
-import rx.Observable;
-
 public interface DockerClient extends MiscOperations, ContainerOperations, ImageOperations {
 
     String DEFAULT_DOCKER_HOST = "localhost";
@@ -22,5 +20,4 @@ public interface DockerClient extends MiscOperations, ContainerOperations, Image
 
     String getApiUri();
 
-    Observable<HttpStatus> pullImageObs(String fromImage);
 }
