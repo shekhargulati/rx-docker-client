@@ -294,13 +294,10 @@ class RxDockerClient implements DockerClient {
     }
 
     @Override
-    public ContainerStats containerStats(final String containerId) {
-        return containerStatsObs(containerId).toBlocking().single();
-    }
-
-    @Override
     public Observable<ContainerStats> containerStatsObs(final String containerId) {
-        return null;
+        final String endpointUri = String.format(CONTAINER_STATS_ENDPOINT, containerId);
+        return httpClient.getBuffer(endpointUri,
+                buffer -> gson.fromJson(buffer.readUtf8(), ContainerStats.class));
     }
 
     @Override

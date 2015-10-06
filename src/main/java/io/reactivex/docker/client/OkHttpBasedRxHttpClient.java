@@ -1,6 +1,7 @@
 package io.reactivex.docker.client;
 
 import com.squareup.okhttp.*;
+import io.reactivex.docker.client.function.BufferTransformer;
 import io.reactivex.docker.client.function.JsonTransformer;
 import io.reactivex.docker.client.function.ResponseBodyTransformer;
 import io.reactivex.docker.client.function.ResponseTransformer;
@@ -91,6 +92,37 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
             }
         });
     }
+
+    @Override
+    public <T> Observable<T> getBuffer(final String endpoint, BufferTransformer<T> transformer) {
+        return Observable.create(subscriber -> {
+            try {
+                final String url = String.format("%s/%s", apiUri, endpoint);
+                Request getRequest = new Request.Builder().url(url).build();
+                logger.info("Making GET request to {}", url);
+                Call call = client.newCall(getRequest);
+                Response response = call.execute();
+                logger.info("Received response >> {} with headers >> {}", response.code(), response.headers());
+                if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
+                    try (ResponseBody body = response.body()) {
+                        BufferedSource source = body.source();
+                        while (!source.exhausted() && !subscriber.isUnsubscribed()) {
+                            subscriber.onNext(transformer.apply(source.buffer()));
+                        }
+                        subscriber.onCompleted();
+                    }
+                } else if (response.isSuccessful() && subscriber.isUnsubscribed()) {
+                    subscriber.onCompleted();
+                } else {
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message())));
+                }
+            } catch (IOException e) {
+                logger.error("Encountered error while making {} call", endpoint, e);
+                subscriber.onError(new RestServiceCommunicationException(e));
+            }
+        });
+    }
+
 
     @Override
     public Observable<String> get(final String endpointPath) {

@@ -23,6 +23,7 @@ public interface ContainerOperations {
     String CONTAINER_RENAME_ENDPOINT = CONTAINERS_ENDPOINT + "/rename";
     String CONTAINER_WAIT_ENDPOINT = CONTAINERS_ENDPOINT + "/wait";
     String CONTAINER_EXPORT_ENDPOINT = CONTAINERS_ENDPOINT + "/export";
+    String CONTAINER_STATS_ENDPOINT = CONTAINERS_ENDPOINT + "/stats";
 
     Logger logger = LoggerFactory.getLogger(ContainerOperations.class);
 
@@ -101,8 +102,6 @@ public interface ContainerOperations {
     Observable<HttpStatus> waitContainerObs(String containerId);
 
     void exportContainer(String containerId, Path pathToExportTo);
-
-    ContainerStats containerStats(String containerId);
 
     Observable<ContainerStats> containerStatsObs(String containerId);
 }

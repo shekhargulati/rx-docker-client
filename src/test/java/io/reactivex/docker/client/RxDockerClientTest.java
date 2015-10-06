@@ -7,6 +7,8 @@ import okio.Buffer;
 import okio.BufferedSource;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscriber;
 
@@ -36,6 +38,8 @@ public class RxDockerClientTest {
     private static final String DOCKER_MACHINE_NAME = "rx-docker-test";
     public static final String CONTAINER_NAME = "my_first_container";
     public static final String SECOND_CONTAINER_NAME = "my_second_container";
+
+    private final Logger logger = LoggerFactory.getLogger(RxDockerClientTest.class);
 
     private static DockerClient client;
     private static String dockerHost;
@@ -204,14 +208,39 @@ public class RxDockerClientTest {
         assertTrue(Files.newDirectoryStream(pathToExportTo, p -> p.toFile().isFile()).iterator().hasNext());
     }
 
-    //    @Test
+    @Test
     public void shouldShowContainerStats() throws Exception {
-        DockerContainerResponse response = createContainer("rx-docker-client-test-17");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
         String containerId = response.getId();
         client.startContainer(containerId);
-        ContainerStats containerStats = client.containerStats(containerId);
-        System.out.println(containerStats);
-        assertNotNull(containerStats);
+        Observable<ContainerStats> containerStatsObservable = client.containerStatsObs(containerId);
+        Subscriber<ContainerStats> containerStatsSubscriber = new Subscriber<ContainerStats>() {
+
+            @Override
+            public void onCompleted() {
+                logger.info("Successfully received all the container stats for container with id {}", containerId);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                logger.error("Error encountered while processing container stats for container with id {}", containerId);
+            }
+
+            @Override
+            public void onNext(ContainerStats msg) {
+                logger.info("Received a new message for container '{}'", containerId);
+                assertNotNull(msg);
+            }
+        };
+
+        Observable.timer(5, TimeUnit.SECONDS).forEach(t -> {
+            logger.info("Unsubscribing subscriber...");
+            containerStatsSubscriber.unsubscribe();
+            logger.info("Unsubscribed subscriber...");
+        });
+
+        containerStatsObservable.subscribe(containerStatsSubscriber);
+        containerStatsSubscriber.unsubscribe();
     }
 
     //    @Test
