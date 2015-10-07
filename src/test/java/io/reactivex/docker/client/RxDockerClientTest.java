@@ -1,10 +1,6 @@
 package io.reactivex.docker.client;
 
-import com.squareup.okhttp.*;
 import io.reactivex.docker.client.representations.*;
-import io.reactivex.docker.client.ssl.DockerCertificates;
-import okio.Buffer;
-import okio.BufferedSource;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
@@ -13,7 +9,6 @@ import rx.Observable;
 import rx.Subscriber;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -240,88 +235,12 @@ public class RxDockerClientTest {
         });
 
         containerStatsObservable.subscribe(containerStatsSubscriber);
-        containerStatsSubscriber.unsubscribe();
     }
 
-    //    @Test
-    public void shouldPullImageFromDockerRegistry() throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        client.setReadTimeout(2, TimeUnit.MINUTES);
-        client.setSslSocketFactory(new DockerCertificates(Paths.get("/Users/shekhargulati/.docker/machine/machines/rx-docker-test")).sslContext().getSocketFactory());
-        Request request = new Request.Builder()
-                .url("https://192.168.99.100:2376/images/create?fromImage=busybox")
-                .header("Content-Type", "application/json").post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "")).build();
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Request request, IOException e) {
-                System.out.println("Encountered failure >> " + e.getMessage());
-                e.printStackTrace();
-            }
-
-            @Override
-            public void onResponse(Response response) throws IOException {
-                System.out.println(response.headers());
-                System.out.println(response.body().string());
-            }
-        });
-
-        Thread.sleep(60000);
-    }
-
-    //    @Test
-    public void pullImage() throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        client.setReadTimeout(2, TimeUnit.MINUTES);
-        client.setSslSocketFactory(new DockerCertificates(Paths.get("/Users/shekhargulati/.docker/machine/machines/rx-docker-test")).sslContext().getSocketFactory());
-        Observable<Buffer> pullImageObservable = Observable.create(sub -> {
-            Request request = new Request.Builder()
-                    .url("https://192.168.99.100:2376/images/create?fromImage=busybox")
-                    .header("Content-Type", "application/json")
-                    .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), ""))
-                    .build();
-            Call call = client.newCall(request);
-            try {
-                System.out.println("Making a response to fetch an image");
-                Response response = call.execute();
-                System.out.println(response.headers());
-                if (response.isSuccessful()) {
-                    System.out.println("Downloading chunk");
-                    BufferedSource source = response.body().source();
-                    while (!source.exhausted()) {
-                        sub.onNext(source.buffer());
-                    }
-                    sub.onCompleted();
-                } else {
-                    sub.onError(new RuntimeException(String.format("Unable to complete request %d and message %s", response.code(), response.message())));
-                }
-            } catch (IOException e) {
-                sub.onError(e);
-            }
-
-        });
-
-        Subscriber<Buffer> httpSubscriber = new Subscriber<Buffer>() {
-            @Override
-            public void onCompleted() {
-                System.out.println("Successfully recieved all data");
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                System.out.println("Error encountered >> " + e);
-                e.printStackTrace();
-            }
-
-            @Override
-            public void onNext(Buffer res) {
-                System.out.println("Received message >> " + res.readString(Charset.defaultCharset()));
-            }
-        };
-
-        pullImageObservable.subscribe(httpSubscriber);
-        httpSubscriber.unsubscribe();
-
-
+    @Test
+    public void shouldPullImageFromDockerHub() throws Exception {
+        HttpStatus status = client.pullImage("busybox");
+        assertThat(status.code(), equalTo(200));
     }
 
     @Ignore

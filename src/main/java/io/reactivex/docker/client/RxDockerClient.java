@@ -301,15 +301,19 @@ class RxDockerClient implements DockerClient {
     }
 
     @Override
-    public HttpStatus pullImage(final String fromImage) {
-        return null;
+    public Observable<Buffer> pullImageObs(final String fromImage) {
+        final String endpoint = String.format("%s?fromImage=%s", IMAGE_CREATE_ENDPOINT, fromImage);
+        return httpClient.postBuffer(endpoint, EMPTY_BODY);
     }
 
     @Override
-    public Observable<HttpStatus> pullImageObs(final String fromImage) {
-        return null;
+    public HttpStatus pullImage(final String fromImage) {
+        Observable<Buffer> imageObs = pullImageObs(fromImage);
+        HttpStatusBufferSubscriber subscriber = new HttpStatusBufferSubscriber();
+        imageObs.subscribe(subscriber);
+        subscriber.unsubscribe();
+        return subscriber.getStatus();
     }
-
 
     private String toRestEndpoint(String endpoint, String containerId, String... queryParameters) {
         String baseUrl = String.format(endpoint, containerId);

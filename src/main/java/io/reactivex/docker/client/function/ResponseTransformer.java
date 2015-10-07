@@ -13,7 +13,7 @@ public interface ResponseTransformer<R> extends IoFunction<Response, R> {
     }
 
     static ResponseTransformer<HttpStatus> httpStatus() {
-        return response -> new HttpStatus(response.code(), response.message());
+        return response -> HttpStatus.of(response.code(), response.message());
     }
 
     static <T> ResponseTransformer<T> fromBody(final ResponseBodyTransformer<T> bodyTransformer) {

@@ -56,7 +56,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                         subscriber.onCompleted();
                     }
                 } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message())));
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                 }
             } catch (IOException e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
@@ -84,7 +84,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                         subscriber.onCompleted();
                     }
                 } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message())));
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                 }
             } catch (IOException e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
@@ -114,7 +114,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                 } else if (response.isSuccessful() && subscriber.isUnsubscribed()) {
                     subscriber.onCompleted();
                 } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message())));
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                 }
             } catch (IOException e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
@@ -143,11 +143,11 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                 logger.info("Making POST request to {}", url);
                 Call call = client.newCall(getRequest);
                 Response response = call.execute();
-                if (response.isSuccessful()) {
+                if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
                     subscriber.onNext(transformer.apply(response));
                     subscriber.onCompleted();
                 } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message())));
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                 }
             } catch (IOException e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
@@ -172,6 +172,44 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     }
 
     @Override
+    public Observable<Buffer> postBuffer(final String endpoint) {
+        return postBuffer(endpoint, EMPTY_BODY);
+    }
+
+    @Override
+    public Observable<Buffer> postBuffer(final String endpoint, final String postBody) {
+        return Observable.create(subscriber -> {
+            try {
+                RequestBody requestBody = RequestBody.create(JSON, postBody);
+                final String url = String.format("%s/%s", apiUri, endpoint);
+                Request getRequest = new Request.Builder()
+                        .header("Content-Type", "application/json")
+                        .url(url)
+                        .post(requestBody)
+                        .build();
+                logger.info("Making POST request to {}", url);
+                Call call = client.newCall(getRequest);
+                Response response = call.execute();
+                logger.info("Received response >> {} with headers >> {}", response.code(), response.headers());
+                if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
+                    try (ResponseBody body = response.body()) {
+                        BufferedSource source = body.source();
+                        while (!source.exhausted() && !subscriber.isUnsubscribed()) {
+                            subscriber.onNext(source.buffer());
+                        }
+                        subscriber.onCompleted();
+                    }
+                } else {
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                }
+            } catch (IOException e) {
+                logger.error("Encountered error while making {} call", endpoint, e);
+                subscriber.onError(new RestServiceCommunicationException(e));
+            }
+        });
+    }
+
+    @Override
     public Observable<HttpStatus> delete(String endpoint) {
         return Observable.create(subscriber -> {
             try {
@@ -185,10 +223,10 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                 Call call = client.newCall(deleteRequest);
                 Response response = call.execute();
                 if (response.isSuccessful()) {
-                    subscriber.onNext(new HttpStatus(response.code(), response.message()));
+                    subscriber.onNext(HttpStatus.of(response.code(), response.message()));
                     subscriber.onCompleted();
                 } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message())));
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                 }
             } catch (IOException e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
