@@ -7,6 +7,7 @@ import io.reactivex.docker.client.function.ResponseBodyTransformer;
 import io.reactivex.docker.client.function.ResponseTransformer;
 import io.reactivex.docker.client.ssl.DockerCertificates;
 import okio.Buffer;
+import okio.BufferedSink;
 import okio.BufferedSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ import rx.Observable;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static io.reactivex.docker.client.function.ResponseTransformer.httpStatus;
 
@@ -23,6 +25,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     private final Logger logger = LoggerFactory.getLogger(OkHttpBasedRxHttpClient.class);
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    public static final MediaType OCTET = MediaType.parse("application/octet-stream; charset=utf-8");
 
     private final OkHttpClient client = new OkHttpClient();
     private final String apiUri;
@@ -38,6 +41,9 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
         if (certPath.isPresent()) {
             client.setSslSocketFactory(new DockerCertificates(Paths.get(certPath.get())).sslContext().getSocketFactory());
         }
+        client.setFollowRedirects(true);
+        client.setFollowSslRedirects(true);
+        client.setReadTimeout(0, TimeUnit.HOURS);
     }
 
     @Override
@@ -180,7 +186,17 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     public Observable<Buffer> postBuffer(final String endpoint, final String postBody) {
         return Observable.create(subscriber -> {
             try {
-                RequestBody requestBody = RequestBody.create(JSON, postBody);
+                RequestBody requestBody = new RequestBody() {
+                    @Override
+                    public MediaType contentType() {
+                        return OCTET;
+                    }
+
+                    @Override
+                    public void writeTo(BufferedSink sink) throws IOException {
+                        logger.info("inside request body");
+                    }
+                };
                 final String url = String.format("%s/%s", apiUri, endpoint);
                 Request getRequest = new Request.Builder()
                         .header("Content-Type", "application/json")
@@ -202,7 +218,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                 } else {
                     subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
                 subscriber.onError(new RestServiceCommunicationException(e));
             }

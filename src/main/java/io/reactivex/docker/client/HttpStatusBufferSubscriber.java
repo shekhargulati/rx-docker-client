@@ -16,7 +16,7 @@ public class HttpStatusBufferSubscriber extends Subscriber<Buffer> {
     @Override
     public void onCompleted() {
         logger.info("Successfully processed all events");
-        status = HttpStatus.NO_CONTENT;
+        status = HttpStatus.OK;
     }
 
     @Override

@@ -240,13 +240,13 @@ public class RxDockerClientTest {
     @Test
     public void shouldPullImageFromDockerHub() throws Exception {
         HttpStatus status = client.pullImage("busybox");
-        assertThat(status.code(), equalTo(200));
+        assertThat(status.code(), equalTo(HttpStatus.OK.code()));
     }
 
     @Test
-    public void shouldPullDebianImageFromDockerHub() throws Exception {
-        HttpStatus status = client.pullImage("debian");
-        assertThat(status.code(), equalTo(200));
+    public void shouldPullHelloWorldImageFromDockerHub() throws Exception {
+        HttpStatus status = client.pullImage("hello-world:latest");
+        assertThat(status.code(), equalTo(HttpStatus.OK.code()));
     }
 
     @Ignore
