@@ -189,20 +189,29 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                         .build();
                 logger.info("Making POST request to {}", url);
                 Call call = client.newCall(getRequest);
-                Response response = call.execute();
-                logger.info("Received response >> {} with headers >> {}", response.code(), response.headers());
-                if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
-                    try (ResponseBody body = response.body()) {
-                        BufferedSource source = body.source();
-                        while (!source.exhausted() && !subscriber.isUnsubscribed()) {
-                            subscriber.onNext(source.buffer());
-                        }
-                        subscriber.onCompleted();
+                call.enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Request request, IOException e) {
+                        subscriber.onError(new RestServiceCommunicationException(e));
                     }
-                } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
-                }
-            } catch (IOException e) {
+
+                    @Override
+                    public void onResponse(Response response) throws IOException {
+                        logger.info("Received response >> {} with headers >> {}", response.code(), response.headers());
+                        if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
+                            try (ResponseBody body = response.body()) {
+                                BufferedSource source = body.source();
+                                while (!source.exhausted() && !subscriber.isUnsubscribed()) {
+                                    subscriber.onNext(source.buffer());
+                                }
+                                subscriber.onCompleted();
+                            }
+                        } else {
+                            subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                        }
+                    }
+                });
+            } catch (Exception e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
                 subscriber.onError(new RestServiceCommunicationException(e));
             }

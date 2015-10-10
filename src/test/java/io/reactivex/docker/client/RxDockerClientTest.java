@@ -243,6 +243,12 @@ public class RxDockerClientTest {
         assertThat(status.code(), equalTo(200));
     }
 
+    @Test
+    public void shouldPullDebianImageFromDockerHub() throws Exception {
+        HttpStatus status = client.pullImage("debian");
+        assertThat(status.code(), equalTo(200));
+    }
+
     @Ignore
     public void shouldListProcessesRunningInsideContainer() throws Exception {
         DockerContainerResponse response = createContainer("rx-docker-client-test-X");

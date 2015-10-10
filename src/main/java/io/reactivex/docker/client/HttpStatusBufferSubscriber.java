@@ -11,11 +11,12 @@ public class HttpStatusBufferSubscriber extends Subscriber<Buffer> {
 
     private final Logger logger = LoggerFactory.getLogger(HttpStatusBufferSubscriber.class);
 
-    private HttpStatus status = HttpStatus.OK;
+    private HttpStatus status = null;
 
     @Override
     public void onCompleted() {
         logger.info("Successfully processed all events");
+        status = HttpStatus.NO_CONTENT;
     }
 
     @Override
