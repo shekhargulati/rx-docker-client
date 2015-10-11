@@ -132,7 +132,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
 
     @Override
     public Observable<String> get(final String endpointPath) {
-        return get(endpointPath, JsonTransformer.identity());
+        return get(endpointPath, JsonTransformer.identityOp());
     }
 
     @Override
