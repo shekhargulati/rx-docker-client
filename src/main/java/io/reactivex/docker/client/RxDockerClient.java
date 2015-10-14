@@ -311,21 +311,32 @@ class RxDockerClient implements DockerClient {
     }
 
     @Override
-    public Observable<Buffer> pullImageObs(final String fromImage) {
-        validate(fromImage, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
-        final String endpoint = String.format("%s?fromImage=%s", IMAGE_CREATE_ENDPOINT, fromImage);
-        return httpClient.postBuffer(endpoint, EMPTY_BODY);
+    public HttpStatus pullImage(final String fromImage) {
+        return pullImage(fromImage, Optional.empty(), Optional.empty());
     }
 
     @Override
-    public HttpStatus pullImage(final String fromImage) {
-        Observable<Buffer> imageObs = pullImageObs(fromImage);
+    public HttpStatus pullImage(final String fromImage, final String tag) {
+        return pullImage(fromImage, null, tag);
+    }
+
+    @Override
+    public HttpStatus pullImage(final String fromImage, final String user, final String tag) {
+        return pullImage(fromImage, Optional.ofNullable(user), Optional.ofNullable(tag));
+    }
+
+    private HttpStatus pullImage(final String fromImage, final Optional<String> user, final Optional<String> tag) {
+        Observable<Buffer> imageObs = pullImageObs(fromImage, user, tag);
         HttpStatusBufferSubscriber subscriber = new HttpStatusBufferSubscriber();
         imageObs.subscribe(subscriber);
         subscriber.unsubscribe();
         return subscriber.getStatus();
     }
 
+    @Override
+    public Observable<Buffer> pullImageObs(final String fromImage, final Optional<String> user, final Optional<String> tag) {
+        validate(fromImage, Strings::isEmptyOrNull, () -> "fromImage can't be null or empty.");
+        final String endpoint = String.format(IMAGE_CREATE_ENDPOINT, user.map(u -> u + "/").orElse(""), fromImage, tag.orElse("latest"));
+        return httpClient.postBuffer(endpoint, EMPTY_BODY);
+    }
 }
-
-

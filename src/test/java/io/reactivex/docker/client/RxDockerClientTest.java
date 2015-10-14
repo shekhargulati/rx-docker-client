@@ -244,8 +244,14 @@ public class RxDockerClientTest {
     }
 
     @Test
-    public void shouldPullHelloWorldImageFromDockerHub() throws Exception {
-        HttpStatus status = client.pullImage("hello-world:latest");
+    public void shouldPullLatestTagOfHelloWorldImageFromDockerHub() throws Exception {
+        HttpStatus status = client.pullImage("hello-world", "latest");
+        assertThat(status.code(), equalTo(HttpStatus.OK.code()));
+    }
+
+    @Test
+    public void shouldPullLatestTagOfOpenShiftHelloImageFromDockerHub() throws Exception {
+        HttpStatus status = client.pullImage("hello-openshift", "openshift", "latest");
         assertThat(status.code(), equalTo(HttpStatus.OK.code()));
     }
 
