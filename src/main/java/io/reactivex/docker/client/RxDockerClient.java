@@ -184,6 +184,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> stopContainerObs(final String containerId, final int waitInSecs) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_STOP_ENDPOINT, containerId) + "?t=" + waitInSecs;
         return httpClient.post(uri, EMPTY_BODY, httpStatus());
     }
@@ -195,6 +196,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> restartContainerObs(final String containerId, final int waitInSecs) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_RESTART_ENDPOINT, containerId) + "?t=" + waitInSecs;
         return httpClient.post(uri, EMPTY_BODY, httpStatus());
     }
@@ -206,6 +208,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> killRunningContainerObs(final String containerId) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_KILL_ENDPOINT, containerId);
         return httpClient.post(uri, EMPTY_BODY, httpStatus());
     }
@@ -217,6 +220,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public HttpStatus removeContainer(final String containerId, final boolean removeVolume, final boolean force) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         return removeContainerObs(containerId, removeVolume, force).toBlocking().single();
     }
 
@@ -227,6 +231,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> removeContainerObs(final String containerId, final boolean removeVolume, final boolean force) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_REMOVE_ENDPOINT, containerId) + "?v=" + removeVolume + "&force=" + force;
         return httpClient.delete(uri);
     }
@@ -238,6 +243,8 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> renameContainerObs(final String containerId, final String newName) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(newName, Strings::isEmptyOrNull, () -> "Please provide newName that you want't to use for container.");
         final String uri = String.format(CONTAINER_RENAME_ENDPOINT, containerId) + "?name=" + newName;
         return httpClient.post(uri, EMPTY_BODY, httpStatus());
     }
@@ -249,12 +256,14 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> waitContainerObs(final String containerId) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_WAIT_ENDPOINT, containerId);
         return httpClient.post(uri, EMPTY_BODY, httpStatus());
     }
 
     @Override
     public void exportContainer(final String containerId, final Path pathToExportTo) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_EXPORT_ENDPOINT, containerId);
         Observable<Buffer> bufferStream = httpClient.getBuffer(endpointUri);
 
@@ -295,6 +304,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<ContainerStats> containerStatsObs(final String containerId) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_STATS_ENDPOINT, containerId);
         return httpClient.getBuffer(endpointUri,
                 buffer -> gson.fromJson(buffer.readUtf8(), ContainerStats.class));
@@ -302,6 +312,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<Buffer> pullImageObs(final String fromImage) {
+        validate(fromImage, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpoint = String.format("%s?fromImage=%s", IMAGE_CREATE_ENDPOINT, fromImage);
         return httpClient.postBuffer(endpoint, EMPTY_BODY);
     }
@@ -313,17 +324,6 @@ class RxDockerClient implements DockerClient {
         imageObs.subscribe(subscriber);
         subscriber.unsubscribe();
         return subscriber.getStatus();
-    }
-
-    private String toRestEndpoint(String endpoint, String containerId, String... queryParameters) {
-        String baseUrl = String.format(endpoint, containerId);
-        if (queryParameters == null || queryParameters.length == 0) {
-            logger.info("Making request to {}", baseUrl);
-            return baseUrl;
-        }
-        String uri = String.format("%s?%s", baseUrl, String.join("&", queryParameters));
-        logger.info("Making request to {}", uri);
-        return uri;
     }
 
 }
