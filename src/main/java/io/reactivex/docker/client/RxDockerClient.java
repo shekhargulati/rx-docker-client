@@ -276,7 +276,7 @@ class RxDockerClient implements DockerClient {
                     try {
                         logger.info("Exporting to path {}", exportFilePath);
                         final byte[] buffer = new byte[1024];
-                        int n = 0;
+                        int n;
                         while (-1 != (n = res.read(buffer))) {
                             out.write(buffer, 0, n);
                         }
