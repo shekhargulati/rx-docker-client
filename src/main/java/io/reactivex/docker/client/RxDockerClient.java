@@ -21,6 +21,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
+import static io.reactivex.docker.client.ImageListQueryParameters.allImages;
+import static io.reactivex.docker.client.ImageListQueryParameters.queryParameterWithImageName;
 import static io.reactivex.docker.client.QueryParametersBuilder.defaultQueryParameters;
 import static io.reactivex.docker.client.function.ResponseTransformer.httpStatus;
 import static io.reactivex.docker.client.utils.Dates.DOCKER_DATE_TIME_FORMAT;
@@ -116,8 +118,8 @@ class RxDockerClient implements DockerClient {
     @Override
     public Observable<List<DockerContainer>> listContainersObs(QueryParameters queryParameters) {
         final String query = queryParameters.toQuery();
-        String url = String.format(CONTAINER_ENDPOINT, query);
-        return httpClient.get(url,
+        final String endpoint = String.format(CONTAINER_ENDPOINT, query);
+        return httpClient.get(endpoint,
                 json -> gson.fromJson(json, new TypeToken<List<DockerContainer>>() {
                 }.getType()));
     }
@@ -343,18 +345,32 @@ class RxDockerClient implements DockerClient {
     }
 
     @Override
-    public Stream<DockerImage> listImages() {
-        return iteratorToStream(listImagesObs().toBlocking().getIterator());
+    public Stream<DockerImage> listAllImages() {
+        return listImages(allImages());
     }
 
     @Override
-    public Observable<DockerImage> listImagesObs() {
-        final String endpoint = String.format(IMAGE_LIST_ENDPOINT);
+    public Stream<DockerImage> listImages(final String imageName) {
+        return listImages(queryParameterWithImageName(imageName));
+    }
+
+    @Override
+    public Stream<DockerImage> listImages() {
+        return listImages(ImageListQueryParameters.defaultQueryParameters());
+    }
+
+    @Override
+    public Stream<DockerImage> listImages(ImageListQueryParameters queryParameters) {
+        return iteratorToStream(listImagesObs(queryParameters).toBlocking().getIterator());
+    }
+
+    @Override
+    public Observable<DockerImage> listImagesObs(ImageListQueryParameters queryParameters) {
+        final String endpoint = IMAGE_LIST_ENDPOINT + queryParameters.toQuery();
         Observable<List<DockerImage>> observable = httpClient.get(endpoint,
                 json -> gson.fromJson(json, new TypeToken<List<DockerImage>>() {
                 }.getType()));
 
         return observable.flatMap(xs -> Observable.from(xs));
-
     }
 }

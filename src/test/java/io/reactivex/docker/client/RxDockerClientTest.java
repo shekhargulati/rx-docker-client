@@ -1,8 +1,10 @@
 package io.reactivex.docker.client;
 
 import io.reactivex.docker.client.representations.*;
-import org.hamcrest.Matchers;
-import org.junit.*;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +41,6 @@ public class RxDockerClientTest {
     private final Logger logger = LoggerFactory.getLogger(RxDockerClientTest.class);
 
     private static DockerClient client;
-    private static String dockerHost;
     private static Map<String, String> dockerConfiguration;
 
     @Rule
@@ -52,7 +53,7 @@ public class RxDockerClientTest {
         createAndWaitForProcessExecution(new String[]{"docker-machine", "start", DOCKER_MACHINE_NAME});
         createAndWaitForProcessExecution(new String[]{"docker-machine", "env", DOCKER_MACHINE_NAME});
         readOutputFileAndSetDockerProperties();
-        dockerHost = dockerConfiguration.get("DOCKER_HOST");
+        String dockerHost = dockerConfiguration.get("DOCKER_HOST");
         client = DockerClient.newDockerClient(dockerHost, dockerConfiguration.get("DOCKER_CERT_PATH"));
 
     }
@@ -259,19 +260,22 @@ public class RxDockerClientTest {
 
 
     @Test
-    public void shouldListAllImagesInLocalRepository() throws Exception {
+    public void shouldListImagesInLocalRepository() throws Exception {
         Stream<DockerImage> images = client.listImages();
-        assertThat(images.count(), Matchers.is(greaterThan(0L)));
+        assertThat(images.count(), is(greaterThan(0L)));
     }
 
-    @Ignore
-    public void shouldListProcessesRunningInsideContainer() throws Exception {
-        DockerContainerResponse response = createContainer("rx-docker-client-test-X");
-        client.startContainer(response.getId());
-        ProcessListResponse processListResponse = client.listProcesses(response.getId());
-        assertNotNull(processListResponse);
+    @Test
+    public void shouldListAllImages() throws Exception {
+        Stream<DockerImage> images = client.listAllImages();
+        assertThat(images.count(), is(greaterThan(0L)));
     }
 
+    @Test
+    public void shouldListImageByName() throws Exception {
+        Stream<DockerImage> images = client.listImages("busybox");
+        assertThat(images.count(), is(equalTo(7L)));
+    }
 
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()

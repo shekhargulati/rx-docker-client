@@ -21,7 +21,13 @@ public interface ImageOperations {
 
     HttpStatus pullImage(String fromImage);
 
-    Stream<DockerImage> listImages();
+    Stream<DockerImage> listImages(ImageListQueryParameters queryParameters);
 
-    Observable<DockerImage> listImagesObs();
+    Observable<DockerImage> listImagesObs(ImageListQueryParameters queryParameters);
+
+    Stream<DockerImage> listAllImages();
+
+    Stream<DockerImage> listImages(String imageName);
+
+    Stream<DockerImage> listImages();
 }
