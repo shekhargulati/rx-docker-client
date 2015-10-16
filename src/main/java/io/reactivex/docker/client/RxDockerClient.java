@@ -18,11 +18,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
 import static io.reactivex.docker.client.QueryParametersBuilder.defaultQueryParameters;
 import static io.reactivex.docker.client.function.ResponseTransformer.httpStatus;
 import static io.reactivex.docker.client.utils.Dates.DOCKER_DATE_TIME_FORMAT;
+import static io.reactivex.docker.client.utils.StreamUtils.iteratorToStream;
 import static io.reactivex.docker.client.utils.Validations.validate;
 
 class RxDockerClient implements DockerClient {
@@ -338,5 +340,21 @@ class RxDockerClient implements DockerClient {
         validate(fromImage, Strings::isEmptyOrNull, () -> "fromImage can't be null or empty.");
         final String endpoint = String.format(IMAGE_CREATE_ENDPOINT, user.map(u -> u + "/").orElse(""), fromImage, tag.orElse("latest"));
         return httpClient.postBuffer(endpoint, EMPTY_BODY);
+    }
+
+    @Override
+    public Stream<DockerImage> listImages() {
+        return iteratorToStream(listImagesObs().toBlocking().getIterator());
+    }
+
+    @Override
+    public Observable<DockerImage> listImagesObs() {
+        final String endpoint = String.format(IMAGE_LIST_ENDPOINT);
+        Observable<List<DockerImage>> observable = httpClient.get(endpoint,
+                json -> gson.fromJson(json, new TypeToken<List<DockerImage>>() {
+                }.getType()));
+
+        return observable.flatMap(xs -> Observable.from(xs));
+
     }
 }

@@ -1,6 +1,7 @@
 package io.reactivex.docker.client;
 
 import io.reactivex.docker.client.representations.*;
+import org.hamcrest.Matchers;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
@@ -17,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -253,6 +255,13 @@ public class RxDockerClientTest {
     public void shouldPullLatestTagOfOpenShiftHelloImageFromDockerHub() throws Exception {
         HttpStatus status = client.pullImage("hello-openshift", "openshift", "latest");
         assertThat(status.code(), equalTo(HttpStatus.OK.code()));
+    }
+
+
+    @Test
+    public void shouldListAllImagesInLocalRepository() throws Exception {
+        Stream<DockerImage> images = client.listImages();
+        assertThat(images.count(), Matchers.is(greaterThan(0L)));
     }
 
     @Ignore
