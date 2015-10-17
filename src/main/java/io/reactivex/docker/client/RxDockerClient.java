@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
-import static io.reactivex.docker.client.ImageListQueryParameters.allImages;
+import static io.reactivex.docker.client.ImageListQueryParameters.allImagesQueryParameters;
 import static io.reactivex.docker.client.ImageListQueryParameters.queryParameterWithImageName;
 import static io.reactivex.docker.client.QueryParametersBuilder.defaultQueryParameters;
 import static io.reactivex.docker.client.function.ResponseTransformer.httpStatus;
@@ -346,12 +346,17 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Stream<DockerImage> listAllImages() {
-        return listImages(allImages());
+        return listImages(allImagesQueryParameters());
     }
 
     @Override
     public Stream<DockerImage> listImages(final String imageName) {
         return listImages(queryParameterWithImageName(imageName));
+    }
+
+    @Override
+    public Stream<DockerImage> listDanglingImages() {
+        return listImages(ImageListQueryParameters.defaultQueryParameters().addFilter("dangling", "true"));
     }
 
     @Override

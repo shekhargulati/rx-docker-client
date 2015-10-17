@@ -277,6 +277,12 @@ public class RxDockerClientTest {
         assertThat(images.count(), is(equalTo(7L)));
     }
 
+    @Test
+    public void shouldListDanglingImages() throws Exception {
+        Stream<DockerImage> images = client.listDanglingImages();
+        images.forEach(System.out::println);
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")

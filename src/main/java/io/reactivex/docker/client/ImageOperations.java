@@ -30,4 +30,6 @@ public interface ImageOperations {
     Stream<DockerImage> listImages(String imageName);
 
     Stream<DockerImage> listImages();
+
+    Stream<DockerImage> listDanglingImages();
 }
