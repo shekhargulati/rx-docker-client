@@ -381,4 +381,26 @@ class RxDockerClient implements DockerClient {
 
         return observable.flatMap(xs -> Observable.from(xs));
     }
+
+    @Override
+    public HttpStatus removeImage(final String imageName, final boolean noPrune, final boolean force) {
+        return removeImageObs(imageName, noPrune, force).toBlocking().first();
+    }
+
+    @Override
+    public HttpStatus removeImage(final String imageName) {
+        return removeImage(imageName, false, false);
+    }
+
+    @Override
+    public Observable<HttpStatus> removeImageObs(final String imageName) {
+        return removeImageObs(imageName, false, false);
+    }
+
+    @Override
+    public Observable<HttpStatus> removeImageObs(final String imageName, final boolean noPrune, final boolean force) {
+        validate(imageName, Strings::isEmptyOrNull, () -> "imageName can't be null or empty.");
+        final String uri = String.format(ImageOperations.IMAGE_REMOVE_ENDPOINT, imageName) + "?noprune=" + noPrune + "&force=" + force;
+        return httpClient.delete(uri);
+    }
 }

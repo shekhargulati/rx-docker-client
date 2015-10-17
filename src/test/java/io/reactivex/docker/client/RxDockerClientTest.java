@@ -284,6 +284,20 @@ public class RxDockerClientTest {
         images.forEach(System.out::println);
     }
 
+    @Test
+    public void shouldRemoveImage() throws Exception {
+        client.pullImage("hello-world", "latest");
+        HttpStatus httpStatus = client.removeImage("hello-world");
+        assertThat(httpStatus.code(), equalTo(200));
+    }
+
+    @Test
+    public void shouldRemoveDanglingImages() throws Exception {
+        client.removeDanglingImages();
+        long count = client.listDanglingImages().count();
+        assertThat(count, equalTo(0L));
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")
