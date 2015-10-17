@@ -298,6 +298,20 @@ public class RxDockerClientTest {
         assertThat(count, equalTo(0L));
     }
 
+    @Test
+    public void shouldSearchImage() throws Exception {
+        Stream<DockerImageInfo> ubuntuImages = client.searchImages("ubuntu");
+        long count = ubuntuImages.count();
+        assertThat(count, greaterThan(0L));
+    }
+
+    @Test
+    public void shouldSearchImageWithPredicate() throws Exception {
+        Stream<DockerImageInfo> ubuntuImages = client.searchImages("ubuntu", image -> image.getStarCount() > 2400 && image.isOfficial());
+        DockerImageInfo officialDockerImage = ubuntuImages.findFirst().get();
+        assertThat(officialDockerImage.getName(), equalTo("ubuntu"));
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")

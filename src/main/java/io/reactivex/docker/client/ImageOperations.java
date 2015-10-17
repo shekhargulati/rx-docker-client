@@ -2,6 +2,7 @@ package io.reactivex.docker.client;
 
 import io.reactivex.docker.client.http_client.HttpStatus;
 import io.reactivex.docker.client.representations.DockerImage;
+import io.reactivex.docker.client.representations.DockerImageInfo;
 import okio.Buffer;
 import rx.Observable;
 
@@ -15,6 +16,7 @@ public interface ImageOperations {
     String IMAGE_CREATE_ENDPOINT = IMAGE_ENDPOINT + "/create?fromImage=%s%s&tag=%s";
     String IMAGE_LIST_ENDPOINT = IMAGE_ENDPOINT + "/json";
     String IMAGE_REMOVE_ENDPOINT = IMAGE_ENDPOINT + "/%s";
+    String IMAGE_SEARCH_ENDPOINT = IMAGE_ENDPOINT + "/search";
 
     Observable<Buffer> pullImageObs(String image, final Optional<String> user, final Optional<String> tag);
 
@@ -61,4 +63,18 @@ public interface ImageOperations {
             removeImage(image.id(), false, true);
         });
     }
+
+    default Stream<DockerImageInfo> searchImages(String searchTerm) {
+        return searchImages(searchTerm, t -> true);
+    }
+
+    Stream<DockerImageInfo> searchImages(String searchTerm, Predicate<DockerImageInfo> predicate);
+
+    default Observable<DockerImageInfo> searchImagesObs(String searchTerm) {
+        return searchImagesObs(searchTerm, t -> true);
+    }
+
+    Observable<DockerImageInfo> searchImagesObs(String searchTerm, Predicate<DockerImageInfo> predicate);
+
+
 }

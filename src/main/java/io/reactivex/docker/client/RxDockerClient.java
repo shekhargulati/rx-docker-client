@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
@@ -379,7 +380,7 @@ class RxDockerClient implements DockerClient {
                 json -> gson.fromJson(json, new TypeToken<List<DockerImage>>() {
                 }.getType()));
 
-        return observable.flatMap(xs -> Observable.from(xs));
+        return observable.flatMap(Observable::from);
     }
 
     @Override
@@ -402,5 +403,20 @@ class RxDockerClient implements DockerClient {
         validate(imageName, Strings::isEmptyOrNull, () -> "imageName can't be null or empty.");
         final String uri = String.format(ImageOperations.IMAGE_REMOVE_ENDPOINT, imageName) + "?noprune=" + noPrune + "&force=" + force;
         return httpClient.delete(uri);
+    }
+
+    @Override
+    public Stream<DockerImageInfo> searchImages(final String searchTerm, Predicate<DockerImageInfo> predicate) {
+        return iteratorToStream(searchImagesObs(searchTerm, predicate).toBlocking().getIterator());
+    }
+
+    @Override
+    public Observable<DockerImageInfo> searchImagesObs(final String searchTerm, Predicate<DockerImageInfo> predicate) {
+        validate(searchTerm, Strings::isEmptyOrNull, () -> "searchTerm can't be null or empty.");
+        final String endpoint = String.format("%s?term=%s", ImageOperations.IMAGE_SEARCH_ENDPOINT, searchTerm);
+        Observable<List<DockerImageInfo>> observable = httpClient.get(endpoint,
+                json -> gson.fromJson(json, new TypeToken<List<DockerImageInfo>>() {
+                }.getType()));
+        return observable.flatMap(Observable::from).filter(predicate::test);
     }
 }
