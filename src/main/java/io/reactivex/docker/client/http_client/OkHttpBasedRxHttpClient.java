@@ -1,4 +1,4 @@
-package io.reactivex.docker.client;
+package io.reactivex.docker.client.http_client;
 
 import com.squareup.okhttp.*;
 import io.reactivex.docker.client.function.BufferTransformer;

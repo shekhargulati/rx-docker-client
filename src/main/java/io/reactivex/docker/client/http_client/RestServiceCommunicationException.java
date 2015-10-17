@@ -1,4 +1,4 @@
-package io.reactivex.docker.client;
+package io.reactivex.docker.client.http_client;
 
 public class RestServiceCommunicationException extends RuntimeException {
 

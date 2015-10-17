@@ -1,6 +1,6 @@
 package io.reactivex.docker.client.function;
 
-import io.reactivex.docker.client.HttpStatus;
+import io.reactivex.docker.client.http_client.HttpStatus;
 import rx.Observable;
 
 import java.util.function.BiFunction;

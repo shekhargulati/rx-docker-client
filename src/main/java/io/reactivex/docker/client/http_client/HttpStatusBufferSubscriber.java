@@ -1,4 +1,4 @@
-package io.reactivex.docker.client;
+package io.reactivex.docker.client.http_client;
 
 import okio.Buffer;
 import org.slf4j.Logger;

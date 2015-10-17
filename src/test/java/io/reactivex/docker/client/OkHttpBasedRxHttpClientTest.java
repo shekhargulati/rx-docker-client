@@ -1,6 +1,7 @@
 package io.reactivex.docker.client;
 
 import com.google.gson.Gson;
+import io.reactivex.docker.client.http_client.RxHttpClient;
 import io.reactivex.docker.client.representations.DockerVersion;
 import org.junit.Test;
 import rx.Observable;

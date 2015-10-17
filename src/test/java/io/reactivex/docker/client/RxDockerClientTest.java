@@ -1,5 +1,6 @@
 package io.reactivex.docker.client;
 
+import io.reactivex.docker.client.http_client.HttpStatus;
 import io.reactivex.docker.client.representations.*;
 import org.junit.After;
 import org.junit.BeforeClass;

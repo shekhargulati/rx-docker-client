@@ -2,7 +2,7 @@ package io.reactivex.docker.client.function;
 
 import com.squareup.okhttp.Response;
 import com.squareup.okhttp.ResponseBody;
-import io.reactivex.docker.client.HttpStatus;
+import io.reactivex.docker.client.http_client.HttpStatus;
 
 import java.io.IOException;
 
