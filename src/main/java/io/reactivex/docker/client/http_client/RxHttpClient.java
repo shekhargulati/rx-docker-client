@@ -7,6 +7,7 @@ import io.reactivex.docker.client.function.ResponseTransformer;
 import okio.Buffer;
 import rx.Observable;
 
+import java.nio.file.Path;
 import java.util.Optional;
 
 public interface RxHttpClient {
@@ -23,7 +24,7 @@ public interface RxHttpClient {
 
     <R> Observable<R> get(String endpointPath, JsonTransformer<R> transformer);
 
-    Observable<Buffer> getBuffer(String endpoint);
+    Observable<Buffer> getAsBuffer(String endpoint);
 
     <T> Observable<T> getBuffer(String endpoint, BufferTransformer<T> transformer);
 
@@ -42,4 +43,6 @@ public interface RxHttpClient {
     Observable<Buffer> postBuffer(String endpoint, String postBody);
 
     Observable<HttpStatus> delete(final String endpoint);
+
+    public <R> Observable<R> postTarStream(final String endpoint, final Path pathToTarArchive, final BufferTransformer<R> transformer);
 }

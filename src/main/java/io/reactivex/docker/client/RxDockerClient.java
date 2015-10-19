@@ -18,6 +18,7 @@ import rx.Subscriber;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -273,7 +274,7 @@ class RxDockerClient implements DockerClient {
     public void exportContainer(final String containerId, final Path pathToExportTo) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_EXPORT_ENDPOINT, containerId);
-        Observable<Buffer> bufferStream = httpClient.getBuffer(endpointUri);
+        Observable<Buffer> bufferStream = httpClient.getAsBuffer(endpointUri);
 
         String exportFilePath = pathToExportTo.toString() + "/" + containerId + ".tar";
         try (FileOutputStream out = new FileOutputStream(exportFilePath)) {
@@ -401,8 +402,8 @@ class RxDockerClient implements DockerClient {
     @Override
     public Observable<HttpStatus> removeImageObs(final String imageName, final boolean noPrune, final boolean force) {
         validate(imageName, Strings::isEmptyOrNull, () -> "imageName can't be null or empty.");
-        final String uri = String.format(ImageOperations.IMAGE_REMOVE_ENDPOINT, imageName) + "?noprune=" + noPrune + "&force=" + force;
-        return httpClient.delete(uri);
+        final String endpoint = new StringBuilder().append(String.format(IMAGE_REMOVE_ENDPOINT, imageName)).append("?noprune=").append(noPrune).append("&force=").append(force).toString();
+        return httpClient.delete(endpoint);
     }
 
     @Override
@@ -413,10 +414,19 @@ class RxDockerClient implements DockerClient {
     @Override
     public Observable<DockerImageInfo> searchImagesObs(final String searchTerm, Predicate<DockerImageInfo> predicate) {
         validate(searchTerm, Strings::isEmptyOrNull, () -> "searchTerm can't be null or empty.");
-        final String endpoint = String.format("%s?term=%s", ImageOperations.IMAGE_SEARCH_ENDPOINT, searchTerm);
+        final String endpoint = String.format("%s?term=%s", IMAGE_SEARCH_ENDPOINT, searchTerm);
         Observable<List<DockerImageInfo>> observable = httpClient.get(endpoint,
                 json -> gson.fromJson(json, new TypeToken<List<DockerImageInfo>>() {
                 }.getType()));
         return observable.flatMap(Observable::from).filter(predicate::test);
     }
+
+    @Override
+    public Observable<String> buildImageObs(final String repositoryName, final Path pathToTarArchive) {
+        validate(pathToTarArchive, path -> path == null, () -> "path to archive can't be null");
+        validate(pathToTarArchive, path -> !path.toFile().exists(), () -> String.format("%s can't be resolved to a tar file", pathToTarArchive.toAbsolutePath().toString()));
+        final String endpoint = String.format("%s?t=%s", IMAGE_BUILD_ENDPOINT, repositoryName);
+        return httpClient.postTarStream(endpoint, pathToTarArchive, buf -> buf.readString(Charset.defaultCharset()));
+    }
+
 }

@@ -312,6 +312,14 @@ public class RxDockerClientTest {
         assertThat(officialDockerImage.getName(), equalTo("ubuntu"));
     }
 
+    @Test
+    public void shouldBuildImageFromTarWithOnlyDockerFile() throws Exception {
+        Observable<String> buildImageObs = client.buildImageObs("shekhargulati/my_first_docker_image", Paths.get("src", "test", "resources", "images", "my_docker_container.tar"));
+        final StringBuilder resultCapturer = new StringBuilder();
+        buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
+        assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")

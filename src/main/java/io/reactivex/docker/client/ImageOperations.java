@@ -6,6 +6,7 @@ import io.reactivex.docker.client.representations.DockerImageInfo;
 import okio.Buffer;
 import rx.Observable;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -17,6 +18,7 @@ public interface ImageOperations {
     String IMAGE_LIST_ENDPOINT = IMAGE_ENDPOINT + "/json";
     String IMAGE_REMOVE_ENDPOINT = IMAGE_ENDPOINT + "/%s";
     String IMAGE_SEARCH_ENDPOINT = IMAGE_ENDPOINT + "/search";
+    String IMAGE_BUILD_ENDPOINT = "build";
 
     Observable<Buffer> pullImageObs(String image, final Optional<String> user, final Optional<String> tag);
 
@@ -76,5 +78,6 @@ public interface ImageOperations {
 
     Observable<DockerImageInfo> searchImagesObs(String searchTerm, Predicate<DockerImageInfo> predicate);
 
+    public Observable<String> buildImageObs(final String repositoryName, final Path pathToTarArchive);
 
 }
