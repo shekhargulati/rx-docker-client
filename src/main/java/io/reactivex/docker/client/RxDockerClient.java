@@ -441,4 +441,20 @@ class RxDockerClient implements DockerClient {
         return httpClient.post(endpoint);
     }
 
+    @Override
+    public Stream<DockerImageHistory> imageHistory(final String image) {
+        return iteratorToStream(imageHistoryObs(image).toBlocking().getIterator());
+    }
+
+    @Override
+    public Observable<DockerImageHistory> imageHistoryObs(final String image) {
+        validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
+        final String endpoint = String.format(IMAGE_HISTORY_ENDPOINT, image);
+        Observable<List<DockerImageHistory>> observable = httpClient.get(endpoint,
+                json -> gson.fromJson(json, new TypeToken<List<DockerImageHistory>>() {
+                }.getType()));
+
+        return observable.flatMap(Observable::from);
+    }
+
 }

@@ -330,6 +330,17 @@ public class RxDockerClientTest {
         assertThat(httpStatus.code(), equalTo(201));
     }
 
+    @Test
+    public void shouldShowHistoryOfImage() throws Exception {
+        String image = "test_rx_docker/my_hello_world_image";
+        Observable<String> buildImageObs = client.buildImageObs(image, Paths.get("src", "test", "resources", "images", "my_hello_world_image.tar"));
+        buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> System.out.println("Completed!!!"));
+
+        Stream<DockerImageHistory> dockerImageHistoryStream = client.imageHistory(image);
+        long historyCount = dockerImageHistoryStream.count();
+        assertThat(historyCount, greaterThan(1L));
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")

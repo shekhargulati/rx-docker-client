@@ -2,6 +2,7 @@ package io.reactivex.docker.client;
 
 import io.reactivex.docker.client.http_client.HttpStatus;
 import io.reactivex.docker.client.representations.DockerImage;
+import io.reactivex.docker.client.representations.DockerImageHistory;
 import io.reactivex.docker.client.representations.DockerImageInfo;
 import okio.Buffer;
 import rx.Observable;
@@ -20,6 +21,7 @@ public interface ImageOperations {
     String IMAGE_SEARCH_ENDPOINT = IMAGE_ENDPOINT + "/search";
     String IMAGE_BUILD_ENDPOINT = "build";
     String IMAGE_TAG_ENDPOINT = IMAGE_ENDPOINT + "/%s/tag";
+    String IMAGE_HISTORY_ENDPOINT = IMAGE_ENDPOINT + "/%s/history";
 
     Observable<Buffer> pullImageObs(String image, final Optional<String> user, final Optional<String> tag);
 
@@ -55,7 +57,7 @@ public interface ImageOperations {
 
     default void removeImages(Predicate<DockerImage> predicate) {
         listAllImages().filter(predicate).forEach(image -> {
-            System.out.println(String.format("Deleting image with id %s", image.id()));
+            System.out.println(String.format("Deleting image with tag %s", image.repoTags()));
             removeImage(image.id(), false, true);
         });
     }
@@ -84,4 +86,8 @@ public interface ImageOperations {
     Observable<HttpStatus> tagImageObs(String image, ImageTagQueryParameters queryParameters);
 
     HttpStatus tagImage(String image, ImageTagQueryParameters queryParameters);
+
+    Stream<DockerImageHistory> imageHistory(String image);
+
+    Observable<DockerImageHistory> imageHistoryObs(String image);
 }
