@@ -457,4 +457,20 @@ class RxDockerClient implements DockerClient {
         return observable.flatMap(Observable::from);
     }
 
+    @Override
+    public DockerImageInspectDetails inspectImage(final String image) {
+        return inspectImageObs(image).toBlocking().single();
+    }
+
+    @Override
+    public Observable<DockerImageInspectDetails> inspectImageObs(final String image) {
+        validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
+        final String endpoint = String.format(IMAGE_INSPECT_ENDPOINT, image);
+        return httpClient.get(endpoint,
+                json -> gson.fromJson(json, new TypeToken<DockerImageInspectDetails>() {
+                }.getType()));
+
+    }
+
+
 }

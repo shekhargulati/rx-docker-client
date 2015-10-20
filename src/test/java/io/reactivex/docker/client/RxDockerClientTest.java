@@ -341,6 +341,12 @@ public class RxDockerClientTest {
         assertThat(historyCount, greaterThan(1L));
     }
 
+    @Test
+    public void shouldInspectDockerImage() throws Exception {
+        DockerImageInspectDetails inspectDetails = client.inspectImage("ubuntu");
+        assertNotNull(inspectDetails);
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")
