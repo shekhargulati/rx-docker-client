@@ -19,6 +19,7 @@ public interface ImageOperations {
     String IMAGE_REMOVE_ENDPOINT = IMAGE_ENDPOINT + "/%s";
     String IMAGE_SEARCH_ENDPOINT = IMAGE_ENDPOINT + "/search";
     String IMAGE_BUILD_ENDPOINT = "build";
+    String IMAGE_TAG_ENDPOINT = IMAGE_ENDPOINT + "/%s/tag";
 
     Observable<Buffer> pullImageObs(String image, final Optional<String> user, final Optional<String> tag);
 
@@ -80,4 +81,7 @@ public interface ImageOperations {
 
     public Observable<String> buildImageObs(final String repositoryName, final Path pathToTarArchive);
 
+    Observable<HttpStatus> tagImageObs(String image, ImageTagQueryParameters queryParameters);
+
+    HttpStatus tagImage(String image, ImageTagQueryParameters queryParameters);
 }

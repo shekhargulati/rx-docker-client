@@ -63,6 +63,8 @@ public class RxDockerClientTest {
     public void tearDownInfra() throws Exception {
         client.removeAllContainers();
         assertThat(client.listAllContainers().size(), equalTo(0));
+        client.removeDanglingImages();
+        client.removeImages(dockerImage -> dockerImage.repoTags().stream().anyMatch(repo -> repo.contains("test_rx_docker")));
 //        createAndWaitForProcessExecution(new String[]{"docker-machine", "stop", DOCKER_MACHINE_NAME});
 //        createAndWaitForProcessExecution(new String[]{"docker-machine", "rm", DOCKER_MACHINE_NAME});
     }
@@ -85,7 +87,7 @@ public class RxDockerClientTest {
     @Test
     public void shouldFetchVersionInformationFromDocker() throws Exception {
         DockerVersion dockerVersion = client.serverVersion();
-        assertThat(dockerVersion.version(), is(equalTo("1.8.1")));
+        assertThat(dockerVersion.version(), is(equalTo("1.8.3")));
         assertThat(dockerVersion.apiVersion(), is(equalTo("1.20")));
     }
 
@@ -314,10 +316,18 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldBuildImageFromTarWithOnlyDockerFile() throws Exception {
-        Observable<String> buildImageObs = client.buildImageObs("shekhargulati/my_first_docker_image", Paths.get("src", "test", "resources", "images", "my_docker_container.tar"));
+        Observable<String> buildImageObs = client.buildImageObs("test_rx_docker/my_first_docker_image", Paths.get("src", "test", "resources", "images", "my_docker_image.tar"));
         final StringBuilder resultCapturer = new StringBuilder();
         buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
         assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
+    }
+
+    @Test
+    public void shouldTagAnImage() throws Exception {
+        Observable<String> buildImageObs = client.buildImageObs("my_hello_world_image", Paths.get("src", "test", "resources", "images", "my_hello_world_image.tar"));
+        buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> System.out.println("Completed!!!"));
+        HttpStatus httpStatus = client.tagImage("my_hello_world_image", ImageTagQueryParameters.with("test_rx_docker/my_hello_world_image", "v42"));
+        assertThat(httpStatus.code(), equalTo(201));
     }
 
     private DockerContainerResponse createContainer(String containerName) {

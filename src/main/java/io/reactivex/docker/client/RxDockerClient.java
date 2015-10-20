@@ -429,4 +429,16 @@ class RxDockerClient implements DockerClient {
         return httpClient.postTarStream(endpoint, pathToTarArchive, buf -> buf.readString(Charset.defaultCharset()));
     }
 
+    @Override
+    public HttpStatus tagImage(final String image, final ImageTagQueryParameters queryParameters) {
+        return tagImageObs(image, queryParameters).toBlocking().single();
+    }
+
+    @Override
+    public Observable<HttpStatus> tagImageObs(final String image, final ImageTagQueryParameters queryParameters) {
+        validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
+        final String endpoint = String.format(IMAGE_TAG_ENDPOINT, image) + queryParameters.toQuery();
+        return httpClient.post(endpoint);
+    }
+
 }
