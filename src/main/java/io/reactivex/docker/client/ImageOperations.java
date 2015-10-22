@@ -16,14 +16,15 @@ import java.util.stream.Stream;
 public interface ImageOperations {
 
     String IMAGE_ENDPOINT = "images";
+    String IMAGE_BUILD_ENDPOINT = "build";
     String IMAGE_CREATE_ENDPOINT = IMAGE_ENDPOINT + "/create?fromImage=%s%s&tag=%s";
     String IMAGE_LIST_ENDPOINT = IMAGE_ENDPOINT + "/json";
     String IMAGE_REMOVE_ENDPOINT = IMAGE_ENDPOINT + "/%s";
     String IMAGE_SEARCH_ENDPOINT = IMAGE_ENDPOINT + "/search";
-    String IMAGE_BUILD_ENDPOINT = "build";
     String IMAGE_TAG_ENDPOINT = IMAGE_ENDPOINT + "/%s/tag";
     String IMAGE_HISTORY_ENDPOINT = IMAGE_ENDPOINT + "/%s/history";
     String IMAGE_INSPECT_ENDPOINT = IMAGE_ENDPOINT + "/%s/json";
+    String IMAGE_PUSH_ENDPOINT = IMAGE_ENDPOINT + "/%s/push";
 
     Observable<Buffer> pullImageObs(String image, final Optional<String> user, final Optional<String> tag);
 
@@ -96,4 +97,8 @@ public interface ImageOperations {
     DockerImageInspectDetails inspectImage(String image);
 
     Observable<DockerImageInspectDetails> inspectImageObs(String image);
+
+    HttpStatus pushImage(String image);
+
+    Observable<String> pushImageObs(String image, String xRegistryAuth);
 }

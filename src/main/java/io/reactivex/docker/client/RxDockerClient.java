@@ -386,7 +386,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public HttpStatus removeImage(final String imageName, final boolean noPrune, final boolean force) {
-        return removeImageObs(imageName, noPrune, force).toBlocking().first();
+        return removeImageObs(imageName, noPrune, force).toBlocking().last();
     }
 
     @Override
@@ -469,8 +469,24 @@ class RxDockerClient implements DockerClient {
         return httpClient.get(endpoint,
                 json -> gson.fromJson(json, new TypeToken<DockerImageInspectDetails>() {
                 }.getType()));
-
     }
 
+    @Override
+    public HttpStatus pushImage(final String image) {
+        validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
+        final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
+        return httpClient.post(endpoint).toBlocking().last();
+    }
+
+    @Override
+    public Observable<String> pushImageObs(final String image, String xRegistryAuth) {
+        return pushImageObsBuffer(image, xRegistryAuth).map(buffer -> buffer.readString(Charset.defaultCharset()));
+    }
+
+    private Observable<Buffer> pushImageObsBuffer(final String image, String xRegistryAuth) {
+        validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
+        final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
+        return httpClient.postBuffer(endpoint);
+    }
 
 }

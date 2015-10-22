@@ -347,6 +347,17 @@ public class RxDockerClientTest {
         assertNotNull(inspectDetails);
     }
 
+    @Test
+    public void pushImageToRepository() throws Exception {
+        String image = "shekhar007/my_hello_world_image";
+        Observable<String> buildImageObs = client.buildImageObs(image, Paths.get("src", "test", "resources", "images", "my_hello_world_image.tar"));
+        buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> System.out.println("Completed!!!"));
+
+        final StringBuilder resultCapturer = new StringBuilder();
+        client.pushImageObs(image, "").subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
+        assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")

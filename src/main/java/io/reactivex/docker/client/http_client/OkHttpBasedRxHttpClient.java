@@ -203,6 +203,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                 final String url = String.format("%s/%s", apiUri, endpoint);
                 Request getRequest = new Request.Builder()
                         .header("Content-Type", "application/json")
+                        .header("X-Registry-Auth", "ewogICJVc2VybmFtZSI6ICJzaGVraGFyMDA3IiwKICAiUGFzc3dvcmQiOiAic2hla2hhcjciLAogICJFbWFpbCI6ICJzaGVraGFyLmd1bGF0aUBnbWFpbC5jb20iLAogICJTZXJ2ZXJBZGRyZXNzIjogImh0dHBzOi8vaW5kZXguZG9ja2VyLmlvL3YxLyIKfQ==")
                         .url(url)
                         .post(requestBody)
                         .build();
