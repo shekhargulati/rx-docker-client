@@ -346,7 +346,7 @@ class RxDockerClient implements DockerClient {
     public Observable<Buffer> pullImageObs(final String fromImage, final Optional<String> user, final Optional<String> tag) {
         validate(fromImage, Strings::isEmptyOrNull, () -> "fromImage can't be null or empty.");
         final String endpoint = String.format(IMAGE_CREATE_ENDPOINT, user.map(u -> u + "/").orElse(""), fromImage, tag.orElse("latest"));
-        return httpClient.postBuffer(endpoint, EMPTY_BODY);
+        return httpClient.postBuffer(endpoint);
     }
 
     @Override
@@ -472,21 +472,21 @@ class RxDockerClient implements DockerClient {
     }
 
     @Override
-    public HttpStatus pushImage(final String image) {
+    public HttpStatus pushImage(final String image, AuthConfig authConfig) {
         validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
         return httpClient.post(endpoint).toBlocking().last();
     }
 
     @Override
-    public Observable<String> pushImageObs(final String image, String xRegistryAuth) {
-        return pushImageObsBuffer(image, xRegistryAuth).map(buffer -> buffer.readString(Charset.defaultCharset()));
+    public Observable<String> pushImageObs(final String image, AuthConfig authConfig) {
+        return pushImageObsBuffer(image, authConfig).map(buffer -> buffer.readString(Charset.defaultCharset()));
     }
 
-    private Observable<Buffer> pushImageObsBuffer(final String image, String xRegistryAuth) {
+    private Observable<Buffer> pushImageObsBuffer(final String image, AuthConfig authConfig) {
         validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
-        return httpClient.postBuffer(endpoint);
+        return httpClient.postBuffer(endpoint, authConfig);
     }
 
 }

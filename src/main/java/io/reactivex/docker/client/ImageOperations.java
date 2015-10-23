@@ -98,7 +98,7 @@ public interface ImageOperations {
 
     Observable<DockerImageInspectDetails> inspectImageObs(String image);
 
-    HttpStatus pushImage(String image);
+    HttpStatus pushImage(String image, AuthConfig authConfig);
 
-    Observable<String> pushImageObs(String image, String xRegistryAuth);
+    Observable<String> pushImageObs(String image, AuthConfig authConfig);
 }

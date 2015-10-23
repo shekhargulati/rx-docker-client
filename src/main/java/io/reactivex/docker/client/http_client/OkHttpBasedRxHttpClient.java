@@ -1,6 +1,7 @@
 package io.reactivex.docker.client.http_client;
 
 import com.squareup.okhttp.*;
+import io.reactivex.docker.client.AuthConfig;
 import io.reactivex.docker.client.function.BufferTransformer;
 import io.reactivex.docker.client.function.JsonTransformer;
 import io.reactivex.docker.client.function.ResponseBodyTransformer;
@@ -182,11 +183,16 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
 
     @Override
     public Observable<Buffer> postBuffer(final String endpoint) {
-        return postBuffer(endpoint, EMPTY_BODY);
+        return postBuffer(endpoint, EMPTY_BODY, Optional.<AuthConfig>empty());
     }
 
     @Override
-    public Observable<Buffer> postBuffer(final String endpoint, final String postBody) {
+    public Observable<Buffer> postBuffer(final String endpoint, AuthConfig authConfig) {
+        return postBuffer(endpoint, EMPTY_BODY, Optional.ofNullable(authConfig));
+    }
+
+    @Override
+    public Observable<Buffer> postBuffer(final String endpoint, final String postBody, Optional<AuthConfig> authConfig) {
         return Observable.create(subscriber -> {
             try {
                 RequestBody requestBody = new RequestBody() {
@@ -201,9 +207,13 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                     }
                 };
                 final String url = String.format("%s/%s", apiUri, endpoint);
-                Request getRequest = new Request.Builder()
-                        .header("Content-Type", "application/json")
-                        .header("X-Registry-Auth", "ewogICJVc2VybmFtZSI6ICJzaGVraGFyMDA3IiwKICAiUGFzc3dvcmQiOiAic2hla2hhcjciLAogICJFbWFpbCI6ICJzaGVraGFyLmd1bGF0aUBnbWFpbC5jb20iLAogICJTZXJ2ZXJBZGRyZXNzIjogImh0dHBzOi8vaW5kZXguZG9ja2VyLmlvL3YxLyIKfQ==")
+                Request.Builder requestBuilder = new Request.Builder()
+                        .header("Content-Type", "application/json");
+                if (authConfig.isPresent()) {
+                    requestBuilder
+                            .header("X-Registry-Auth", authConfig.get().xAuthHeader());
+                }
+                Request getRequest = requestBuilder
                         .url(url)
                         .post(requestBody)
                         .build();

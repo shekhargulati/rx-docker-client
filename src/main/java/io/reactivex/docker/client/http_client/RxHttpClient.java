@@ -1,5 +1,6 @@
 package io.reactivex.docker.client.http_client;
 
+import io.reactivex.docker.client.AuthConfig;
 import io.reactivex.docker.client.function.BufferTransformer;
 import io.reactivex.docker.client.function.JsonTransformer;
 import io.reactivex.docker.client.function.ResponseBodyTransformer;
@@ -40,7 +41,9 @@ public interface RxHttpClient {
 
     Observable<Buffer> postBuffer(String endpoint);
 
-    Observable<Buffer> postBuffer(String endpoint, String postBody);
+    Observable<Buffer> postBuffer(String endpoint, AuthConfig authConfig);
+
+    Observable<Buffer> postBuffer(String endpoint, String postBody, Optional<AuthConfig> authConfig);
 
     Observable<HttpStatus> delete(final String endpoint);
 
