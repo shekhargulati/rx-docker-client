@@ -121,7 +121,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                         }
                         subscriber.onCompleted();
                     }
-                } else if (response.isSuccessful() && subscriber.isUnsubscribed()) {
+                } else if (response.isSuccessful()) {
                     subscriber.onCompleted();
                 } else {
                     subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
@@ -169,6 +169,11 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     @Override
     public Observable<HttpStatus> post(final String endpoint) {
         return post(endpoint, EMPTY_BODY, httpStatus());
+    }
+
+    @Override
+    public Observable<HttpStatus> post(final String endpoint, String body) {
+        return post(endpoint, body, httpStatus());
     }
 
     @Override

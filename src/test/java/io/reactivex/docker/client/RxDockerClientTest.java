@@ -358,6 +358,12 @@ public class RxDockerClientTest {
         assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
     }
 
+    @Test
+    public void shouldReturnHttpStatus500WhenAuthConfigurationIsInvalid() throws Exception {
+        HttpStatus httpStatus = client.checkAuthConfiguration(AuthConfig.authConfig("xxx", "xxx", "xxxx"));
+        assertThat(httpStatus, is(equalTo(HttpStatus.SERVER_ERROR)));
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")

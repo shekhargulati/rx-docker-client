@@ -19,6 +19,10 @@ public class AuthConfig {
     @SerializedName("ServerAddress")
     private String serverAddress = "https://index.docker.io/v1/";
 
+    private Gson gson = new GsonBuilder()
+            .setFieldNamingPolicy(UPPER_CAMEL_CASE)
+            .setPrettyPrinting().create();
+
     public AuthConfig(String username, String password, String email) {
         this.username = username;
         this.password = password;
@@ -51,11 +55,11 @@ public class AuthConfig {
     }
 
     public String xAuthHeader() {
-        Gson gson = new GsonBuilder()
-                .setFieldNamingPolicy(UPPER_CAMEL_CASE)
-                .setPrettyPrinting().create();
-        return Base64.getEncoder().encodeToString(gson.toJson(this).getBytes());
+        return Base64.getEncoder().encodeToString(toJson().getBytes());
     }
 
+    public String toJson() {
+        return gson.toJson(this);
+    }
 }
 

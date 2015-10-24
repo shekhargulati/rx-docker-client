@@ -7,6 +7,7 @@ import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.ResponseBody;
 import io.reactivex.docker.client.http_client.HttpStatus;
 import io.reactivex.docker.client.http_client.HttpStatusBufferSubscriber;
+import io.reactivex.docker.client.http_client.RestServiceCommunicationException;
 import io.reactivex.docker.client.http_client.RxHttpClient;
 import io.reactivex.docker.client.representations.*;
 import io.reactivex.docker.client.utils.Strings;
@@ -480,13 +481,23 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<String> pushImageObs(final String image, AuthConfig authConfig) {
-        return pushImageObsBuffer(image, authConfig).map(buffer -> buffer.readString(Charset.defaultCharset()));
-    }
-
-    private Observable<Buffer> pushImageObsBuffer(final String image, AuthConfig authConfig) {
         validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
-        return httpClient.postBuffer(endpoint, authConfig);
+        return httpClient.postBuffer(endpoint, authConfig).map(buffer -> buffer.readString(Charset.defaultCharset()));
+    }
+
+    @Override
+    public HttpStatus checkAuthConfiguration(final AuthConfig authConfig) {
+        validate(authConfig, cfg -> cfg == null, () -> "authConfig can't be null.");
+        final String endpoint = CHECK_AUTH_ENDPOINT;
+        return httpClient.post(endpoint, authConfig.toJson()).onErrorReturn(e -> {
+            if (e instanceof RestServiceCommunicationException) {
+                logger.info("checkAuthConfiguration threw RestServiceCommunicationException");
+                RestServiceCommunicationException restException = (RestServiceCommunicationException) e;
+                return HttpStatus.of(restException.getCode(), restException.getHttpMessage());
+            }
+            return HttpStatus.of(500, e.getMessage());
+        }).toBlocking().last();
     }
 
 }
