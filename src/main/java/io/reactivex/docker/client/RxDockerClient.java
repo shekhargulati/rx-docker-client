@@ -97,6 +97,38 @@ class RxDockerClient implements DockerClient {
                 single();
     }
 
+    @Override
+    public HttpStatus checkAuth(final AuthConfig authConfig) {
+        return checkAuthObs(authConfig).onErrorReturn(e -> {
+            if (e instanceof RestServiceCommunicationException) {
+                logger.info("checkAuth threw RestServiceCommunicationException");
+                RestServiceCommunicationException restException = (RestServiceCommunicationException) e;
+                return HttpStatus.of(restException.getCode(), restException.getHttpMessage());
+            }
+            return HttpStatus.of(500, e.getMessage());
+        }).toBlocking().last();
+    }
+
+    @Override
+    public Observable<HttpStatus> checkAuthObs(final AuthConfig authConfig) {
+        validate(authConfig, cfg -> cfg == null, () -> "authConfig can't be null.");
+        final String endpoint = CHECK_AUTH_ENDPOINT;
+        return httpClient.post(endpoint, authConfig.toJson());
+    }
+
+    @Override
+    public HttpStatus ping() {
+        final String endpoint = PING_ENDPOINT;
+        return httpClient.getHttpStatus(endpoint).onErrorReturn(e -> {
+            if (e instanceof RestServiceCommunicationException) {
+                logger.info("checkAuth threw RestServiceCommunicationException");
+                RestServiceCommunicationException restException = (RestServiceCommunicationException) e;
+                return HttpStatus.of(restException.getCode(), restException.getHttpMessage());
+            }
+            return HttpStatus.of(500, e.getMessage());
+        }).toBlocking().last();
+    }
+
     // Container operations
     @Override
     public Observable<List<DockerContainer>> listRunningContainerObs() {
@@ -501,35 +533,5 @@ class RxDockerClient implements DockerClient {
         return httpClient.postBuffer(endpoint, authConfig).map(buffer -> buffer.readString(Charset.defaultCharset()));
     }
 
-    @Override
-    public HttpStatus checkAuth(final AuthConfig authConfig) {
-        return checkAuthObs(authConfig).onErrorReturn(e -> {
-            if (e instanceof RestServiceCommunicationException) {
-                logger.info("checkAuth threw RestServiceCommunicationException");
-                RestServiceCommunicationException restException = (RestServiceCommunicationException) e;
-                return HttpStatus.of(restException.getCode(), restException.getHttpMessage());
-            }
-            return HttpStatus.of(500, e.getMessage());
-        }).toBlocking().last();
-    }
 
-    @Override
-    public Observable<HttpStatus> checkAuthObs(final AuthConfig authConfig) {
-        validate(authConfig, cfg -> cfg == null, () -> "authConfig can't be null.");
-        final String endpoint = CHECK_AUTH_ENDPOINT;
-        return httpClient.post(endpoint, authConfig.toJson());
-    }
-
-    @Override
-    public HttpStatus ping() {
-        final String endpoint = PING_ENDPOINT;
-        return httpClient.getHttpStatus(endpoint).onErrorReturn(e -> {
-            if (e instanceof RestServiceCommunicationException) {
-                logger.info("checkAuth threw RestServiceCommunicationException");
-                RestServiceCommunicationException restException = (RestServiceCommunicationException) e;
-                return HttpStatus.of(restException.getCode(), restException.getHttpMessage());
-            }
-            return HttpStatus.of(500, e.getMessage());
-        }).toBlocking().last();
-    }
 }
