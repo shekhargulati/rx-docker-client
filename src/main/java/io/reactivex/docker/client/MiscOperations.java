@@ -19,5 +19,7 @@ public interface MiscOperations {
 
     DockerInfo info();
 
-    HttpStatus checkAuthConfiguration(AuthConfig authConfig);
+    HttpStatus checkAuth(AuthConfig authConfig);
+
+    Observable<HttpStatus> checkAuthObs(AuthConfig authConfig);
 }

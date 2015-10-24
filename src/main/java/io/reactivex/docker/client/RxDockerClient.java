@@ -487,17 +487,24 @@ class RxDockerClient implements DockerClient {
     }
 
     @Override
-    public HttpStatus checkAuthConfiguration(final AuthConfig authConfig) {
-        validate(authConfig, cfg -> cfg == null, () -> "authConfig can't be null.");
-        final String endpoint = CHECK_AUTH_ENDPOINT;
-        return httpClient.post(endpoint, authConfig.toJson()).onErrorReturn(e -> {
+    public HttpStatus checkAuth(final AuthConfig authConfig) {
+        return checkAuthObs(authConfig).onErrorReturn(e -> {
             if (e instanceof RestServiceCommunicationException) {
-                logger.info("checkAuthConfiguration threw RestServiceCommunicationException");
+                logger.info("checkAuth threw RestServiceCommunicationException");
                 RestServiceCommunicationException restException = (RestServiceCommunicationException) e;
                 return HttpStatus.of(restException.getCode(), restException.getHttpMessage());
             }
             return HttpStatus.of(500, e.getMessage());
         }).toBlocking().last();
     }
+
+    @Override
+    public Observable<HttpStatus> checkAuthObs(final AuthConfig authConfig) {
+        validate(authConfig, cfg -> cfg == null, () -> "authConfig can't be null.");
+        final String endpoint = CHECK_AUTH_ENDPOINT;
+        return httpClient.post(endpoint, authConfig.toJson());
+    }
+
+
 
 }

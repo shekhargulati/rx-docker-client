@@ -360,7 +360,7 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldReturnHttpStatus500WhenAuthConfigurationIsInvalid() throws Exception {
-        HttpStatus httpStatus = client.checkAuthConfiguration(AuthConfig.authConfig("xxx", "xxx", "xxxx"));
+        HttpStatus httpStatus = client.checkAuth(AuthConfig.authConfig("xxx", "xxx", "xxxx"));
         assertThat(httpStatus, is(equalTo(HttpStatus.SERVER_ERROR)));
     }
 
