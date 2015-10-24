@@ -31,7 +31,11 @@ public interface RxHttpClient {
 
     Observable<String> get(String endpointPath);
 
+    Observable<HttpStatus> getHttpStatus(String endpointPath);
+
     Observable<HttpStatus> post(String endpoint);
+
+    <R> Observable<R> getWithResponseTransformer(String endpoint, ResponseTransformer<R> transformer);
 
     <R> Observable<R> post(String endpoint, String postBody, ResponseTransformer<R> transformer);
 

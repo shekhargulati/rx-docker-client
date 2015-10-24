@@ -505,6 +505,16 @@ class RxDockerClient implements DockerClient {
         return httpClient.post(endpoint, authConfig.toJson());
     }
 
-
-
+    @Override
+    public HttpStatus ping() {
+        final String endpoint = PING_ENDPOINT;
+        return httpClient.getHttpStatus(endpoint).onErrorReturn(e -> {
+            if (e instanceof RestServiceCommunicationException) {
+                logger.info("checkAuth threw RestServiceCommunicationException");
+                RestServiceCommunicationException restException = (RestServiceCommunicationException) e;
+                return HttpStatus.of(restException.getCode(), restException.getHttpMessage());
+            }
+            return HttpStatus.of(500, e.getMessage());
+        }).toBlocking().last();
+    }
 }

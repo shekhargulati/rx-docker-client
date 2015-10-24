@@ -364,6 +364,12 @@ public class RxDockerClientTest {
         assertThat(httpStatus, is(equalTo(HttpStatus.SERVER_ERROR)));
     }
 
+    @Test
+    public void shouldPingDockerServer() throws Exception {
+        HttpStatus httpStatus = client.ping();
+        assertThat(httpStatus, is(equalTo(HttpStatus.OK)));
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")

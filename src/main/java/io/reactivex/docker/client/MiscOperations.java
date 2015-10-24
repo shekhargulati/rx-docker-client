@@ -10,6 +10,7 @@ public interface MiscOperations {
     String VERSION_ENDPOINT = "version";
     String INFO_ENDPOINT = "info";
     String CHECK_AUTH_ENDPOINT = "auth";
+    String PING_ENDPOINT = "_ping";
 
     Observable<DockerVersion> serverVersionObs();
 
@@ -22,4 +23,6 @@ public interface MiscOperations {
     HttpStatus checkAuth(AuthConfig authConfig);
 
     Observable<HttpStatus> checkAuthObs(AuthConfig authConfig);
+
+    HttpStatus ping();
 }

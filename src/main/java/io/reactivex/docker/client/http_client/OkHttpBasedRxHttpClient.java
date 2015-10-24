@@ -140,6 +140,38 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     }
 
     @Override
+    public Observable<HttpStatus> getHttpStatus(final String endpointPath) {
+        return getWithResponseTransformer(endpointPath, httpStatus());
+    }
+
+    @Override
+    public <R> Observable<R> getWithResponseTransformer(final String endpoint, final ResponseTransformer<R> transformer) {
+        final String url = String.format("%s/%s", apiUri, endpoint);
+        Request getRequest = new Request.Builder()
+                .header("Content-Type", "application/json")
+                .url(url)
+                .get()
+                .build();
+        logger.info("Making GET request to {}", url);
+        return Observable.create(subscriber -> {
+            try {
+                Call call = client.newCall(getRequest);
+                Response response = call.execute();
+                if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
+                    subscriber.onNext(transformer.apply(response));
+                    subscriber.onCompleted();
+                } else {
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                }
+            } catch (IOException e) {
+                logger.error("Encountered error while making {} call", endpoint, e);
+                subscriber.onError(new RestServiceCommunicationException(e));
+            }
+        });
+    }
+
+
+    @Override
     public <R> Observable<R> post(final String endpoint, final String postBody, final ResponseTransformer<R> transformer) {
         RequestBody requestBody = RequestBody.create(JSON, postBody);
         final String url = String.format("%s/%s", apiUri, endpoint);
