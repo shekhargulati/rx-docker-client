@@ -471,9 +471,13 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<String> buildImageObs(final String repositoryName, final Path pathToTarArchive) {
+        return buildImageObs(repositoryName, pathToTarArchive, BuildImageQueryParameters.withDefaultValues());
+    }
+    @Override
+    public Observable<String> buildImageObs(final String repositoryName, final Path pathToTarArchive, BuildImageQueryParameters queryParameters) {
         validate(pathToTarArchive, path -> path == null, () -> "path to archive can't be null");
         validate(pathToTarArchive, path -> !path.toFile().exists(), () -> String.format("%s can't be resolved to a tar file", pathToTarArchive.toAbsolutePath().toString()));
-        final String endpoint = String.format("%s?t=%s", IMAGE_BUILD_ENDPOINT, repositoryName);
+        final String endpoint = String.format("%s?t=%s", IMAGE_BUILD_ENDPOINT, repositoryName) + queryParameters.toQueryParameterString();
         return httpClient.postTarStream(endpoint, pathToTarArchive, buf -> buf.readString(Charset.defaultCharset()));
     }
 
@@ -532,6 +536,4 @@ class RxDockerClient implements DockerClient {
         final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
         return httpClient.postBuffer(endpoint, authConfig).map(buffer -> buffer.readString(Charset.defaultCharset()));
     }
-
-
 }

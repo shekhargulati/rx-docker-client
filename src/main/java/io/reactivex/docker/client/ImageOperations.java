@@ -84,7 +84,7 @@ public interface ImageOperations {
 
     Observable<DockerImageInfo> searchImagesObs(String searchTerm, Predicate<DockerImageInfo> predicate);
 
-    public Observable<String> buildImageObs(final String repositoryName, final Path pathToTarArchive);
+    public Observable<String> buildImageObs(final String repositoryName, final Path pathToTarArchive, BuildImageQueryParameters queryParameters);
 
     Observable<HttpStatus> tagImageObs(String image, ImageTagQueryParameters queryParameters);
 
@@ -101,4 +101,6 @@ public interface ImageOperations {
     HttpStatus pushImage(String image, AuthConfig authConfig);
 
     Observable<String> pushImageObs(String image, AuthConfig authConfig);
+
+    Observable<String> buildImageObs(String repositoryName, Path pathToTarArchive);
 }
