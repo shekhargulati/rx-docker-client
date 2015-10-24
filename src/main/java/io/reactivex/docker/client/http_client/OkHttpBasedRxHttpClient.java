@@ -18,6 +18,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -76,34 +77,6 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     }
 
     @Override
-    public Observable<Buffer> getAsBuffer(final String endpoint) {
-        return Observable.create(subscriber -> {
-            try {
-                final String url = String.format("%s/%s", apiUri, endpoint);
-                Request getRequest = new Request.Builder().url(url).build();
-                logger.info("Making GET request to {}", url);
-                Call call = client.newCall(getRequest);
-                Response response = call.execute();
-                logger.info("Received response >> {} with headers >> {}", response.code(), response.headers());
-                if (response.isSuccessful()) {
-                    try (ResponseBody body = response.body()) {
-                        BufferedSource source = body.source();
-                        while (!source.exhausted()) {
-                            subscriber.onNext(source.buffer());
-                        }
-                        subscriber.onCompleted();
-                    }
-                } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
-                }
-            } catch (IOException e) {
-                logger.error("Encountered error while making {} call", endpoint, e);
-                subscriber.onError(new RestServiceCommunicationException(e));
-            }
-        });
-    }
-
-    @Override
     public <T> Observable<T> getBuffer(final String endpoint, BufferTransformer<T> transformer) {
         return Observable.create(subscriber -> {
             try {
@@ -131,6 +104,39 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                 subscriber.onError(new RestServiceCommunicationException(e));
             }
         });
+    }
+
+    @Override
+    public Observable<Buffer> getAsBuffer(final String endpoint, final Headers headers) {
+        return Observable.create(subscriber -> {
+            try {
+                final String url = String.format("%s/%s", apiUri, endpoint);
+                Request getRequest = new Request.Builder().url(url).headers(headers).build();
+                logger.info("Making GET request to {}", url);
+                Call call = client.newCall(getRequest);
+                Response response = call.execute();
+                logger.info("Received response >> {} with headers >> {}", response.code(), response.headers());
+                if (response.isSuccessful()) {
+                    try (ResponseBody body = response.body()) {
+                        BufferedSource source = body.source();
+                        while (!source.exhausted()) {
+                            subscriber.onNext(source.buffer());
+                        }
+                        subscriber.onCompleted();
+                    }
+                } else {
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                }
+            } catch (IOException e) {
+                logger.error("Encountered error while making {} call", endpoint, e);
+                subscriber.onError(new RestServiceCommunicationException(e));
+            }
+        });
+    }
+
+    @Override
+    public Observable<Buffer> getAsBuffer(final String endpoint) {
+        return getAsBuffer(endpoint, Headers.of(Collections.emptyMap()));
     }
 
 

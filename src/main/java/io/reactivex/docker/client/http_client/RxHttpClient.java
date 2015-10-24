@@ -1,5 +1,6 @@
 package io.reactivex.docker.client.http_client;
 
+import com.squareup.okhttp.Headers;
 import io.reactivex.docker.client.AuthConfig;
 import io.reactivex.docker.client.function.BufferTransformer;
 import io.reactivex.docker.client.function.JsonTransformer;
@@ -24,6 +25,8 @@ public interface RxHttpClient {
     }
 
     <R> Observable<R> get(String endpointPath, JsonTransformer<R> transformer);
+
+    Observable<Buffer> getAsBuffer(String endpoint, Headers headers);
 
     Observable<Buffer> getAsBuffer(String endpoint);
 

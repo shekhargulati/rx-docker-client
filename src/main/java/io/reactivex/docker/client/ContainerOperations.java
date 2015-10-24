@@ -25,6 +25,7 @@ public interface ContainerOperations {
     String CONTAINER_WAIT_ENDPOINT = CONTAINERS_ENDPOINT + "/wait";
     String CONTAINER_EXPORT_ENDPOINT = CONTAINERS_ENDPOINT + "/export";
     String CONTAINER_STATS_ENDPOINT = CONTAINERS_ENDPOINT + "/stats";
+    String CONTAINER_LOGS_ENDPOINT = CONTAINERS_ENDPOINT + "/logs";
 
     Logger logger = LoggerFactory.getLogger(ContainerOperations.class);
 
@@ -105,4 +106,8 @@ public interface ContainerOperations {
     void exportContainer(String containerId, Path pathToExportTo);
 
     Observable<ContainerStats> containerStatsObs(String containerId);
+
+    Observable<String> containerLogsObs(String containerId, ContainerLogQueryParameters queryParameters);
+
+    Observable<String> containerLogsObs(String containerId);
 }

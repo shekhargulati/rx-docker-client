@@ -244,6 +244,45 @@ public class RxDockerClientTest {
     }
 
     @Test
+    public void shouldShowContainerLogs() throws Exception {
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
+        String containerId = response.getId();
+        client.startContainer(containerId);
+        Observable<String> logsObs = client.containerLogsObs(containerId);
+        StringBuilder result = new StringBuilder();
+        Subscriber<String> statsSub = new Subscriber<String>() {
+
+            @Override
+            public void onCompleted() {
+                logger.info("Successfully received all the container logs for container with id {}", containerId);
+                result.append("Completed!!");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                logger.error(String.format("Error encountered while processing container logs for container with id %s", containerId), e);
+                fail("Should not throw error");
+            }
+
+            @Override
+            public void onNext(String msg) {
+                logger.info("Received a new message for container '{}'", containerId);
+                assertNotNull(msg);
+            }
+        };
+
+        Observable.timer(5, TimeUnit.SECONDS).forEach(t -> {
+            logger.info("Unsubscribing subscriber...");
+            statsSub.unsubscribe();
+            logger.info("Unsubscribed subscriber...");
+        });
+
+        logsObs.subscribe(statsSub);
+        assertThat(result.toString(), equalTo("Completed!!"));
+    }
+
+
+    @Test
     public void shouldPullImageFromDockerHub() throws Exception {
         HttpStatus status = client.pullImage("busybox");
         assertThat(status.code(), equalTo(HttpStatus.OK.code()));

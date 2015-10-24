@@ -25,4 +25,5 @@ public interface MiscOperations {
     Observable<HttpStatus> checkAuthObs(AuthConfig authConfig);
 
     HttpStatus ping();
+
 }

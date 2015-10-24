@@ -4,6 +4,7 @@ package io.reactivex.docker.client;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.squareup.okhttp.Headers;
 import com.squareup.okhttp.ResponseBody;
 import io.reactivex.docker.client.http_client.HttpStatus;
 import io.reactivex.docker.client.http_client.HttpStatusBufferSubscriber;
@@ -27,6 +28,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
+import static io.reactivex.docker.client.ContainerLogQueryParameters.withDefaultValues;
 import static io.reactivex.docker.client.ImageListQueryParameters.allImagesQueryParameters;
 import static io.reactivex.docker.client.ImageListQueryParameters.queryParameterWithImageName;
 import static io.reactivex.docker.client.QueryParametersBuilder.defaultQueryParameters;
@@ -320,6 +322,19 @@ class RxDockerClient implements DockerClient {
                 buffer -> gson.fromJson(buffer.readUtf8(), ContainerStats.class));
     }
 
+    @Override
+    public Observable<String> containerLogsObs(final String containerId) {
+        return containerLogsObs(containerId, withDefaultValues());
+    }
+
+    @Override
+    public Observable<String> containerLogsObs(final String containerId, ContainerLogQueryParameters queryParameters) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        final String endpointUri = String.format(CONTAINER_LOGS_ENDPOINT, containerId) + queryParameters.toQueryParametersString();
+        return httpClient.getAsBuffer(endpointUri, Headers.of("Accept", "application/vnd.docker.raw-stream")).map(buffer -> buffer.readString(Charset.defaultCharset()));
+    }
+
+    // Image Endpoint
     @Override
     public HttpStatus pullImage(final String fromImage) {
         return pullImage(fromImage, Optional.empty(), Optional.empty());
