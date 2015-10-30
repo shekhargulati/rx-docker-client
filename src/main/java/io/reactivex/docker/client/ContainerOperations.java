@@ -29,17 +29,17 @@ public interface ContainerOperations {
 
     Logger logger = LoggerFactory.getLogger(ContainerOperations.class);
 
-    Observable<List<DockerContainer>> listRunningContainerObs();
+    Observable<DockerContainer> listRunningContainerObs();
 
     List<DockerContainer> listRunningContainers();
 
-    Observable<List<DockerContainer>> listAllContainersObs();
+    Observable<DockerContainer> listAllContainersObs();
 
     List<DockerContainer> listAllContainers();
 
     List<DockerContainer> listContainers(QueryParameters queryParameters);
 
-    Observable<List<DockerContainer>> listContainersObs(QueryParameters queryParameters);
+    Observable<DockerContainer> listContainersObs(QueryParameters queryParameters);
 
     DockerContainerResponse createContainer(DockerContainerRequest request, String name);
 

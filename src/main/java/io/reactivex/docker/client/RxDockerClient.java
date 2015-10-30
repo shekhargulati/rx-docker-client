@@ -6,6 +6,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.Headers;
 import com.squareup.okhttp.ResponseBody;
+import io.reactivex.docker.client.function.StringResponseToCollectionTransformer;
+import io.reactivex.docker.client.function.StringResponseTransformer;
 import io.reactivex.docker.client.http_client.HttpStatus;
 import io.reactivex.docker.client.http_client.HttpStatusBufferSubscriber;
 import io.reactivex.docker.client.http_client.RestServiceCommunicationException;
@@ -73,7 +75,7 @@ class RxDockerClient implements DockerClient {
     public Observable<DockerVersion> serverVersionObs() {
         return httpClient
                 .get(VERSION_ENDPOINT,
-                        json -> gson.fromJson(json, DockerVersion.class));
+                        (StringResponseTransformer<DockerVersion>) json -> gson.fromJson(json, DockerVersion.class));
     }
 
     @Override
@@ -87,7 +89,7 @@ class RxDockerClient implements DockerClient {
     public Observable<DockerInfo> infoObs() {
         return httpClient
                 .get(INFO_ENDPOINT,
-                        json -> gson.fromJson(json, DockerInfo.class));
+                        (StringResponseTransformer<DockerInfo>) json -> gson.fromJson(json, DockerInfo.class));
     }
 
     @Override
@@ -131,36 +133,36 @@ class RxDockerClient implements DockerClient {
 
     // Container operations
     @Override
-    public Observable<List<DockerContainer>> listRunningContainerObs() {
+    public Observable<DockerContainer> listRunningContainerObs() {
         return listContainersObs(defaultQueryParameters());
     }
 
     @Override
     public List<DockerContainer> listRunningContainers() {
-        return listRunningContainerObs().flatMap(Observable::from).toList().toBlocking().single();
+        return listRunningContainerObs().toList().toBlocking().single();
     }
 
     @Override
-    public Observable<List<DockerContainer>> listAllContainersObs() {
+    public Observable<DockerContainer> listAllContainersObs() {
         return listContainersObs(new QueryParametersBuilder().withAll(true).createQueryParameters());
     }
 
     @Override
     public List<DockerContainer> listAllContainers() {
-        return listAllContainersObs().flatMap(Observable::from).toList().toBlocking().single();
+        return listAllContainersObs().toList().toBlocking().single();
     }
 
     @Override
     public List<DockerContainer> listContainers(QueryParameters queryParameters) {
-        return listContainersObs(queryParameters).flatMap(Observable::from).toList().toBlocking().single();
+        return listContainersObs(queryParameters).toList().toBlocking().single();
     }
 
     @Override
-    public Observable<List<DockerContainer>> listContainersObs(QueryParameters queryParameters) {
+    public Observable<DockerContainer> listContainersObs(QueryParameters queryParameters) {
         final String query = queryParameters.toQuery();
         final String endpoint = String.format(CONTAINER_ENDPOINT, query);
         return httpClient.get(endpoint,
-                json -> gson.fromJson(json, new TypeToken<List<DockerContainer>>() {
+                (StringResponseToCollectionTransformer<DockerContainer>) json -> gson.fromJson(json, new TypeToken<List<DockerContainer>>() {
                 }.getType()));
     }
 
@@ -193,7 +195,7 @@ class RxDockerClient implements DockerClient {
         final String uri = String.format(CONTAINER_JSON_ENDPOINT, containerId);
         return httpClient
                 .get(uri,
-                        json -> gson.fromJson(json, ContainerInspectResponse.class));
+                        (StringResponseTransformer<ContainerInspectResponse>) json -> gson.fromJson(json, ContainerInspectResponse.class));
     }
 
     @Override
@@ -207,7 +209,7 @@ class RxDockerClient implements DockerClient {
         final String uri = String.format(CONTAINER_LIST_PROCESS_ENDPOINT, containerId);
         return httpClient
                 .get(uri,
-                        json -> gson.fromJson(json, ProcessListResponse.class));
+                        (StringResponseTransformer<ProcessListResponse>) json -> gson.fromJson(json, ProcessListResponse.class));
     }
 
     @Override
@@ -425,11 +427,10 @@ class RxDockerClient implements DockerClient {
     @Override
     public Observable<DockerImage> listImagesObs(ImageListQueryParameters queryParameters) {
         final String endpoint = IMAGE_LIST_ENDPOINT + queryParameters.toQuery();
-        Observable<List<DockerImage>> observable = httpClient.get(endpoint,
-                json -> gson.fromJson(json, new TypeToken<List<DockerImage>>() {
+        return httpClient.get(endpoint,
+                (StringResponseToCollectionTransformer<DockerImage>) json -> gson.fromJson(json, new TypeToken<List<DockerImage>>() {
                 }.getType()));
 
-        return observable.flatMap(Observable::from);
     }
 
     @Override
@@ -450,7 +451,7 @@ class RxDockerClient implements DockerClient {
     @Override
     public Observable<HttpStatus> removeImageObs(final String imageName, final boolean noPrune, final boolean force) {
         validate(imageName, Strings::isEmptyOrNull, () -> "imageName can't be null or empty.");
-        final String endpoint = new StringBuilder().append(String.format(IMAGE_REMOVE_ENDPOINT, imageName)).append("?noprune=").append(noPrune).append("&force=").append(force).toString();
+        final String endpoint = String.format(IMAGE_REMOVE_ENDPOINT, imageName) + "?noprune=" + noPrune + "&force=" + force;
         return httpClient.delete(endpoint);
     }
 
@@ -463,10 +464,9 @@ class RxDockerClient implements DockerClient {
     public Observable<DockerImageInfo> searchImagesObs(final String searchTerm, Predicate<DockerImageInfo> predicate) {
         validate(searchTerm, Strings::isEmptyOrNull, () -> "searchTerm can't be null or empty.");
         final String endpoint = String.format("%s?term=%s", IMAGE_SEARCH_ENDPOINT, searchTerm);
-        Observable<List<DockerImageInfo>> observable = httpClient.get(endpoint,
-                json -> gson.fromJson(json, new TypeToken<List<DockerImageInfo>>() {
-                }.getType()));
-        return observable.flatMap(Observable::from).filter(predicate::test);
+        return httpClient.get(endpoint,
+                (StringResponseToCollectionTransformer<DockerImageInfo>) json -> gson.fromJson(json, new TypeToken<List<DockerImageInfo>>() {
+                }.getType())).filter(predicate::test);
     }
 
     @Override
@@ -503,11 +503,9 @@ class RxDockerClient implements DockerClient {
     public Observable<DockerImageHistory> imageHistoryObs(final String image) {
         validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_HISTORY_ENDPOINT, image);
-        Observable<List<DockerImageHistory>> observable = httpClient.get(endpoint,
-                json -> gson.fromJson(json, new TypeToken<List<DockerImageHistory>>() {
+        return httpClient.get(endpoint,
+                (StringResponseToCollectionTransformer<DockerImageHistory>) json -> gson.fromJson(json, new TypeToken<List<DockerImageHistory>>() {
                 }.getType()));
-
-        return observable.flatMap(Observable::from);
     }
 
     @Override
@@ -520,7 +518,7 @@ class RxDockerClient implements DockerClient {
         validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_INSPECT_ENDPOINT, image);
         return httpClient.get(endpoint,
-                json -> gson.fromJson(json, new TypeToken<DockerImageInspectDetails>() {
+                (StringResponseTransformer<DockerImageInspectDetails>) json -> gson.fromJson(json, new TypeToken<DockerImageInspectDetails>() {
                 }.getType()));
     }
 

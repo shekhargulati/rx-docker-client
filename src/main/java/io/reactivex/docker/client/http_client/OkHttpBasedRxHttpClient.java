@@ -2,10 +2,7 @@ package io.reactivex.docker.client.http_client;
 
 import com.squareup.okhttp.*;
 import io.reactivex.docker.client.AuthConfig;
-import io.reactivex.docker.client.function.BufferTransformer;
-import io.reactivex.docker.client.function.ResponseBodyTransformer;
-import io.reactivex.docker.client.function.ResponseTransformer;
-import io.reactivex.docker.client.function.StringResponseTransformer;
+import io.reactivex.docker.client.function.*;
 import io.reactivex.docker.client.ssl.DockerCertificates;
 import okio.Buffer;
 import okio.BufferedSink;
@@ -18,6 +15,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -34,7 +32,11 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     public static final MediaType TAR = MediaType.parse("application/tar; charset=utf-8");
 
     private final OkHttpClient client = new OkHttpClient();
-    private final String apiUri;
+    private final String baseApiUrl;
+
+    public OkHttpBasedRxHttpClient(String baseApiUrl) {
+        this.baseApiUrl = baseApiUrl;
+    }
 
     OkHttpBasedRxHttpClient(final String host, final int port) {
         this(host, port, Optional.empty());
@@ -42,8 +44,8 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
 
     OkHttpBasedRxHttpClient(final String host, final int port, final Optional<String> certPath) {
         final String scheme = certPath.isPresent() ? "https" : "http";
-        apiUri = scheme + "://" + host + ":" + port;
-        logger.info("Base API uri {}", apiUri);
+        baseApiUrl = scheme + "://" + host + ":" + port;
+        logger.info("Base API uri {}", baseApiUrl);
         if (certPath.isPresent()) {
             client.setSslSocketFactory(new DockerCertificates(Paths.get(certPath.get())).sslContext().getSocketFactory());
         }
@@ -53,34 +55,52 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     }
 
     @Override
+    public Observable<String> get(final String endpoint) {
+        return get(endpoint, StringResponseTransformer.identityOp());
+    }
+
+    @Override
     public <R> Observable<R> get(final String endpoint, final StringResponseTransformer<R> transformer) {
         return get(endpoint, Collections.emptyMap(), transformer);
     }
 
     @Override
     public <R> Observable<R> get(final String endpoint, final Map<String, String> headers, final StringResponseTransformer<R> transformer) {
+        return get(endpoint, transformer.toCollectionTransformer());
+    }
+
+    @Override
+    public <R> Observable<R> get(final String endpoint, final StringResponseToCollectionTransformer<R> transformer) {
+        return get(endpoint, Collections.emptyMap(), transformer);
+    }
+
+    @Override
+    public <R> Observable<R> get(final String endpoint, final Map<String, String> headers, final StringResponseToCollectionTransformer<R> transformer) {
+        final String fullEndpointUrl = fullEndpointUrl(endpoint);
         return Observable.create(subscriber -> {
-            try {
-                final String url = String.format("%s/%s", apiUri, endpoint);
-                Request getRequest = new Request.Builder()
-                        .url(url)
-                        .headers(Headers.of(headers))
-                        .build();
-                logger.info("Making GET request to {}", url);
-                Call call = client.newCall(getRequest);
-                Response response = call.execute();
-                logger.debug("Received response with code '{}' and headers '{}'", response.code(), response.headers());
-                if (response.isSuccessful()) {
-                    try (ResponseBody body = response.body()) {
-                        subscriber.onNext(transformer.apply(body.string()));
-                        subscriber.onCompleted();
+            if (!subscriber.isUnsubscribed()) {
+                try {
+                    Request getRequest = new Request.Builder()
+                            .url(fullEndpointUrl)
+                            .headers(Headers.of(headers))
+                            .build();
+                    logger.info("Making GET request to {}", fullEndpointUrl);
+                    Call call = client.newCall(getRequest);
+                    Response response = call.execute();
+                    logger.debug("Received response with code '{}' and headers '{}'", response.code(), response.headers());
+                    if (response.isSuccessful()) {
+                        try (ResponseBody body = response.body()) {
+                            Collection<R> collection = transformer.apply(body.string());
+                            collection.forEach(subscriber::onNext);
+                            subscriber.onCompleted();
+                        }
+                    } else {
+                        subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                     }
-                } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                } catch (IOException e) {
+                    logger.error("Encountered error while making HTTP GET call to '{}'", fullEndpointUrl, e);
+                    subscriber.onError(new RestServiceCommunicationException(e));
                 }
-            } catch (IOException e) {
-                logger.error("Encountered error while making {} call", endpoint, e);
-                subscriber.onError(new RestServiceCommunicationException(e));
             }
         });
     }
@@ -89,7 +109,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     public <T> Observable<T> getBuffer(final String endpoint, BufferTransformer<T> transformer) {
         return Observable.create(subscriber -> {
             try {
-                final String url = String.format("%s/%s", apiUri, endpoint);
+                final String url = String.format("%s/%s", baseApiUrl, endpoint);
                 Request getRequest = new Request.Builder().url(url).build();
                 logger.info("Making GET request to {}", url);
                 Call call = client.newCall(getRequest);
@@ -119,7 +139,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     public Observable<Buffer> getAsBuffer(final String endpoint, final Headers headers) {
         return Observable.create(subscriber -> {
             try {
-                final String url = String.format("%s/%s", apiUri, endpoint);
+                final String url = String.format("%s/%s", baseApiUrl, endpoint);
                 Request getRequest = new Request.Builder().url(url).headers(headers).build();
                 logger.info("Making GET request to {}", url);
                 Call call = client.newCall(getRequest);
@@ -150,18 +170,13 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
 
 
     @Override
-    public Observable<String> get(final String endpointPath) {
-        return get(endpointPath, StringResponseTransformer.identityOp());
-    }
-
-    @Override
     public Observable<HttpStatus> getHttpStatus(final String endpointPath) {
         return getWithResponseTransformer(endpointPath, httpStatus());
     }
 
     @Override
     public <R> Observable<R> getWithResponseTransformer(final String endpoint, final ResponseTransformer<R> transformer) {
-        final String url = String.format("%s/%s", apiUri, endpoint);
+        final String url = String.format("%s/%s", baseApiUrl, endpoint);
         Request getRequest = new Request.Builder()
                 .header("Content-Type", "application/json")
                 .url(url)
@@ -189,7 +204,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     @Override
     public <R> Observable<R> post(final String endpoint, final String postBody, final ResponseTransformer<R> transformer) {
         RequestBody requestBody = RequestBody.create(JSON, postBody);
-        final String url = String.format("%s/%s", apiUri, endpoint);
+        final String url = String.format("%s/%s", baseApiUrl, endpoint);
         Request getRequest = new Request.Builder()
                 .header("Content-Type", "application/json")
                 .url(url)
@@ -258,7 +273,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                         logger.info("inside request body");
                     }
                 };
-                final String url = String.format("%s/%s", apiUri, endpoint);
+                final String url = String.format("%s/%s", baseApiUrl, endpoint);
                 Request.Builder requestBuilder = new Request.Builder()
                         .header("Content-Type", "application/json");
                 if (authConfig.isPresent()) {
@@ -296,7 +311,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     public Observable<HttpStatus> delete(String endpoint) {
         return Observable.create(subscriber -> {
             try {
-                final String url = String.format("%s/%s", apiUri, endpoint);
+                final String url = String.format("%s/%s", baseApiUrl, endpoint);
                 Request deleteRequest = new Request.Builder()
                         .header("Content-Type", "application/json")
                         .url(url)
@@ -341,7 +356,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
             }
         };
 
-        final String url = String.format("%s/%s", apiUri, endpoint);
+        final String url = String.format("%s/%s", baseApiUrl, endpoint);
         logger.info(String.format("Created request body for %s", url));
         Request request = new Request.Builder().url(url).post(requestBody).build();
         return Observable.create(subscriber ->
@@ -372,6 +387,15 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
         );
 
 
+    }
+
+
+    private String fullEndpointUrl(final String endpoint) throws IllegalArgumentException {
+        return Optional.ofNullable(endpoint)
+                .filter(e -> e.trim().length() > 0)
+                .map(e -> e.startsWith("/") ? e : "/" + e)
+                .map(e -> baseApiUrl + e)
+                .orElseThrow(() -> new IllegalArgumentException("endpoint can't be null or empty"));
     }
 
 }

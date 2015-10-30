@@ -1,38 +1,69 @@
 package io.reactivex.docker.client;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import io.reactivex.docker.client.function.StringResponseToCollectionTransformer;
+import io.reactivex.docker.client.function.StringResponseTransformer;
 import io.reactivex.docker.client.http_client.RxHttpClient;
-import io.reactivex.docker.client.representations.DockerVersion;
 import org.junit.Test;
 import rx.Observable;
-import rx.Subscriber;
+import rx.observers.TestSubscriber;
+
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Map;
+
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.junit.Assert.assertThat;
 
 public class OkHttpBasedRxHttpClientTest {
 
+    final String githubApiUrl = "https://api.github.com";
+    private String githubUser = "shekhargulati";
+
     @Test
-    public void shouldMakeASuccessfulGetRequest() throws Exception {
-        RxHttpClient client = RxHttpClient.newRxClient("192.168.99.100", 2376, "/Users/shekhargulati/.docker/machine/machines/rx-docker-test");
-        Observable<DockerVersion> responseStream = client.get("/version", json -> new Gson().fromJson(json, DockerVersion.class));
+    public void shouldMakeGetCallAndReturnObservableOfString() throws Exception {
+        String listUserRepo = String.format("/users/%s/repos", githubUser);
+        RxHttpClient client = RxHttpClient.newRxClient(githubApiUrl);
+        Observable<String> repos = client.get(listUserRepo);
+        TestSubscriber<String> subscriber = new TestSubscriber<>();
+        repos.subscribe(subscriber);
+        assertThat(subscriber.getOnNextEvents(), hasSize(1));
+        assertThat(subscriber.getOnCompletedEvents(), hasSize(1));
+        subscriber.assertNoErrors();
+        subscriber.assertCompleted();
+    }
 
-        Subscriber<DockerVersion> httpSubscriber = new Subscriber<DockerVersion>() {
-            @Override
-            public void onCompleted() {
-                System.out.println("Successfully received all data");
-            }
+    @Test
+    public void shouldMakeGetCallAndReturnObservableWithTransformedType() throws Exception {
+        String listUserRepo = String.format("/users/%s/repos", githubUser);
+        RxHttpClient client = RxHttpClient.newRxClient(githubApiUrl);
+        Type type = new TypeToken<List<Map<String, Object>>>() {
+        }.getType();
+        StringResponseTransformer<List<Map<String, Object>>> transformer = json -> new Gson().fromJson(json, type);
+        Observable<List<Map<String, Object>>> repos = client.get(listUserRepo, transformer);
+        TestSubscriber<List<Map<String, Object>>> subscriber = new TestSubscriber<>();
+        repos.subscribe(subscriber);
+        assertThat(subscriber.getOnNextEvents(), hasSize(1));
+        assertThat(subscriber.getOnCompletedEvents(), hasSize(1));
+        subscriber.assertNoErrors();
+        subscriber.assertCompleted();
+    }
 
-            @Override
-            public void onError(Throwable e) {
-                System.out.println("Error encountered >> " + e);
-            }
-
-            @Override
-            public void onNext(DockerVersion res) {
-                System.out.println("Received message >> " + res);
-            }
-        };
-
-        responseStream.subscribe(httpSubscriber);
-        httpSubscriber.unsubscribe();
-
+    @Test
+    public void shouldMakeGetCallAndReturnObservableWithCollectionTransformedType() throws Exception {
+        String listUserRepo = String.format("/users/%s/repos", githubUser);
+        RxHttpClient client = RxHttpClient.newRxClient(githubApiUrl);
+        Type type = new TypeToken<List<Map<String, Object>>>() {
+        }.getType();
+        StringResponseToCollectionTransformer<Map<String, Object>> transformer = json -> new Gson().fromJson(json, type);
+        Observable<Map<String, Object>> repos = client.get(listUserRepo, transformer);
+        TestSubscriber<Map<String, Object>> subscriber = new TestSubscriber<>();
+        repos.subscribe(subscriber);
+        assertThat(subscriber.getOnNextEvents(), hasSize(greaterThanOrEqualTo(30)));
+        assertThat(subscriber.getOnCompletedEvents(), hasSize(1));
+        subscriber.assertNoErrors();
+        subscriber.assertCompleted();
     }
 }

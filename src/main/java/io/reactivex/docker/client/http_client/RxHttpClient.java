@@ -2,10 +2,7 @@ package io.reactivex.docker.client.http_client;
 
 import com.squareup.okhttp.Headers;
 import io.reactivex.docker.client.AuthConfig;
-import io.reactivex.docker.client.function.BufferTransformer;
-import io.reactivex.docker.client.function.ResponseBodyTransformer;
-import io.reactivex.docker.client.function.ResponseTransformer;
-import io.reactivex.docker.client.function.StringResponseTransformer;
+import io.reactivex.docker.client.function.*;
 import okio.Buffer;
 import rx.Observable;
 
@@ -29,6 +26,18 @@ public interface RxHttpClient {
         return new OkHttpBasedRxHttpClient(host, port, certPath);
     }
 
+    static RxHttpClient newRxClient(final String apiUrl) {
+        return new OkHttpBasedRxHttpClient(apiUrl);
+    }
+
+    /**
+     * This method makes an HTTP GET request and return response body as String of Observable
+     *
+     * @param endpoint    Endpoint at which to make the GET call
+     * @return Observable sequence of String
+     */
+    Observable<String> get(String endpoint);
+
     /**
      * This method makes an HTTP GET request and then convert the resultant JSON into R using the JsonBodyTransformer function
      *
@@ -50,13 +59,15 @@ public interface RxHttpClient {
      */
     <R> Observable<R> get(String endpoint, Map<String, String> headers, StringResponseTransformer<R> transformer);
 
+    <R> Observable<R> get(String endpoint, StringResponseToCollectionTransformer<R> transformer);
+
+    <R> Observable<R> get(String endpoint, Map<String, String> headers, StringResponseToCollectionTransformer<R> transformer);
+
     Observable<Buffer> getAsBuffer(String endpoint, Headers headers);
 
     Observable<Buffer> getAsBuffer(String endpoint);
 
     <T> Observable<T> getBuffer(String endpoint, BufferTransformer<T> transformer);
-
-    Observable<String> get(String endpointPath);
 
     Observable<HttpStatus> getHttpStatus(String endpointPath);
 
