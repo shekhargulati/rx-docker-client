@@ -473,6 +473,7 @@ class RxDockerClient implements DockerClient {
     public Observable<String> buildImageObs(final String repositoryName, final Path pathToTarArchive) {
         return buildImageObs(repositoryName, pathToTarArchive, BuildImageQueryParameters.withDefaultValues());
     }
+
     @Override
     public Observable<String> buildImageObs(final String repositoryName, final Path pathToTarArchive, BuildImageQueryParameters queryParameters) {
         validate(pathToTarArchive, path -> path == null, () -> "path to archive can't be null");

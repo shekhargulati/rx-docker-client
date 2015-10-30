@@ -3,9 +3,9 @@ package io.reactivex.docker.client.http_client;
 import com.squareup.okhttp.*;
 import io.reactivex.docker.client.AuthConfig;
 import io.reactivex.docker.client.function.BufferTransformer;
-import io.reactivex.docker.client.function.JsonTransformer;
 import io.reactivex.docker.client.function.ResponseBodyTransformer;
 import io.reactivex.docker.client.function.ResponseTransformer;
+import io.reactivex.docker.client.function.StringResponseTransformer;
 import io.reactivex.docker.client.ssl.DockerCertificates;
 import okio.Buffer;
 import okio.BufferedSink;
@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -52,15 +53,23 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     }
 
     @Override
-    public <R> Observable<R> get(final String endpoint, final JsonTransformer<R> transformer) {
+    public <R> Observable<R> get(final String endpoint, final StringResponseTransformer<R> transformer) {
+        return get(endpoint, Collections.emptyMap(), transformer);
+    }
+
+    @Override
+    public <R> Observable<R> get(final String endpoint, final Map<String, String> headers, final StringResponseTransformer<R> transformer) {
         return Observable.create(subscriber -> {
             try {
                 final String url = String.format("%s/%s", apiUri, endpoint);
-                Request getRequest = new Request.Builder().url(url).build();
+                Request getRequest = new Request.Builder()
+                        .url(url)
+                        .headers(Headers.of(headers))
+                        .build();
                 logger.info("Making GET request to {}", url);
                 Call call = client.newCall(getRequest);
                 Response response = call.execute();
-                logger.info("Received response >> {} with headers >> {}", response.code(), response.headers());
+                logger.debug("Received response with code '{}' and headers '{}'", response.code(), response.headers());
                 if (response.isSuccessful()) {
                     try (ResponseBody body = response.body()) {
                         subscriber.onNext(transformer.apply(body.string()));
@@ -142,7 +151,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
 
     @Override
     public Observable<String> get(final String endpointPath) {
-        return get(endpointPath, JsonTransformer.identityOp());
+        return get(endpointPath, StringResponseTransformer.identityOp());
     }
 
     @Override

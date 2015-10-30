@@ -3,13 +3,14 @@ package io.reactivex.docker.client.http_client;
 import com.squareup.okhttp.Headers;
 import io.reactivex.docker.client.AuthConfig;
 import io.reactivex.docker.client.function.BufferTransformer;
-import io.reactivex.docker.client.function.JsonTransformer;
 import io.reactivex.docker.client.function.ResponseBodyTransformer;
 import io.reactivex.docker.client.function.ResponseTransformer;
+import io.reactivex.docker.client.function.StringResponseTransformer;
 import okio.Buffer;
 import rx.Observable;
 
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 
 public interface RxHttpClient {
@@ -20,11 +21,34 @@ public interface RxHttpClient {
         return new OkHttpBasedRxHttpClient(host, port);
     }
 
+    static RxHttpClient newRxClient(final String host, final int port, String certPath) {
+        return newRxClient(host, port, Optional.ofNullable(certPath));
+    }
+
     static RxHttpClient newRxClient(final String host, final int port, Optional<String> certPath) {
         return new OkHttpBasedRxHttpClient(host, port, certPath);
     }
 
-    <R> Observable<R> get(String endpointPath, JsonTransformer<R> transformer);
+    /**
+     * This method makes an HTTP GET request and then convert the resultant JSON into R using the JsonBodyTransformer function
+     *
+     * @param endpoint    Endpoint at which to make the GET call
+     * @param transformer function to convert String response into some other domain object
+     * @param <R>         type returned by StringResponseTransformer
+     * @return Observable sequence of R
+     */
+    <R> Observable<R> get(final String endpoint, StringResponseTransformer<R> transformer);
+
+    /**
+     * This method makes an HTTP GET request and then convert the resultant JSON into R using the JsonBodyTransformer function
+     *
+     * @param endpoint    Endpoint at which to make the GET call
+     * @param headers     HTTP headers to be sent along with the request
+     * @param transformer function to convert String response into some other domain object
+     * @param <R>         type returned by StringResponseTransformer
+     * @return Observable sequence of R
+     */
+    <R> Observable<R> get(String endpoint, Map<String, String> headers, StringResponseTransformer<R> transformer);
 
     Observable<Buffer> getAsBuffer(String endpoint, Headers headers);
 

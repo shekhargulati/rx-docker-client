@@ -7,13 +7,11 @@ import org.junit.Test;
 import rx.Observable;
 import rx.Subscriber;
 
-import java.util.Optional;
-
 public class OkHttpBasedRxHttpClientTest {
 
     @Test
     public void shouldMakeASuccessfulGetRequest() throws Exception {
-        RxHttpClient client = RxHttpClient.newRxClient("192.168.99.100", 2376, Optional.of("/Users/shekhargulati/.docker/machine/machines/rx-docker-test"));
+        RxHttpClient client = RxHttpClient.newRxClient("192.168.99.100", 2376, "/Users/shekhargulati/.docker/machine/machines/rx-docker-test");
         Observable<DockerVersion> responseStream = client.get("/version", json -> new Gson().fromJson(json, DockerVersion.class));
 
         Subscriber<DockerVersion> httpSubscriber = new Subscriber<DockerVersion>() {
