@@ -123,7 +123,7 @@ class RxDockerClient implements DockerClient {
     @Override
     public HttpStatus ping() {
         final String endpoint = PING_ENDPOINT;
-        return httpClient.getHttpStatus(endpoint).onErrorReturn(e -> {
+        return httpClient.getResponseHttpStatus(endpoint).onErrorReturn(e -> {
             if (e instanceof RestServiceCommunicationException) {
                 logger.info("checkAuth threw RestServiceCommunicationException");
                 RestServiceCommunicationException restException = (RestServiceCommunicationException) e;
@@ -313,7 +313,7 @@ class RxDockerClient implements DockerClient {
     public void exportContainer(final String containerId, final Path pathToExportTo) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_EXPORT_ENDPOINT, containerId);
-        Observable<Buffer> bufferStream = httpClient.getAsBuffer(endpointUri);
+        Observable<Buffer> bufferStream = httpClient.getResponseBuffer(endpointUri);
 
         String exportFilePath = pathToExportTo.toString() + "/" + containerId + ".tar";
         try (FileOutputStream out = new FileOutputStream(exportFilePath)) {
@@ -369,7 +369,7 @@ class RxDockerClient implements DockerClient {
         final String endpointUri = String.format(CONTAINER_LOGS_ENDPOINT, containerId) + queryParameters.toQueryParametersString();
 
         return httpClient
-                .get(endpointUri,
+                .getResponseBuffer(endpointUri,
                         Stream.of(new SimpleEntry<>("Accept", "application/vnd.docker.raw-stream"))
                                 .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue)))
                 .map(buffer -> buffer.readString(Charset.defaultCharset()));

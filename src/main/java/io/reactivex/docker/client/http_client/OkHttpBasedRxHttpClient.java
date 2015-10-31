@@ -132,34 +132,27 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     }
 
     @Override
-    public Observable<Buffer> get(final String endpoint, final Map<String, String> headers) {
+    public Observable<Buffer> getResponseBuffer(final String endpoint, final Map<String, String> headers) {
         return get(endpoint, headers, BufferTransformer.identityOp());
     }
 
     @Override
-    public Observable<Buffer> getAsBuffer(final String endpoint) {
-        return get(endpoint, Collections.emptyMap());
-    }
-
-
-    @Override
-    public Observable<HttpStatus> getHttpStatus(final String endpointPath) {
-        return getWithResponseTransformer(endpointPath, httpStatus());
+    public Observable<Buffer> getResponseBuffer(final String endpoint) {
+        return getResponseBuffer(endpoint, Collections.emptyMap());
     }
 
     @Override
-    public <R> Observable<R> getWithResponseTransformer(final String endpoint, final ResponseTransformer<R> transformer) {
-        final String url = String.format("%s/%s", baseApiUrl, endpoint);
-        Request getRequest = new Request.Builder()
-                .header("Content-Type", "application/json")
-                .url(url)
-                .get()
-                .build();
-        logger.info("Making GET request to {}", url);
+    public Observable<HttpStatus> getResponseHttpStatus(final String endpointPath) {
+        return get(endpointPath, httpStatus());
+    }
+
+    @Override
+    public <R> Observable<R> get(final String endpoint, final ResponseTransformer<R> transformer) {
+        final String fullEndpointUrl = fullEndpointUrl(endpoint);
+
         return Observable.create(subscriber -> {
             try {
-                Call call = client.newCall(getRequest);
-                Response response = call.execute();
+                Response response = makeHttpGetRequest(fullEndpointUrl);
                 if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
                     subscriber.onNext(transformer.apply(response));
                     subscriber.onCompleted();
