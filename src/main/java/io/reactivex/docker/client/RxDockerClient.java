@@ -403,7 +403,7 @@ class RxDockerClient implements DockerClient {
     public Observable<Buffer> pullImageObs(final String fromImage, final Optional<String> user, final Optional<String> tag) {
         validate(fromImage, Strings::isEmptyOrNull, () -> "fromImage can't be null or empty.");
         final String endpoint = String.format(IMAGE_CREATE_ENDPOINT, user.map(u -> u + "/").orElse(""), fromImage, tag.orElse("latest"));
-        return httpClient.postBuffer(endpoint);
+        return httpClient.postAndReceiveResponseBuffer(endpoint);
     }
 
     @Override
@@ -540,6 +540,6 @@ class RxDockerClient implements DockerClient {
     public Observable<String> pushImageObs(final String image, AuthConfig authConfig) {
         validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
-        return httpClient.postBuffer(endpoint, authConfig).map(buffer -> buffer.readString(Charset.defaultCharset()));
+        return httpClient.postAndReceiveResponseBuffer(endpoint, authConfig).map(buffer -> buffer.readString(Charset.defaultCharset()));
     }
 }

@@ -149,38 +149,9 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     @Override
     public <R> Observable<R> get(final String endpoint, final ResponseTransformer<R> transformer) {
         final String fullEndpointUrl = fullEndpointUrl(endpoint);
-
         return Observable.create(subscriber -> {
             try {
                 Response response = makeHttpGetRequest(fullEndpointUrl);
-                if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
-                    subscriber.onNext(transformer.apply(response));
-                    subscriber.onCompleted();
-                } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
-                }
-            } catch (IOException e) {
-                logger.error("Encountered error while making {} call", endpoint, e);
-                subscriber.onError(new RestServiceCommunicationException(e));
-            }
-        });
-    }
-
-
-    @Override
-    public <R> Observable<R> post(final String endpoint, final String postBody, final ResponseTransformer<R> transformer) {
-        RequestBody requestBody = RequestBody.create(JSON, postBody);
-        final String url = String.format("%s/%s", baseApiUrl, endpoint);
-        Request getRequest = new Request.Builder()
-                .header("Content-Type", "application/json")
-                .url(url)
-                .post(requestBody)
-                .build();
-        logger.info("Making POST request to {}", url);
-        return Observable.create(subscriber -> {
-            try {
-                Call call = client.newCall(getRequest);
-                Response response = call.execute();
                 if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
                     subscriber.onNext(transformer.apply(response));
                     subscriber.onCompleted();
@@ -215,17 +186,37 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     }
 
     @Override
-    public Observable<Buffer> postBuffer(final String endpoint) {
-        return postBuffer(endpoint, EMPTY_BODY, Optional.<AuthConfig>empty());
+    public <R> Observable<R> post(final String endpoint, final String postBody, final ResponseTransformer<R> transformer) {
+        final String fullEndpointUrl = fullEndpointUrl(endpoint);
+        return Observable.create(subscriber -> {
+            try {
+                Response response = makeHttpPostRequest(fullEndpointUrl, postBody);
+                if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
+                    subscriber.onNext(transformer.apply(response));
+                    subscriber.onCompleted();
+                } else {
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                }
+            } catch (IOException e) {
+                logger.error("Encountered error while making {} call", endpoint, e);
+                subscriber.onError(new RestServiceCommunicationException(e));
+            }
+        });
     }
 
     @Override
-    public Observable<Buffer> postBuffer(final String endpoint, AuthConfig authConfig) {
-        return postBuffer(endpoint, EMPTY_BODY, Optional.ofNullable(authConfig));
+    public Observable<Buffer> postAndReceiveResponseBuffer(final String endpoint) {
+        return postAndReceiveResponseBuffer(endpoint, EMPTY_BODY, Optional.<AuthConfig>empty());
     }
 
     @Override
-    public Observable<Buffer> postBuffer(final String endpoint, final String postBody, Optional<AuthConfig> authConfig) {
+    public Observable<Buffer> postAndReceiveResponseBuffer(final String endpoint, AuthConfig authConfig) {
+        return postAndReceiveResponseBuffer(endpoint, EMPTY_BODY, Optional.ofNullable(authConfig));
+    }
+
+    @Override
+    public Observable<Buffer> postAndReceiveResponseBuffer(final String endpoint, final String postBody, Optional<AuthConfig> authConfig) {
+        final String fullEndpointUrl = fullEndpointUrl(endpoint);
         return Observable.create(subscriber -> {
             try {
                 RequestBody requestBody = new RequestBody() {
@@ -239,21 +230,20 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                         logger.info("inside request body");
                     }
                 };
-                final String url = String.format("%s/%s", baseApiUrl, endpoint);
                 Request.Builder requestBuilder = new Request.Builder()
                         .header("Content-Type", "application/json");
                 if (authConfig.isPresent()) {
                     requestBuilder
                             .header("X-Registry-Auth", authConfig.get().xAuthHeader());
                 }
-                Request getRequest = requestBuilder
-                        .url(url)
+                Request postRequest = requestBuilder
+                        .url(fullEndpointUrl)
                         .post(requestBody)
                         .build();
-                logger.info("Making POST request to {}", url);
-                Call call = client.newCall(getRequest);
+                logger.info("Making POST request to {}", fullEndpointUrl);
+                Call call = client.newCall(postRequest);
                 Response response = call.execute();
-                logger.info("Received response >> {} with headers >> {}", response.code(), response.headers());
+                logger.debug("Received response with code '{}' and headers '{}'", response.code(), response.headers());
                 if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
                     try (ResponseBody body = response.body()) {
                         BufferedSource source = body.source();
@@ -266,33 +256,6 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                     subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                 }
             } catch (Exception e) {
-                logger.error("Encountered error while making {} call", endpoint, e);
-                subscriber.onError(new RestServiceCommunicationException(e));
-            }
-        });
-    }
-
-
-    @Override
-    public Observable<HttpStatus> delete(String endpoint) {
-        return Observable.create(subscriber -> {
-            try {
-                final String url = String.format("%s/%s", baseApiUrl, endpoint);
-                Request deleteRequest = new Request.Builder()
-                        .header("Content-Type", "application/json")
-                        .url(url)
-                        .delete()
-                        .build();
-                logger.info("Making DELETE request to {}", url);
-                Call call = client.newCall(deleteRequest);
-                Response response = call.execute();
-                if (response.isSuccessful()) {
-                    subscriber.onNext(HttpStatus.of(response.code(), response.message()));
-                    subscriber.onCompleted();
-                } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
-                }
-            } catch (IOException e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
                 subscriber.onError(new RestServiceCommunicationException(e));
             }
@@ -322,15 +285,11 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
             }
         };
 
-        final String url = String.format("%s/%s", baseApiUrl, endpoint);
-        logger.info(String.format("Created request body for %s", url));
-        Request request = new Request.Builder().url(url).post(requestBody).build();
+        final String fullEndpointUrl = fullEndpointUrl(endpoint);
         return Observable.create(subscriber ->
-
                 {
                     try {
-                        Call call = client.newCall(request);
-                        Response response = call.execute();
+                        Response response = makeHttpPostRequest(fullEndpointUrl, requestBody);
                         if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
                             try (ResponseBody body = response.body()) {
                                 BufferedSource source = body.source();
@@ -351,9 +310,38 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                 }
 
         );
-
-
     }
+
+    @Override
+    public Observable<HttpStatus> delete(final String endpoint) {
+        final String fullEndpointUrl = fullEndpointUrl(endpoint);
+        return Observable.create(subscriber -> {
+            try {
+                Response response = makeHttpDeleteRequest(fullEndpointUrl);
+                if (response.isSuccessful()) {
+                    subscriber.onNext(HttpStatus.of(response.code(), response.message()));
+                    subscriber.onCompleted();
+                } else {
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                }
+            } catch (IOException e) {
+                logger.error("Encountered error while making {} call", endpoint, e);
+                subscriber.onError(new RestServiceCommunicationException(e));
+            }
+        });
+    }
+
+    private Response makeHttpDeleteRequest(String fullEndpointUrl) throws IOException {
+        Request deleteRequest = new Request.Builder()
+                .header("Content-Type", "application/json")
+                .url(fullEndpointUrl)
+                .delete()
+                .build();
+        logger.info("Making DELETE request to {}", fullEndpointUrl);
+        Call call = client.newCall(deleteRequest);
+        return call.execute();
+    }
+
 
     private Response makeHttpGetRequest(final String fullEndpointUrl) throws IOException {
         Request getRequest = new Request.Builder()
@@ -372,5 +360,21 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                 .map(e -> e.startsWith("/") ? e : "/" + e)
                 .map(e -> baseApiUrl + e)
                 .orElseThrow(() -> new IllegalArgumentException("endpoint can't be null or empty"));
+    }
+
+    private Response makeHttpPostRequest(String fullEndpointUrl, String body) throws IOException {
+        RequestBody requestBody = RequestBody.create(JSON, body);
+        return makeHttpPostRequest(fullEndpointUrl, requestBody);
+    }
+
+    private Response makeHttpPostRequest(final String fullEndpointUrl, final RequestBody requestBody) throws IOException {
+        Request getRequest = new Request.Builder()
+                .header("Content-Type", "application/json")
+                .url(fullEndpointUrl)
+                .post(requestBody)
+                .build();
+        logger.info("Making POST request to {}", fullEndpointUrl);
+        Call call = client.newCall(getRequest);
+        return call.execute();
     }
 }

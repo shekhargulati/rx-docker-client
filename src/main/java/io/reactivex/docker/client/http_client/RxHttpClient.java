@@ -84,11 +84,11 @@ public interface RxHttpClient {
 
     <R> Observable<R> post(String endpoint, String postBody, ResponseBodyTransformer<R> bodyTransformer);
 
-    Observable<Buffer> postBuffer(String endpoint);
+    Observable<Buffer> postAndReceiveResponseBuffer(String endpoint);
 
-    Observable<Buffer> postBuffer(String endpoint, AuthConfig authConfig);
+    Observable<Buffer> postAndReceiveResponseBuffer(String endpoint, AuthConfig authConfig);
 
-    Observable<Buffer> postBuffer(String endpoint, String postBody, Optional<AuthConfig> authConfig);
+    Observable<Buffer> postAndReceiveResponseBuffer(String endpoint, String postBody, Optional<AuthConfig> authConfig);
 
     Observable<HttpStatus> delete(final String endpoint);
 
