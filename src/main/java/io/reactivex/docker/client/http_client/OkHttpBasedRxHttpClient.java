@@ -66,7 +66,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
 
     @Override
     public <R> Observable<R> get(final String endpoint, final Map<String, String> headers, final StringResponseTransformer<R> transformer) {
-        return get(endpoint, transformer.toCollectionTransformer());
+        return get(endpoint, headers, transformer.toCollectionTransformer());
     }
 
     @Override
@@ -80,20 +80,15 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
         return Observable.create(subscriber -> {
             if (!subscriber.isUnsubscribed()) {
                 try {
-                    Request getRequest = new Request.Builder()
-                            .url(fullEndpointUrl)
-                            .headers(Headers.of(headers))
-                            .build();
-                    logger.info("Making GET request to {}", fullEndpointUrl);
-                    Call call = client.newCall(getRequest);
-                    Response response = call.execute();
-                    logger.debug("Received response with code '{}' and headers '{}'", response.code(), response.headers());
-                    if (response.isSuccessful()) {
+                    Response response = makeHttpGetRequest(fullEndpointUrl);
+                    if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
                         try (ResponseBody body = response.body()) {
                             Collection<R> collection = transformer.apply(body.string());
                             collection.forEach(subscriber::onNext);
                             subscriber.onCompleted();
                         }
+                    } else if (response.isSuccessful()) {
+                        subscriber.onCompleted();
                     } else {
                         subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                     }
@@ -106,15 +101,16 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     }
 
     @Override
-    public <T> Observable<T> getBuffer(final String endpoint, BufferTransformer<T> transformer) {
+    public <T> Observable<T> get(final String endpoint, final BufferTransformer<T> transformer) {
+        return get(endpoint, Collections.emptyMap(), transformer);
+    }
+
+    @Override
+    public <T> Observable<T> get(final String endpoint, final Map<String, String> headers, final BufferTransformer<T> transformer) {
+        final String fullEndpointUrl = fullEndpointUrl(endpoint);
         return Observable.create(subscriber -> {
             try {
-                final String url = String.format("%s/%s", baseApiUrl, endpoint);
-                Request getRequest = new Request.Builder().url(url).build();
-                logger.info("Making GET request to {}", url);
-                Call call = client.newCall(getRequest);
-                Response response = call.execute();
-                logger.info("Received response >> {} with headers >> {}", response.code(), response.headers());
+                Response response = makeHttpGetRequest(fullEndpointUrl);
                 if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
                     try (ResponseBody body = response.body()) {
                         BufferedSource source = body.source();
@@ -136,36 +132,13 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     }
 
     @Override
-    public Observable<Buffer> getAsBuffer(final String endpoint, final Headers headers) {
-        return Observable.create(subscriber -> {
-            try {
-                final String url = String.format("%s/%s", baseApiUrl, endpoint);
-                Request getRequest = new Request.Builder().url(url).headers(headers).build();
-                logger.info("Making GET request to {}", url);
-                Call call = client.newCall(getRequest);
-                Response response = call.execute();
-                logger.info("Received response >> {} with headers >> {}", response.code(), response.headers());
-                if (response.isSuccessful()) {
-                    try (ResponseBody body = response.body()) {
-                        BufferedSource source = body.source();
-                        while (!source.exhausted()) {
-                            subscriber.onNext(source.buffer());
-                        }
-                        subscriber.onCompleted();
-                    }
-                } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
-                }
-            } catch (IOException e) {
-                logger.error("Encountered error while making {} call", endpoint, e);
-                subscriber.onError(new RestServiceCommunicationException(e));
-            }
-        });
+    public Observable<Buffer> get(final String endpoint, final Map<String, String> headers) {
+        return get(endpoint, headers, BufferTransformer.identityOp());
     }
 
     @Override
     public Observable<Buffer> getAsBuffer(final String endpoint) {
-        return getAsBuffer(endpoint, Headers.of(Collections.emptyMap()));
+        return get(endpoint, Collections.emptyMap());
     }
 
 
@@ -389,6 +362,16 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
 
     }
 
+    private Response makeHttpGetRequest(final String fullEndpointUrl) throws IOException {
+        Request getRequest = new Request.Builder()
+                .url(fullEndpointUrl)
+                .build();
+        logger.info("Making GET request to {}", fullEndpointUrl);
+        Call call = client.newCall(getRequest);
+        Response response = call.execute();
+        logger.debug("Received response with code '{}' and headers '{}'", response.code(), response.headers());
+        return response;
+    }
 
     private String fullEndpointUrl(final String endpoint) throws IllegalArgumentException {
         return Optional.ofNullable(endpoint)
@@ -397,5 +380,4 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                 .map(e -> baseApiUrl + e)
                 .orElseThrow(() -> new IllegalArgumentException("endpoint can't be null or empty"));
     }
-
 }

@@ -4,8 +4,8 @@ package io.reactivex.docker.client;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.squareup.okhttp.Headers;
 import com.squareup.okhttp.ResponseBody;
+import io.reactivex.docker.client.function.BufferTransformer;
 import io.reactivex.docker.client.function.StringResponseToCollectionTransformer;
 import io.reactivex.docker.client.function.StringResponseTransformer;
 import io.reactivex.docker.client.http_client.HttpStatus;
@@ -24,9 +24,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
@@ -352,8 +354,8 @@ class RxDockerClient implements DockerClient {
     public Observable<ContainerStats> containerStatsObs(final String containerId) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_STATS_ENDPOINT, containerId);
-        return httpClient.getBuffer(endpointUri,
-                buffer -> gson.fromJson(buffer.readUtf8(), ContainerStats.class));
+        return httpClient.get(endpointUri,
+                (BufferTransformer<ContainerStats>) buffer -> gson.fromJson(buffer.readUtf8(), ContainerStats.class));
     }
 
     @Override
@@ -365,7 +367,12 @@ class RxDockerClient implements DockerClient {
     public Observable<String> containerLogsObs(final String containerId, ContainerLogQueryParameters queryParameters) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_LOGS_ENDPOINT, containerId) + queryParameters.toQueryParametersString();
-        return httpClient.getAsBuffer(endpointUri, Headers.of("Accept", "application/vnd.docker.raw-stream")).map(buffer -> buffer.readString(Charset.defaultCharset()));
+
+        return httpClient
+                .get(endpointUri,
+                        Stream.of(new SimpleEntry<>("Accept", "application/vnd.docker.raw-stream"))
+                                .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue)))
+                .map(buffer -> buffer.readString(Charset.defaultCharset()));
     }
 
     // Image Endpoint

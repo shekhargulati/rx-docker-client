@@ -1,6 +1,5 @@
 package io.reactivex.docker.client.http_client;
 
-import com.squareup.okhttp.Headers;
 import io.reactivex.docker.client.AuthConfig;
 import io.reactivex.docker.client.function.*;
 import okio.Buffer;
@@ -63,11 +62,13 @@ public interface RxHttpClient {
 
     <R> Observable<R> get(String endpoint, Map<String, String> headers, StringResponseToCollectionTransformer<R> transformer);
 
-    Observable<Buffer> getAsBuffer(String endpoint, Headers headers);
+    <T> Observable<T> get(String endpoint, Map<String, String> headers, BufferTransformer<T> transformer);
+
+    Observable<Buffer> get(String endpoint, Map<String, String> headers);
 
     Observable<Buffer> getAsBuffer(String endpoint);
 
-    <T> Observable<T> getBuffer(String endpoint, BufferTransformer<T> transformer);
+    <T> Observable<T> get(String endpoint, BufferTransformer<T> transformer);
 
     Observable<HttpStatus> getHttpStatus(String endpointPath);
 
