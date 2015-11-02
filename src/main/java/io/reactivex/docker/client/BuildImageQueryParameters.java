@@ -31,6 +31,11 @@ public class BuildImageQueryParameters {
     private Optional<String> remote = Optional.empty();
 
     private BuildImageQueryParameters() {
+        this(null, null);
+    }
+
+    public BuildImageQueryParameters(String dockerFile) {
+        this(dockerFile, null);
     }
 
     public BuildImageQueryParameters(String dockerFile, String remote) {
@@ -39,10 +44,14 @@ public class BuildImageQueryParameters {
     }
 
     public String toQueryParameterString() {
-        Optional<StringBuilder> queryBuilder = Optional.of(new StringBuilder("?"))
-                .flatMap(qb -> dockerFile.map(df -> qb.append("dockerfile=").append(df).append("&")))
-                .flatMap(qb -> remote.map(r -> qb.append("remote=").append(r).append("&")));
-        return queryBuilder.filter(qb -> qb.toString().endsWith("&")).map(StringBuilder::toString).map(qb -> qb.substring(0, qb.lastIndexOf("&"))).orElse("");
+        Optional<StringBuilder> queryBuilder = Optional.of(new StringBuilder("&"))
+                .flatMap(qb -> Optional.ofNullable(dockerFile.map(df -> qb.append("dockerfile=").append(df).append("&")).orElse(qb)))
+                .flatMap(qb -> Optional.ofNullable(remote.map(r -> qb.append("remote=").append(r).append("&")).orElse(qb)));
+        return queryBuilder
+                .filter(qb -> qb.toString().endsWith("&"))
+                .map(StringBuilder::toString)
+                .map(qb -> qb.substring(0, qb.lastIndexOf("&")))
+                .orElse("");
     }
 
     public static BuildImageQueryParameters withDefaultValues() {

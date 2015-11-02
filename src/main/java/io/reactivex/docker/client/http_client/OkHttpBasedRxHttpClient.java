@@ -332,7 +332,6 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                         subscriber.onError(new RestServiceCommunicationException(e));
                     }
                 }
-
         );
     }
 

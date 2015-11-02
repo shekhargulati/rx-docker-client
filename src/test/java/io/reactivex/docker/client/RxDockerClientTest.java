@@ -355,7 +355,17 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldBuildImageFromTarWithOnlyDockerFile() throws Exception {
-        Observable<String> buildImageObs = client.buildImageObs("test_rx_docker/my_first_docker_image", Paths.get("src", "test", "resources", "images", "my_docker_image.tar"));
+        Observable<String> buildImageObs = client.buildImageObs("test_rx_docker/my_hello_world_image", Paths.get("src", "test", "resources", "images", "my_hello_world_image.tar"));
+        final StringBuilder resultCapturer = new StringBuilder();
+        buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
+        assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
+    }
+
+    @Test
+    public void shouldBuildImageWhenDockerFileIsPresentAtDifferentPathInsideTar() throws Exception {
+        String repositoryName = "test_rx_docker/dockerfile_option_image";
+        Path path = Paths.get("src", "test", "resources", "images", "dockerfile_option_image.tar");
+        Observable<String> buildImageObs = client.buildImageObs(repositoryName, path, new BuildImageQueryParameters("innerDir/innerDockerfile"));
         final StringBuilder resultCapturer = new StringBuilder();
         buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
         assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
