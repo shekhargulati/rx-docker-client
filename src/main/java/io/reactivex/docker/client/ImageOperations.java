@@ -127,4 +127,6 @@ public interface ImageOperations {
     Observable<String> pushImageObs(String image, AuthConfig authConfig);
 
     Observable<String> buildImageObs(String repositoryName, Path pathToTarArchive);
+
+    Observable<String> buildImageObs(String repositoryName, BuildImageQueryParameters queryParameters);
 }

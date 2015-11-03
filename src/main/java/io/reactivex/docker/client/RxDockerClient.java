@@ -514,6 +514,12 @@ class RxDockerClient implements DockerClient {
     }
 
     @Override
+    public Observable<String> buildImageObs(final String repositoryName, BuildImageQueryParameters queryParameters) {
+        final String endpoint = String.format("%s?t=%s", IMAGE_BUILD_ENDPOINT, repositoryName) + queryParameters.toQueryParameterString();
+        return httpClient.postAndReceiveResponseBuffer(endpoint).map(buffer -> buffer.readString(Charset.defaultCharset()));
+    }
+
+    @Override
     public HttpStatus tagImage(final String image, final ImageTagQueryParameters queryParameters) {
         return tagImageObs(image, queryParameters).toBlocking().single();
     }

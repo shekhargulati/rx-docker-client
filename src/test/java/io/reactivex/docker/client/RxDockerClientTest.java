@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import static io.reactivex.docker.client.BuildImageQueryParameters.withRemoteDockerfile;
 import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -366,6 +367,15 @@ public class RxDockerClientTest {
         String repositoryName = "test_rx_docker/dockerfile_option_image";
         Path path = Paths.get("src", "test", "resources", "images", "dockerfile_option_image.tar");
         Observable<String> buildImageObs = client.buildImageObs(repositoryName, path, new BuildImageQueryParameters("innerDir/innerDockerfile"));
+        final StringBuilder resultCapturer = new StringBuilder();
+        buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
+        assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
+    }
+
+    @Test
+    public void shouldBuildImageUsingRemoteDockerFile() throws Exception {
+        String repository = "test_rx_docker/hello_world_remote";
+        Observable<String> buildImageObs = client.buildImageObs(repository, withRemoteDockerfile("https://raw.githubusercontent.com/shekhargulati/hello-world-docker/master/Dockerfile"));
         final StringBuilder resultCapturer = new StringBuilder();
         buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
         assertThat(resultCapturer.toString(), equalTo("Completed!!!"));

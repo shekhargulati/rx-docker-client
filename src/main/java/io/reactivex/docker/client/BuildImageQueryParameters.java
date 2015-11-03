@@ -30,6 +30,10 @@ public class BuildImageQueryParameters {
     private Optional<String> dockerFile = Optional.empty();
     private Optional<String> remote = Optional.empty();
 
+    public static BuildImageQueryParameters withRemoteDockerfile(final String remote) {
+        return new BuildImageQueryParameters(null, remote);
+    }
+
     private BuildImageQueryParameters() {
         this(null, null);
     }
