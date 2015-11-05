@@ -6,6 +6,7 @@ apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
+group = 'io.shekhar.reactivex'
 sourceCompatibility = 1.8
 
 repositories {
