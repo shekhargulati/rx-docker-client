@@ -6,7 +6,7 @@ apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
-group = 'io.shekhar.reactivex'
+group = 'com.shekhargulati.reactivex'
 sourceCompatibility = 1.8
 
 repositories {
@@ -17,7 +17,7 @@ publishing {
     publications {
         MyPublication(MavenPublication) {
             from components.java
-            groupId 'io.shekhar.reactivex'
+            groupId 'com.shekhargulati.reactivex'
             artifactId 'rx-docker-client'
             version '0.1.0'
         }
