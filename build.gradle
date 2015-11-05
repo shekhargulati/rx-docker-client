@@ -1,3 +1,6 @@
+plugins {
+    id 'net.researchgate.release' version '2.3.3'
+}
 apply plugin: 'java'
 
 sourceCompatibility = 1.8
@@ -6,6 +9,7 @@ version = '0.1.0'
 repositories {
     mavenCentral()
 }
+
 
 dependencies {
     compile 'io.reactivex:rxjava:1.0.15'
