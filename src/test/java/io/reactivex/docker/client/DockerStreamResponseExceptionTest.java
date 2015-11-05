@@ -22,40 +22,22 @@
  * THE SOFTWARE.
  */
 
-package io.reactivex.docker.client.http_client;
+package io.reactivex.docker.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.Subscriber;
+import org.junit.Test;
 
-public class HttpStatusBufferSubscriber extends Subscriber<String> {
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertThat;
 
-    private final Logger logger = LoggerFactory.getLogger(HttpStatusBufferSubscriber.class);
+public class DockerStreamResponseExceptionTest {
 
-    private HttpStatus status = null;
+    @Test
+    public void shouldCreateExceptionObjectFromJson() throws Exception {
+        final String json = "{\"errorDetail\":{\"message\":\"unauthorized: access to the requested resource is not authorized\"},\"error\":\"unauthorized: access to the requested resource is not authorized\"}";
+        DockerStreamResponseException ex = new DockerStreamResponseException(json);
+        assertThat(ex.getError(), equalTo("unauthorized: access to the requested resource is not authorized"));
+        assertThat(ex.getMessage(), equalTo("unauthorized: access to the requested resource is not authorized"));
 
-    @Override
-    public void onCompleted() {
-        logger.info("Successfully processed all events");
-        status = HttpStatus.OK;
-    }
 
-    @Override
-    public void onError(Throwable e) {
-        logger.error("Error encountered >> ", e);
-        if (e instanceof RestServiceCommunicationException) {
-            status = HttpStatus.of(((RestServiceCommunicationException) e).getCode(), ((RestServiceCommunicationException) e).getHttpMessage());
-        } else {
-            status = HttpStatus.SERVER_ERROR;
-        }
-    }
-
-    @Override
-    public void onNext(String res) {
-        logger.info("Received message >> {}", res);
-    }
-
-    public HttpStatus getStatus() {
-        return status;
     }
 }

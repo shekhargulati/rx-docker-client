@@ -413,8 +413,8 @@ public class RxDockerClientTest {
         buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> System.out.println("Completed!!!"));
 
         final StringBuilder resultCapturer = new StringBuilder();
-        client.pushImageObs(image, AuthConfig.authConfig("xxxx", "xxx", "xxx")).subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
-        assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
+        client.pushImageObs(image, AuthConfig.authConfig("xxxx", "xxx", "xxx")).subscribe(System.out::println, error -> resultCapturer.append(error.getMessage()), () -> fail("should not complete as authentication header was incorrect!!"));
+        assertThat(resultCapturer.toString(), equalTo("unauthorized: access to the requested resource is not authorized"));
     }
 
     @Test

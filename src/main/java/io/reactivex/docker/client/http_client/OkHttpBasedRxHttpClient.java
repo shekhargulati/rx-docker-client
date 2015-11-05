@@ -26,6 +26,7 @@ package io.reactivex.docker.client.http_client;
 
 import com.squareup.okhttp.*;
 import io.reactivex.docker.client.AuthConfig;
+import io.reactivex.docker.client.DockerStreamResponseException;
 import io.reactivex.docker.client.function.*;
 import io.reactivex.docker.client.ssl.DockerCertificates;
 import okio.Buffer;
@@ -44,6 +45,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import static io.reactivex.docker.client.function.ResponseTransformer.httpStatus;
 
@@ -125,12 +127,12 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     }
 
     @Override
-    public <T> Observable<T> get(final String endpoint, final BufferTransformer<T> transformer) {
-        return get(endpoint, Collections.emptyMap(), transformer);
+    public <T> Observable<T> getResponseStream(final String endpoint, final StringResponseTransformer<T> transformer) {
+        return getResponseStream(endpoint, Collections.emptyMap(), transformer);
     }
 
     @Override
-    public <T> Observable<T> get(final String endpoint, final Map<String, String> headers, final BufferTransformer<T> transformer) {
+    public <T> Observable<T> getResponseStream(final String endpoint, final Map<String, String> headers, final StringResponseTransformer<T> transformer) {
         final String fullEndpointUrl = fullEndpointUrl(endpoint);
         return Observable.create(subscriber -> {
             try {
@@ -139,7 +141,7 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                     try (ResponseBody body = response.body()) {
                         BufferedSource source = body.source();
                         while (!source.exhausted() && !subscriber.isUnsubscribed()) {
-                            subscriber.onNext(transformer.apply(source.buffer()));
+                            subscriber.onNext(transformer.apply(source.buffer().readUtf8()));
                         }
                         subscriber.onCompleted();
                     }
@@ -156,13 +158,39 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     }
 
     @Override
-    public Observable<Buffer> getResponseBuffer(final String endpoint, final Map<String, String> headers) {
-        return get(endpoint, headers, BufferTransformer.identityOp());
+    public Observable<String> getResponseStream(final String endpoint, final Map<String, String> headers) {
+        return getResponseStream(endpoint, headers, StringResponseTransformer.identityOp());
     }
 
     @Override
-    public Observable<Buffer> getResponseBuffer(final String endpoint) {
-        return getResponseBuffer(endpoint, Collections.emptyMap());
+    public Observable<Buffer> getResponseBufferStream(final String endpoint) {
+        final String fullEndpointUrl = fullEndpointUrl(endpoint);
+        return Observable.create(subscriber -> {
+            try {
+                Response response = makeHttpGetRequest(fullEndpointUrl);
+                if (response.isSuccessful() && !subscriber.isUnsubscribed()) {
+                    try (ResponseBody body = response.body()) {
+                        BufferedSource source = body.source();
+                        while (!source.exhausted() && !subscriber.isUnsubscribed()) {
+                            subscriber.onNext(source.buffer());
+                        }
+                        subscriber.onCompleted();
+                    }
+                } else if (response.isSuccessful()) {
+                    subscriber.onCompleted();
+                } else {
+                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                }
+            } catch (IOException e) {
+                logger.error("Encountered error while making {} call", endpoint, e);
+                subscriber.onError(new RestServiceCommunicationException(e));
+            }
+        });
+    }
+
+    @Override
+    public Observable<String> getResponseStream(final String endpoint) {
+        return getResponseStream(endpoint, Collections.emptyMap());
     }
 
     @Override
@@ -229,17 +257,17 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
     }
 
     @Override
-    public Observable<Buffer> postAndReceiveResponseBuffer(final String endpoint) {
-        return postAndReceiveResponseBuffer(endpoint, EMPTY_BODY, Optional.<AuthConfig>empty());
+    public Observable<String> postAndReceiveResponse(final String endpoint) {
+        return postAndReceiveResponse(endpoint, EMPTY_BODY, Optional.<AuthConfig>empty(), t -> false);
     }
 
     @Override
-    public Observable<Buffer> postAndReceiveResponseBuffer(final String endpoint, AuthConfig authConfig) {
-        return postAndReceiveResponseBuffer(endpoint, EMPTY_BODY, Optional.ofNullable(authConfig));
+    public Observable<String> postAndReceiveResponse(final String endpoint, AuthConfig authConfig, Predicate<String> errorChecker) {
+        return postAndReceiveResponse(endpoint, EMPTY_BODY, Optional.ofNullable(authConfig), errorChecker);
     }
 
     @Override
-    public Observable<Buffer> postAndReceiveResponseBuffer(final String endpoint, final String postBody, Optional<AuthConfig> authConfig) {
+    public Observable<String> postAndReceiveResponse(final String endpoint, final String postBody, Optional<AuthConfig> authConfig, Predicate<String> errorChecker) {
         final String fullEndpointUrl = fullEndpointUrl(endpoint);
         return Observable.create(subscriber -> {
             try {
@@ -272,7 +300,12 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                     try (ResponseBody body = response.body()) {
                         BufferedSource source = body.source();
                         while (!source.exhausted() && !subscriber.isUnsubscribed()) {
-                            subscriber.onNext(source.buffer());
+                            final String responseLine = source.buffer().readUtf8();
+                            if (!errorChecker.test(responseLine)) {
+                                subscriber.onNext(responseLine);
+                            } else {
+                                subscriber.onError(new DockerStreamResponseException(responseLine));
+                            }
                         }
                         subscriber.onCompleted();
                     }

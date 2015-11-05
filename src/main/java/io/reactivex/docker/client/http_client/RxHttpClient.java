@@ -32,6 +32,7 @@ import rx.Observable;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 public interface RxHttpClient {
 
@@ -56,7 +57,7 @@ public interface RxHttpClient {
     /**
      * This method makes an HTTP GET request and return response body as String of Observable
      *
-     * @param endpoint    Endpoint at which to make the GET call
+     * @param endpoint Endpoint at which to make the GET call
      * @return Observable sequence of String
      */
     Observable<String> get(String endpoint);
@@ -86,13 +87,15 @@ public interface RxHttpClient {
 
     <R> Observable<R> get(String endpoint, Map<String, String> headers, StringResponseToCollectionTransformer<R> transformer);
 
-    <T> Observable<T> get(String endpoint, Map<String, String> headers, BufferTransformer<T> transformer);
+    <T> Observable<T> getResponseStream(String endpoint, Map<String, String> headers, StringResponseTransformer<T> transformer);
 
-    Observable<Buffer> getResponseBuffer(String endpoint, Map<String, String> headers);
+    Observable<String> getResponseStream(String endpoint, Map<String, String> headers);
 
-    Observable<Buffer> getResponseBuffer(String endpoint);
+    Observable<Buffer> getResponseBufferStream(String endpoint);
 
-    <T> Observable<T> get(String endpoint, BufferTransformer<T> transformer);
+    Observable<String> getResponseStream(String endpoint);
+
+    <T> Observable<T> getResponseStream(String endpoint, StringResponseTransformer<T> transformer);
 
     Observable<HttpStatus> getResponseHttpStatus(String endpointPath);
 
@@ -108,11 +111,11 @@ public interface RxHttpClient {
 
     <R> Observable<R> post(String endpoint, String postBody, ResponseBodyTransformer<R> bodyTransformer);
 
-    Observable<Buffer> postAndReceiveResponseBuffer(String endpoint);
+    Observable<String> postAndReceiveResponse(String endpoint);
 
-    Observable<Buffer> postAndReceiveResponseBuffer(String endpoint, AuthConfig authConfig);
+    Observable<String> postAndReceiveResponse(String endpoint, AuthConfig authConfig, Predicate<String> errorChecker);
 
-    Observable<Buffer> postAndReceiveResponseBuffer(String endpoint, String postBody, Optional<AuthConfig> authConfig);
+    Observable<String> postAndReceiveResponse(String endpoint, String postBody, Optional<AuthConfig> authConfig, Predicate<String> errorChecker);
 
     Observable<HttpStatus> delete(final String endpoint);
 

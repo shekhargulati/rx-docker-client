@@ -22,40 +22,52 @@
  * THE SOFTWARE.
  */
 
-package io.reactivex.docker.client.http_client;
+package io.reactivex.docker.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.Subscriber;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
-public class HttpStatusBufferSubscriber extends Subscriber<String> {
+import java.lang.reflect.Type;
 
-    private final Logger logger = LoggerFactory.getLogger(HttpStatusBufferSubscriber.class);
+public class DockerStreamResponseException extends RuntimeException {
 
-    private HttpStatus status = null;
+    private final String error;
+    private final String message;
 
-    @Override
-    public void onCompleted() {
-        logger.info("Successfully processed all events");
-        status = HttpStatus.OK;
+    public DockerStreamResponseException(String json) {
+        Type type = new TypeToken<DockerErrorDetails>() {
+        }.getType();
+        DockerErrorDetails details = new Gson().fromJson(json, type);
+        this.error = details.getError();
+        this.message = details.getErrorDetail().getMessage();
     }
 
-    @Override
-    public void onError(Throwable e) {
-        logger.error("Error encountered >> ", e);
-        if (e instanceof RestServiceCommunicationException) {
-            status = HttpStatus.of(((RestServiceCommunicationException) e).getCode(), ((RestServiceCommunicationException) e).getHttpMessage());
-        } else {
-            status = HttpStatus.SERVER_ERROR;
-        }
+    public String getError() {
+        return error;
     }
 
-    @Override
-    public void onNext(String res) {
-        logger.info("Received message >> {}", res);
+    public String getMessage() {
+        return message;
+    }
+}
+
+class DockerErrorDetails {
+    private ErrorDetails errorDetail;
+    private String error;
+
+    public ErrorDetails getErrorDetail() {
+        return errorDetail;
     }
 
-    public HttpStatus getStatus() {
-        return status;
+    public String getError() {
+        return error;
+    }
+}
+
+class ErrorDetails {
+    private String message;
+
+    public String getMessage() {
+        return message;
     }
 }

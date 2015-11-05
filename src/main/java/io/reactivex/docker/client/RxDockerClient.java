@@ -29,7 +29,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.ResponseBody;
-import io.reactivex.docker.client.function.BufferTransformer;
 import io.reactivex.docker.client.function.StringResponseToCollectionTransformer;
 import io.reactivex.docker.client.function.StringResponseTransformer;
 import io.reactivex.docker.client.http_client.HttpStatus;
@@ -50,6 +49,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -337,7 +337,7 @@ class RxDockerClient implements DockerClient {
     public void exportContainer(final String containerId, final Path pathToExportTo) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_EXPORT_ENDPOINT, containerId);
-        Observable<Buffer> bufferStream = httpClient.getResponseBuffer(endpointUri);
+        Observable<Buffer> bufferStream = httpClient.getResponseBufferStream(endpointUri);
 
         String exportFilePath = pathToExportTo.toString() + "/" + containerId + ".tar";
         try (FileOutputStream out = new FileOutputStream(exportFilePath)) {
@@ -378,8 +378,7 @@ class RxDockerClient implements DockerClient {
     public Observable<ContainerStats> containerStatsObs(final String containerId) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_STATS_ENDPOINT, containerId);
-        return httpClient.get(endpointUri,
-                (BufferTransformer<ContainerStats>) buffer -> gson.fromJson(buffer.readUtf8(), ContainerStats.class));
+        return httpClient.getResponseStream(endpointUri).map(json -> gson.fromJson(json, ContainerStats.class));
     }
 
     @Override
@@ -391,12 +390,10 @@ class RxDockerClient implements DockerClient {
     public Observable<String> containerLogsObs(final String containerId, ContainerLogQueryParameters queryParameters) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_LOGS_ENDPOINT, containerId) + queryParameters.toQueryParametersString();
-
+        Map<String, String> headers = Stream.of(new SimpleEntry<>("Accept", "application/vnd.docker.raw-stream"))
+                .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
         return httpClient
-                .getResponseBuffer(endpointUri,
-                        Stream.of(new SimpleEntry<>("Accept", "application/vnd.docker.raw-stream"))
-                                .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue)))
-                .map(buffer -> buffer.readString(Charset.defaultCharset()));
+                .getResponseStream(endpointUri, headers);
     }
 
     // Image Endpoint
@@ -416,7 +413,7 @@ class RxDockerClient implements DockerClient {
     }
 
     private HttpStatus pullImage(final String fromImage, final Optional<String> user, final Optional<String> tag) {
-        Observable<Buffer> imageObs = pullImageObs(fromImage, user, tag);
+        Observable<String> imageObs = pullImageObs(fromImage, user, tag);
         HttpStatusBufferSubscriber subscriber = new HttpStatusBufferSubscriber();
         imageObs.subscribe(subscriber);
         subscriber.unsubscribe();
@@ -424,10 +421,10 @@ class RxDockerClient implements DockerClient {
     }
 
     @Override
-    public Observable<Buffer> pullImageObs(final String fromImage, final Optional<String> user, final Optional<String> tag) {
+    public Observable<String> pullImageObs(final String fromImage, final Optional<String> user, final Optional<String> tag) {
         validate(fromImage, Strings::isEmptyOrNull, () -> "fromImage can't be null or empty.");
         final String endpoint = String.format(IMAGE_CREATE_ENDPOINT, user.map(u -> u + "/").orElse(""), fromImage, tag.orElse("latest"));
-        return httpClient.postAndReceiveResponseBuffer(endpoint);
+        return httpClient.postAndReceiveResponse(endpoint);
     }
 
     @Override
@@ -516,7 +513,7 @@ class RxDockerClient implements DockerClient {
     @Override
     public Observable<String> buildImageObs(final String repositoryName, BuildImageQueryParameters queryParameters) {
         final String endpoint = String.format("%s?t=%s", IMAGE_BUILD_ENDPOINT, repositoryName) + queryParameters.toQueryParameterString();
-        return httpClient.postAndReceiveResponseBuffer(endpoint).map(buffer -> buffer.readString(Charset.defaultCharset()));
+        return httpClient.postAndReceiveResponse(endpoint);
     }
 
     @Override
@@ -570,6 +567,9 @@ class RxDockerClient implements DockerClient {
     public Observable<String> pushImageObs(final String image, AuthConfig authConfig) {
         validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
-        return httpClient.postAndReceiveResponseBuffer(endpoint, authConfig).map(buffer -> buffer.readString(Charset.defaultCharset()));
+        return httpClient
+                .postAndReceiveResponse(endpoint, authConfig, r -> r.contains("errorDetail"));
     }
+
 }
+
