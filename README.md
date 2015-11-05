@@ -38,12 +38,36 @@ To use rx-docker-client in your application, you have to add `rx-docker-client` 
 For Apache Maven users, please add following to your pom.xml.
 
 ```xml
+<repositories>
+    <repository>
+        <id>dl</id>
+        <url>https://dl.bintray.com/shekhargulati/rx</url>
+    </repository>
+</repositories>
 
+<dependencies>
+    <dependency>
+        <groupId>com.shekhargulati.reactivex</groupId>
+        <artifactId>rx-docker-client</artifactId>
+        <version>0.1.0</version>
+        <type>jar</type>
+    </dependency>
+</dependencies>
 ```
 
 Gradle users can add following to their build.gradle file.
 
 ```
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://dl.bintray.com/shekhargulati/rx'
+    }
+}
+
+compile(group: 'com.shekhargulati.reactivex', name: 'rx-docker-client', version: '0.1.0', ext: 'jar'){
+        transitive=true
+}
 ```
 
 Usage
