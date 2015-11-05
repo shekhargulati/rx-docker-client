@@ -1,8 +1,16 @@
-# rx-docker-client
-Reactive Java docker client for Docker REST API [https://docs.docker.com/reference/api/docker_remote_api/](https://docs.docker.com/reference/api/docker_remote_api/)
+Reactive Docker Java REST API Client
+=========
 
-## Built using
+rx-docker-client is a Java REST API client for Docker REST API(http://docs.docker.com/engine/reference/api/docker_remote_api/).
 
-1. Java 8
-2. RxJava
-3. OkHttp
+## Table of Contents
+* [Getting Started](#getting-started)
+* [Usage](#usage)
+* [Exception Handling](#exception-handling)
+* [License](#license)
+
+Getting Started
+--------
+
+You can start using rx-docker-client
+
