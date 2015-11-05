@@ -116,11 +116,11 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                     } else if (response.isSuccessful()) {
                         subscriber.onCompleted();
                     } else {
-                        subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                        subscriber.onError(new ServiceException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                     }
                 } catch (IOException e) {
                     logger.error("Encountered error while making HTTP GET call to '{}'", fullEndpointUrl, e);
-                    subscriber.onError(new RestServiceCommunicationException(e));
+                    subscriber.onError(new ServiceException(e));
                 }
             }
         });
@@ -148,11 +148,11 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                 } else if (response.isSuccessful()) {
                     subscriber.onCompleted();
                 } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                    subscriber.onError(new ServiceException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                 }
             } catch (IOException e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
-                subscriber.onError(new RestServiceCommunicationException(e));
+                subscriber.onError(new ServiceException(e));
             }
         });
     }
@@ -179,11 +179,11 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                 } else if (response.isSuccessful()) {
                     subscriber.onCompleted();
                 } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                    subscriber.onError(new ServiceException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                 }
             } catch (IOException e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
-                subscriber.onError(new RestServiceCommunicationException(e));
+                subscriber.onError(new ServiceException(e));
             }
         });
     }
@@ -208,11 +208,11 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                     subscriber.onNext(transformer.apply(response));
                     subscriber.onCompleted();
                 } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                    subscriber.onError(new ServiceException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                 }
             } catch (IOException e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
-                subscriber.onError(new RestServiceCommunicationException(e));
+                subscriber.onError(new ServiceException(e));
             }
         });
     }
@@ -247,11 +247,11 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                     subscriber.onNext(transformer.apply(response));
                     subscriber.onCompleted();
                 } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                    subscriber.onError(new ServiceException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                 }
             } catch (IOException e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
-                subscriber.onError(new RestServiceCommunicationException(e));
+                subscriber.onError(new ServiceException(e));
             }
         });
     }
@@ -310,11 +310,11 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                         subscriber.onCompleted();
                     }
                 } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                    subscriber.onError(new ServiceException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                 }
             } catch (Exception e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
-                subscriber.onError(new RestServiceCommunicationException(e));
+                subscriber.onError(new ServiceException(e));
             }
         });
     }
@@ -358,11 +358,11 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                         } else if (response.isSuccessful()) {
                             subscriber.onCompleted();
                         } else {
-                            subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                            subscriber.onError(new ServiceException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                         }
                     } catch (IOException e) {
                         logger.error("Encountered error while making {} call", endpoint, e);
-                        subscriber.onError(new RestServiceCommunicationException(e));
+                        subscriber.onError(new ServiceException(e));
                     }
                 }
         );
@@ -378,11 +378,11 @@ class OkHttpBasedRxHttpClient implements RxHttpClient {
                     subscriber.onNext(HttpStatus.of(response.code(), response.message()));
                     subscriber.onCompleted();
                 } else {
-                    subscriber.onError(new RestServiceCommunicationException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
+                    subscriber.onError(new ServiceException(String.format("Service returned %d with message %s", response.code(), response.message()), response.code(), response.message()));
                 }
             } catch (IOException e) {
                 logger.error("Encountered error while making {} call", endpoint, e);
-                subscriber.onError(new RestServiceCommunicationException(e));
+                subscriber.onError(new ServiceException(e));
             }
         });
     }

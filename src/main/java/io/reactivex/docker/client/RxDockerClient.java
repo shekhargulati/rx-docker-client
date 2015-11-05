@@ -32,9 +32,9 @@ import com.squareup.okhttp.ResponseBody;
 import io.reactivex.docker.client.function.StringResponseToCollectionTransformer;
 import io.reactivex.docker.client.function.StringResponseTransformer;
 import io.reactivex.docker.client.http_client.HttpStatus;
-import io.reactivex.docker.client.http_client.HttpStatusBufferSubscriber;
-import io.reactivex.docker.client.http_client.RestServiceCommunicationException;
+import io.reactivex.docker.client.http_client.HttpStatusSubscriber;
 import io.reactivex.docker.client.http_client.RxHttpClient;
+import io.reactivex.docker.client.http_client.ServiceException;
 import io.reactivex.docker.client.representations.*;
 import io.reactivex.docker.client.utils.Strings;
 import okio.Buffer;
@@ -128,9 +128,9 @@ class RxDockerClient implements DockerClient {
     @Override
     public HttpStatus checkAuth(final AuthConfig authConfig) {
         return checkAuthObs(authConfig).onErrorReturn(e -> {
-            if (e instanceof RestServiceCommunicationException) {
+            if (e instanceof ServiceException) {
                 logger.info("checkAuth threw RestServiceCommunicationException");
-                RestServiceCommunicationException restException = (RestServiceCommunicationException) e;
+                ServiceException restException = (ServiceException) e;
                 return HttpStatus.of(restException.getCode(), restException.getHttpMessage());
             }
             return HttpStatus.of(500, e.getMessage());
@@ -148,9 +148,9 @@ class RxDockerClient implements DockerClient {
     public HttpStatus ping() {
         final String endpoint = PING_ENDPOINT;
         return httpClient.getResponseHttpStatus(endpoint).onErrorReturn(e -> {
-            if (e instanceof RestServiceCommunicationException) {
+            if (e instanceof ServiceException) {
                 logger.info("checkAuth threw RestServiceCommunicationException");
-                RestServiceCommunicationException restException = (RestServiceCommunicationException) e;
+                ServiceException restException = (ServiceException) e;
                 return HttpStatus.of(restException.getCode(), restException.getHttpMessage());
             }
             return HttpStatus.of(500, e.getMessage());
@@ -414,7 +414,7 @@ class RxDockerClient implements DockerClient {
 
     private HttpStatus pullImage(final String fromImage, final Optional<String> user, final Optional<String> tag) {
         Observable<String> imageObs = pullImageObs(fromImage, user, tag);
-        HttpStatusBufferSubscriber subscriber = new HttpStatusBufferSubscriber();
+        HttpStatusSubscriber subscriber = new HttpStatusSubscriber();
         imageObs.subscribe(subscriber);
         subscriber.unsubscribe();
         return subscriber.getStatus();

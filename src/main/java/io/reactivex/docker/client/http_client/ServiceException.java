@@ -24,38 +24,26 @@
 
 package io.reactivex.docker.client.http_client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.Subscriber;
+public class ServiceException extends RuntimeException {
 
-public class HttpStatusBufferSubscriber extends Subscriber<String> {
+    private int code;
+    private String httpMessage;
 
-    private final Logger logger = LoggerFactory.getLogger(HttpStatusBufferSubscriber.class);
-
-    private HttpStatus status = null;
-
-    @Override
-    public void onCompleted() {
-        logger.info("Successfully processed all events");
-        status = HttpStatus.OK;
+    public ServiceException(final String errorMessage, final int code, final String httpMessage) {
+        super(errorMessage);
+        this.code = code;
+        this.httpMessage = httpMessage;
     }
 
-    @Override
-    public void onError(Throwable e) {
-        logger.error("Error encountered >> ", e);
-        if (e instanceof RestServiceCommunicationException) {
-            status = HttpStatus.of(((RestServiceCommunicationException) e).getCode(), ((RestServiceCommunicationException) e).getHttpMessage());
-        } else {
-            status = HttpStatus.SERVER_ERROR;
-        }
+    public ServiceException(Exception e) {
+        super(e);
     }
 
-    @Override
-    public void onNext(String res) {
-        logger.info("Received message >> {}", res);
+    public int getCode() {
+        return code;
     }
 
-    public HttpStatus getStatus() {
-        return status;
+    public String getHttpMessage() {
+        return httpMessage;
     }
 }
