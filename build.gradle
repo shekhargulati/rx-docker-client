@@ -28,7 +28,7 @@ publishing {
 bintray {
     user = System.getenv('BINTRAY_USER')
     key = System.getenv('BINTRAY_KEY')
-    publications = ['MyPublication']
+    publications = ['BintrayPublication']
     publish = true
     pkg {
         repo = 'rx'
