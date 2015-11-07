@@ -5,6 +5,7 @@ plugins {
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
+apply plugin: 'signing'
 
 group = 'com.shekhargulati.reactivex'
 sourceCompatibility = 1.8
@@ -15,7 +16,7 @@ repositories {
 
 publishing {
     publications {
-        MyPublication(MavenPublication) {
+        BintrayPublication(MavenPublication) {
             from components.java
             groupId 'com.shekhargulati.reactivex'
             artifactId 'rx-docker-client'
@@ -46,6 +47,51 @@ bintray {
     }
 }
 
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUser, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUser, password: ossrhPassword)
+            }
+
+            pom.project {
+                name 'Rx Docker Client'
+                packaging 'jar'
+                artifactId 'rx-docker-client'
+                description 'RxJava based Docker REST API client for the JVM'
+                url 'https://github.com/shekhargulati/rx-docker-client'
+
+                scm {
+                    connection 'https://github.com/shekhargulati/rx-docker-client.git'
+                    developerConnection 'https://github.com/shekhargulati/rx-docker-client.git'
+                    url 'https://github.com/shekhargulati/rx-docker-client.git'
+                }
+
+                licenses {
+                    license {
+                        name 'MIT'
+                        url 'https://github.com/shekhargulati/rx-docker-client/blob/master/LICENSE'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'shekhargulati'
+                        name 'Shekhar Gulati'
+                        email 'shekhargulati84@gmail.com'
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 dependencies {
     compile 'io.reactivex:rxjava:1.0.15'
@@ -61,11 +107,20 @@ dependencies {
 }
 
 
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier 'sources'
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
     from sourceSets.main.allSource
 }
 
 artifacts {
-    archives sourcesJar
+    archives javadocJar, sourcesJar
+}
+
+signing {
+    sign configurations.archives
 }
