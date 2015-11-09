@@ -1,6 +1,5 @@
 plugins {
     id 'net.researchgate.release' version '2.3.3'
-    id "com.jfrog.bintray" version "1.4"
 }
 apply plugin: 'java'
 apply plugin: 'maven'
@@ -12,39 +11,6 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
-}
-
-publishing {
-    publications {
-        BintrayPublication(MavenPublication) {
-            from components.java
-            groupId 'com.shekhargulati.reactivex'
-            artifactId 'rx-docker-client'
-            version '0.1.0'
-        }
-    }
-}
-
-bintray {
-    user = System.getenv('BINTRAY_USER')
-    key = System.getenv('BINTRAY_KEY')
-    publications = ['BintrayPublication']
-    publish = true
-    pkg {
-        repo = 'rx'
-        name = 'rx-docker-client'
-        desc = 'Java Reactive REST client for Docker REST API'
-        websiteUrl = 'https://github.com/shekhargulati/rx-docker-client'
-        issueTrackerUrl = 'https://github.com/shekhargulati/rx-docker-client/issues'
-        vcsUrl = 'https://github.com/shekhargulati/rx-docker-client.git'
-        licenses = ['MIT']
-        labels = ['java', 'docker', 'rest']
-        publicDownloadNumbers = true
-        version {
-            name = '0.1.0'
-            vcsTag = '0.1.0'
-        }
-    }
 }
 
 uploadArchives {
