@@ -17,9 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -138,6 +136,13 @@ public class RxDockerClientTest {
     @Test
     public void shouldStartContainerWithAllExposedPortsPublished() throws Exception {
         DockerContainerResponse response = createContainerWithPublishAllPorts(CONTAINER_NAME, "9999/tcp");
+        HttpStatus httpStatus = client.startContainer(response.getId());
+        assertThat(httpStatus.code(), is(equalTo(204)));
+    }
+
+    @Test
+    public void shouldStartContainerWithExposedPortsAndHostPortsPublished() throws Exception {
+        DockerContainerResponse response = createContainerWithExposedAndHostPorts(CONTAINER_NAME, new String[]{"9999/tcp"}, new String[]{"9999/tcp"});
         HttpStatus httpStatus = client.startContainer(response.getId());
         assertThat(httpStatus.code(), is(equalTo(204)));
     }
@@ -425,7 +430,7 @@ public class RxDockerClientTest {
 
         final StringBuilder resultCapturer = new StringBuilder();
         client.pushImageObs(image, AuthConfig.authConfig("xxxx", "xxx", "xxx")).subscribe(System.out::println, error -> resultCapturer.append(error.getMessage()), () -> fail("should not complete as authentication header was incorrect!!"));
-        assertThat(resultCapturer.toString(), equalTo("unauthorized: access to the requested resource is not authorized"));
+        assertThat(resultCapturer.toString(), equalTo("Authentication is required."));
     }
 
     @Test
@@ -457,6 +462,25 @@ public class RxDockerClientTest {
                 .setCmd(Arrays.asList("/bin/bash"))
                 .setAttachStdin(true)
                 .addExposedPort(ports)
+                .setHostConfig(hostConfig)
+                .setTty(true)
+                .createDockerContainerRequest();
+        return client.createContainer(request, containerName);
+    }
+
+    private DockerContainerResponse createContainerWithExposedAndHostPorts(String containerName, String[] exposedPorts, String[] hostPorts) {
+        final Map<String, List<PortBinding>> portBindings = new HashMap<>();
+        for (String hostPort : hostPorts) {
+            List<PortBinding> hostPortBinding = new ArrayList<>();
+            hostPortBinding.add(PortBinding.of("0.0.0.0", hostPort));
+            portBindings.put(hostPort, hostPortBinding);
+        }
+        final HostConfig hostConfig = new HostConfigBuilder().setPortBindings(portBindings).createHostConfig();
+        DockerContainerRequest request = new DockerContainerRequestBuilder()
+                .setImage("ubuntu")
+                .setCmd(Arrays.asList("/bin/bash"))
+                .setAttachStdin(true)
+                .addExposedPort(exposedPorts)
                 .setHostConfig(hostConfig)
                 .setTty(true)
                 .createDockerContainerRequest();
