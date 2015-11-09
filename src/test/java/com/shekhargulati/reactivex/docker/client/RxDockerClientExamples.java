@@ -56,7 +56,6 @@ public class RxDockerClientExamples {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu:latest")
                 .setCmd(Arrays.asList("/bin/bash"))
-                .setExposedPorts(Arrays.asList("80"))
                 .setAttachStdin(true)
                 .setTty(true)
                 .createDockerContainerRequest();

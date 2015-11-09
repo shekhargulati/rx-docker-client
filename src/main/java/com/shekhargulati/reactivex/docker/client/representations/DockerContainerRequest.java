@@ -29,6 +29,7 @@ import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -49,7 +50,7 @@ public class DockerContainerRequest {
     @SerializedName("PortSpecs")
     private List<String> portSpecs;
     @SerializedName("ExposedPorts")
-    private List<String> exposedPorts;
+    private Map<String, Map> exposedPorts = new HashMap<>();
     @SerializedName("Tty")
     private Boolean tty;
     @SerializedName("OpenStdin")
@@ -132,7 +133,7 @@ public class DockerContainerRequest {
         return portSpecs;
     }
 
-    public List<String> getExposedPorts() {
+    public Map<String, Map> getExposedPorts() {
         return exposedPorts;
     }
 

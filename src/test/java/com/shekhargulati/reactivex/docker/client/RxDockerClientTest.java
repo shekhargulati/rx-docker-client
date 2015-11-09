@@ -136,6 +136,13 @@ public class RxDockerClientTest {
     }
 
     @Test
+    public void shouldStartContainerWithAllExposedPortsPublished() throws Exception {
+        DockerContainerResponse response = createContainerWithPublishAllPorts(CONTAINER_NAME, "9999/tcp");
+        HttpStatus httpStatus = client.startContainer(response.getId());
+        assertThat(httpStatus.code(), is(equalTo(204)));
+    }
+
+    @Test
     public void shouldStopStartedContainer() throws Exception {
         DockerContainerResponse response = createContainer(CONTAINER_NAME);
         client.startContainer(response.getId());
@@ -438,6 +445,19 @@ public class RxDockerClientTest {
                 .setImage("ubuntu")
                 .setCmd(Arrays.asList("/bin/bash"))
                 .setAttachStdin(true)
+                .setTty(true)
+                .createDockerContainerRequest();
+        return client.createContainer(request, containerName);
+    }
+
+    private DockerContainerResponse createContainerWithPublishAllPorts(String containerName, String... ports) {
+        final HostConfig hostConfig = new HostConfigBuilder().setPublishAllPorts(true).createHostConfig();
+        DockerContainerRequest request = new DockerContainerRequestBuilder()
+                .setImage("ubuntu")
+                .setCmd(Arrays.asList("/bin/bash"))
+                .setAttachStdin(true)
+                .addExposedPort(ports)
+                .setHostConfig(hostConfig)
                 .setTty(true)
                 .createDockerContainerRequest();
         return client.createContainer(request, containerName);

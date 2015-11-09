@@ -24,6 +24,8 @@
 
 package com.shekhargulati.reactivex.docker.client.representations;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +37,7 @@ public class DockerContainerRequestBuilder {
     Boolean attachStdout;
     Boolean attachStderr;
     List<String> portSpecs;
-    List<String> exposedPorts;
+    Map<String, Map> exposedPorts = new HashMap<>();
     Boolean tty;
     Boolean openStdin;
     Boolean stdinOnce;
@@ -86,8 +88,10 @@ public class DockerContainerRequestBuilder {
         return this;
     }
 
-    public DockerContainerRequestBuilder setExposedPorts(List<String> exposedPorts) {
-        this.exposedPorts = exposedPorts;
+    public DockerContainerRequestBuilder addExposedPort(String... ports) {
+        for (String port : ports) {
+            this.exposedPorts.put(port, Collections.emptyMap());
+        }
         return this;
     }
 
