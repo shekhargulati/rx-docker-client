@@ -22,8 +22,9 @@
  * THE SOFTWARE.
  */
 
-package com.shekhargulati.reactivex.docker.client;
+package com.shekhargulati.reactivex.docker.client.examples;
 
+import com.shekhargulati.reactivex.docker.client.DockerClient;
 import com.shekhargulati.reactivex.docker.client.representations.DockerContainerRequest;
 import com.shekhargulati.reactivex.docker.client.representations.DockerContainerRequestBuilder;
 import rx.Observable;
@@ -34,23 +35,6 @@ import java.util.Arrays;
 public class RxDockerClientExamples {
 
     public static void main(String[] args) {
-        // Create a new Docker client using DOCKER_HOST and DOCKER_CERT_PATH environment variables
-//        DockerClient client = DockerClient.fromDefaultEnv();
-
-//        // Getting Docker version
-//        DockerVersion dockerVersion = client.serverVersion();
-//        System.out.println(dockerVersion.version()); // 1.8.3
-//
-//        DockerInfo info = client.info();
-//        System.out.println(info.images()); // 40
-//
-//        HttpStatus ping = client.ping();
-//        System.out.println(ping); // HttpStatus{code=200, message='OK'}
-//
-//        // Pull image
-//        HttpStatus successPullImage = client.pullImage("ubuntu");
-//        System.out.println("On Success HTTP Code will be 200");
-
         DockerClient client = DockerClient.fromDefaultEnv();
 
         DockerContainerRequest request = new DockerContainerRequestBuilder()

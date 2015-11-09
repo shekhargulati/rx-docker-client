@@ -116,6 +116,32 @@ client.createContainerObs(request, container)
         .subscribe(System.out::println);
 ```
 
+### Create and start container with exposed ports
+
+```java
+DockerClient client = DockerClient.fromDefaultEnv();
+final String[] exposedPorts = new String[]{"9999/tcp"};
+final String[] hostPorts = new String[]{"9999/tcp"};
+
+final Map<String, List<PortBinding>> portBindings = new HashMap<>();
+for (String hostPort : hostPorts) {
+    List<PortBinding> hostPortBinding = new ArrayList<>();
+    hostPortBinding.add(PortBinding.of("0.0.0.0", hostPort));
+    portBindings.put(hostPort, hostPortBinding);
+}
+final HostConfig hostConfig = new HostConfigBuilder().setPortBindings(portBindings).createHostConfig();
+DockerContainerRequest request = new DockerContainerRequestBuilder()
+        .setImage("ubuntu")
+        .setCmd(Arrays.asList("/bin/bash"))
+        .setAttachStdin(true)
+        .addExposedPort(exposedPorts)
+        .setHostConfig(hostConfig)
+        .setTty(true)
+        .createDockerContainerRequest();
+DockerContainerResponse response = client.createContainer(request, "my_container");
+client.startContainer(response.getId());
+```
+
 ### Container Stats
 
 ```java
