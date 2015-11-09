@@ -25,6 +25,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.Matchers.startsWith;
@@ -430,7 +431,7 @@ public class RxDockerClientTest {
 
         final StringBuilder resultCapturer = new StringBuilder();
         client.pushImageObs(image, AuthConfig.authConfig("xxxx", "xxx", "xxx")).subscribe(System.out::println, error -> resultCapturer.append(error.getMessage()), () -> fail("should not complete as authentication header was incorrect!!"));
-        assertThat(resultCapturer.toString(), equalTo("Authentication is required."));
+        assertThat(resultCapturer.toString(), anyOf(equalTo("Authentication is required."), equalTo("unauthorized: access to the requested resource is not authorized")));
     }
 
     @Test
