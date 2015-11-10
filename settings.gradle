@@ -1,1 +1,3 @@
-rootProject.name = 'rx-docker-client'
+rootProject.name = 'rx-docker-client-root'
+include 'samples'
+include 'rx-docker-client'

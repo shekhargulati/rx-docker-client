@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package com.shekhargulati.reactivex.docker.client.examples;
+package com.shekhargulati.reactivex.rx_docker_client.samples;
 
 import com.shekhargulati.reactivex.docker.client.DockerClient;
 import com.shekhargulati.reactivex.docker.client.representations.DockerContainerRequest;
