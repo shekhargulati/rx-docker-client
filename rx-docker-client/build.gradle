@@ -1,0 +1,75 @@
+plugins {
+    id 'net.researchgate.release' version '2.3.3'
+}
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+group = 'com.shekhargulati.reactivex'
+
+repositories {
+    mavenCentral()
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUser, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUser, password: ossrhPassword)
+            }
+
+            pom.project {
+                name 'Rx Docker Client'
+                packaging 'jar'
+                artifactId 'rx-docker-client'
+                description 'RxJava based Docker REST API client for the JVM'
+                url 'https://github.com/shekhargulati/rx-docker-client'
+
+                scm {
+                    connection 'https://github.com/shekhargulati/rx-docker-client.git'
+                    developerConnection 'https://github.com/shekhargulati/rx-docker-client.git'
+                    url 'https://github.com/shekhargulati/rx-docker-client.git'
+                }
+
+                licenses {
+                    license {
+                        name 'MIT'
+                        url 'https://github.com/shekhargulati/rx-docker-client/blob/master/LICENSE'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'shekhargulati'
+                        name 'Shekhar Gulati'
+                        email 'shekhargulati84@gmail.com'
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+dependencies {
+    compile 'io.reactivex:rxjava:1.0.15'
+    compile 'org.apache.httpcomponents:httpclient:4.3.5'
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.51'
+    compile 'com.google.code.gson:gson:2.3.1'
+    compile 'org.slf4j:slf4j-api:1.7.12'
+    compile 'com.squareup.okhttp:okhttp:2.5.0'
+
+    runtime 'org.slf4j:slf4j-simple:1.7.12'
+    testCompile 'org.hamcrest:hamcrest-all:1.3'
+}
+
+signing {
+    sign configurations.archives
+}
