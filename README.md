@@ -33,7 +33,7 @@ In the code shown above, `first`, `flatMap`, and `subscribe` are all RxJava oper
 Getting Started
 --------
 
-To use rx-docker-client in your application, you have to add `rx-docker-client` in your classpath. rx-docker-client is available on [Maven Central](http://search.maven.org/#artifactdetails%7Ccom.shekhargulati.reactivex%7Crx-docker-client%7C0.1.0%7Cjar) so you just need to add dependency to your favorite build tool as show below.
+To use rx-docker-client in your application, you have to add `rx-docker-client` in your classpath. rx-docker-client is available on [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22rx-docker-client%22) so you just need to add dependency to your favorite build tool as show below.
 
 For Apache Maven users, please add following to your pom.xml.
 
