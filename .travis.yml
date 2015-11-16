@@ -5,6 +5,6 @@ services:
   - docker
 
 install: ./gradlew assemble -x signArchives
-script: ./gradlew clean build -x signArchives
+script:  ./gradlew clean build -x signArchives
 jdk:
   - oraclejdk8
