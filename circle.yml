@@ -1,4 +1,12 @@
+test:
+  override:
+    - ./circle.sh test:
+  post:
+    - ./circle.sh post_test:
+
 machine:
+  pre:
+    - rx-docker-client/circle.sh pre_machine
   java:
     version: oraclejdk8
   services:
