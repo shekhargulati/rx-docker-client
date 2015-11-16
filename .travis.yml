@@ -1,6 +1,7 @@
+sudo: required
 language: java
-install: ./gradlew assemble
-script: ./gradlew clean build
+install: ./gradlew assemble -x :signArchives
+script: ./gradlew clean build -x :signArchives
 jdk:
   - oraclejdk8
 services:

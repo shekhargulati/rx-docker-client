@@ -34,3 +34,8 @@ subprojects {
         archives javadocJar, sourcesJar
     }
 }
+
+
+signing {
+    sign configurations.archives
+}
