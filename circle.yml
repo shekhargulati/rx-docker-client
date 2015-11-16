@@ -1,8 +1,10 @@
 test:
   override:
     - ./circle.sh test:
+      parallel: false
   post:
     - ./circle.sh post_test:
+      parallel: false
 
 machine:
   pre:
