@@ -48,11 +48,12 @@ public class RxDockerClientTest {
     @BeforeClass
     public static void setupInfra() throws Exception {
 //        createAndWaitForProcessExecution(new String[]{"docker-machine", "create", "--driver", "virtualbox", DOCKER_MACHINE_NAME});
-        createAndWaitForProcessExecution(new String[]{"docker-machine", "start", DOCKER_MACHINE_NAME});
-        createAndWaitForProcessExecution(new String[]{"docker-machine", "env", DOCKER_MACHINE_NAME});
-        readOutputFileAndSetDockerProperties();
-        String dockerHost = dockerConfiguration.get("DOCKER_HOST");
-        client = DockerClient.newDockerClient(dockerHost, dockerConfiguration.get("DOCKER_CERT_PATH"));
+//        createAndWaitForProcessExecution(new String[]{"docker-machine", "start", DOCKER_MACHINE_NAME});
+//        createAndWaitForProcessExecution(new String[]{"docker-machine", "env", DOCKER_MACHINE_NAME});
+//        readOutputFileAndSetDockerProperties();
+//        String dockerHost = dockerConfiguration.get("DOCKER_HOST");
+//        client = DockerClient.newDockerClient(dockerHost, dockerConfiguration.get("DOCKER_CERT_PATH"));
+        client = DockerClient.fromDefaultEnv();
 
     }
 
