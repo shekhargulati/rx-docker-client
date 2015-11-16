@@ -7,6 +7,7 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'eclipse'
     apply plugin: 'idea'
+    apply plugin: 'signing'
 
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
@@ -33,9 +34,9 @@ subprojects {
     artifacts {
         archives javadocJar, sourcesJar
     }
-}
 
+    signing {
+        sign configurations.archives
+    }
 
-signing {
-    sign configurations.archives
 }

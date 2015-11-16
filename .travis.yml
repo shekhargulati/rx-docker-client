@@ -1,8 +1,10 @@
 sudo: required
 language: java
-install: ./gradlew assemble -x :signArchives
-script: ./gradlew clean build -x :signArchives
-jdk:
-  - oraclejdk8
+
 services:
   - docker
+
+install: ./gradlew assemble -x signArchives
+script: ./gradlew clean build -x signArchives
+jdk:
+  - oraclejdk8
