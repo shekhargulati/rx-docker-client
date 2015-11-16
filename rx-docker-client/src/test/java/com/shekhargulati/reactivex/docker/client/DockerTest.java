@@ -24,14 +24,21 @@
 
 package com.shekhargulati.reactivex.docker.client;
 
+import org.junit.Assert;
 import org.junit.Test;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 
 public class DockerTest {
 
     @Test
     public void shouldConnectWithDockerService() throws Exception {
 
-        System.out.println("Found Docker Host >> " + System.getenv("DOCKER_HOST"));
+        String docker_host = System.getenv("DOCKER_HOST");
+        System.out.println("Found Docker Host >> " + docker_host);
+
+        Assert.assertThat(docker_host, is(equalTo("12311")));
 
     }
 }
