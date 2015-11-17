@@ -26,7 +26,7 @@ package com.shekhargulati.reactivex.docker.client;
 
 public interface DockerClient extends MiscOperations, ContainerOperations, ImageOperations {
 
-    String DEFAULT_DOCKER_HOST = "localhost";
+    String DEFAULT_DOCKER_HOST = "127.0.0.1";
     int DEFAULT_DOCKER_PORT = 2375;
 
     /**
