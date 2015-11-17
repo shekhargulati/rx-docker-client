@@ -24,10 +24,10 @@
 
 package com.shekhargulati.reactivex.docker.client;
 
+import com.shekhargulati.reactivex.docker.client.representations.DockerVersion;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class DockerTest {
@@ -36,8 +36,10 @@ public class DockerTest {
     public void dockerHostEnvironmentVariableShouldBeFound() throws Exception {
         String dockerHost = System.getenv("DOCKER_HOST");
         System.out.println(String.format("Docker host >> %s", dockerHost));
-        assertNotNull(dockerHost);
         DockerClient dockerClient = DockerClient.fromDefaultEnv();
+        System.out.println(dockerClient.getApiUri());
         assertThat(dockerClient.getApiUri(), equalTo("http://127.0.0.1:2375"));
+        DockerVersion dockerVersion = dockerClient.serverVersion();
+        System.out.println(dockerVersion);
     }
 }
