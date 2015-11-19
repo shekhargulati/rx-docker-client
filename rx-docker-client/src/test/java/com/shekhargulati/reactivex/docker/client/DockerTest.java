@@ -52,6 +52,7 @@ public class DockerTest {
 
     @Test
     public void shouldCreateContainer() throws Exception {
+        client.pullImage("ubuntu");
         DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
         DockerContainerResponse response = client.createContainer(request);
         assertThat(response.getId(), notNullValue());
