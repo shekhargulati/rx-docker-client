@@ -51,13 +51,6 @@ public class DockerTest {
     }
 
     @Test
-    public void shouldFetchDockerInformation() throws Exception {
-        DockerInfo info = client.info();
-        assertThat(info.dockerRootDir(), equalTo("/mnt/sda1/var/lib/docker"));
-        assertThat(info.initPath(), equalTo("/usr/local/bin/docker"));
-    }
-
-    @Test
     public void shouldCreateContainer() throws Exception {
         client.pullImage("ubuntu");
         DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
