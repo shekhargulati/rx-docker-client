@@ -29,15 +29,21 @@ import org.junit.After;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.startsWith;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertThat;
 
 public class DockerTest {
 
+    public static final String CONTAINER_NAME = "my_first_container";
+    public static final String SECOND_CONTAINER_NAME = "my_second_container";
+
     private DockerClient client = DockerClient.fromDefaultEnv();
+
 
     @After
     public void tearDownInfra() throws Exception {
@@ -48,24 +54,9 @@ public class DockerTest {
     }
 
     @Test
-    public void shouldConstructHttpDockerAPIUriWhenCertificateNotPresent() throws Exception {
-        String dockerHost = "tcp://192.168.99.100:2375";
-        RxDockerClient client = DockerClient.newDockerClient(dockerHost, null);
-        String apiUri = client.getApiUri();
-        assertThat(apiUri, equalTo("http://192.168.99.100:2375"));
-    }
-
-    @Test
-    public void shouldConstructHttspDockerAPIUriWhenCertificatePresent() throws Exception {
-        String apiUri = client.getApiUri();
-        assertThat(apiUri, startsWith("https://"));
-        assertThat(apiUri, containsString(":2376"));
-    }
-
-    @Test
     public void shouldFetchVersionInformationFromDocker() throws Exception {
         DockerVersion dockerVersion = client.serverVersion();
-        assertThat(dockerVersion.version(), is(equalTo("1.8.3")));
+        assertThat(dockerVersion.version(), containsString("1.8"));
         assertThat(dockerVersion.apiVersion(), is(equalTo("1.20")));
     }
 
@@ -82,6 +73,32 @@ public class DockerTest {
         DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
         DockerContainerResponse response = client.createContainer(request);
         assertThat(response.getId(), notNullValue());
+    }
+
+    @Test
+    public void shouldCreateContainerWithName() throws Exception {
+        client.pullImage("ubuntu");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
+        assertThat(response.getId(), notNullValue());
+    }
+
+    @Test
+    public void shouldListAllContainers() throws Exception {
+        createContainer(CONTAINER_NAME);
+        createContainer(SECOND_CONTAINER_NAME);
+        List<DockerContainer> dockerContainers = client.listAllContainers();
+        dockerContainers.forEach(container -> System.out.println("Docker Container >> \n " + container));
+        assertThat(dockerContainers, hasSize(greaterThanOrEqualTo(2)));
+    }
+
+    private DockerContainerResponse createContainer(String containerName) {
+        DockerContainerRequest request = new DockerContainerRequestBuilder()
+                .setImage("ubuntu")
+                .setCmd(Arrays.asList("/bin/bash"))
+                .setAttachStdin(true)
+                .setTty(true)
+                .createDockerContainerRequest();
+        return client.createContainer(request, containerName);
     }
 
 
