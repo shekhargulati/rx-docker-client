@@ -24,30 +24,56 @@
 
 package com.shekhargulati.reactivex.docker.client;
 
-import com.shekhargulati.reactivex.docker.client.representations.DockerContainerRequest;
-import com.shekhargulati.reactivex.docker.client.representations.DockerContainerRequestBuilder;
-import com.shekhargulati.reactivex.docker.client.representations.DockerContainerResponse;
-import com.shekhargulati.reactivex.docker.client.representations.DockerVersion;
+import com.shekhargulati.reactivex.docker.client.representations.*;
+import org.junit.After;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertThat;
 
 public class DockerTest {
 
     private DockerClient client = DockerClient.fromDefaultEnv();
 
+    @After
+    public void tearDownInfra() throws Exception {
+        client.removeAllContainers();
+        assertThat(client.listAllContainers().size(), equalTo(0));
+        client.removeDanglingImages();
+        client.removeImages(dockerImage -> dockerImage.repoTags().stream().anyMatch(repo -> repo.contains("test_rx_docker")));
+    }
+
     @Test
-    public void dockerHostEnvironmentVariableShouldBeFound() throws Exception {
-        String dockerHost = System.getenv("DOCKER_HOST");
-        System.out.println(String.format("Docker host >> %s", dockerHost));
-        System.out.println(client.getApiUri());
-        assertThat(client.getApiUri(), equalTo("http://127.0.0.1:2375"));
+    public void shouldConstructHttpDockerAPIUriWhenCertificateNotPresent() throws Exception {
+        String dockerHost = "tcp://192.168.99.100:2375";
+        RxDockerClient client = DockerClient.newDockerClient(dockerHost, null);
+        String apiUri = client.getApiUri();
+        assertThat(apiUri, equalTo("http://192.168.99.100:2375"));
+    }
+
+    @Test
+    public void shouldConstructHttspDockerAPIUriWhenCertificatePresent() throws Exception {
+        String apiUri = client.getApiUri();
+        assertThat(apiUri, startsWith("https://"));
+        assertThat(apiUri, containsString(":2376"));
+    }
+
+    @Test
+    public void shouldFetchVersionInformationFromDocker() throws Exception {
         DockerVersion dockerVersion = client.serverVersion();
-        System.out.println(dockerVersion);
+        assertThat(dockerVersion.version(), is(equalTo("1.8.3")));
+        assertThat(dockerVersion.apiVersion(), is(equalTo("1.20")));
+    }
+
+    @Test
+    public void shouldFetchDockerInformation() throws Exception {
+        DockerInfo info = client.info();
+        assertThat(info.dockerRootDir(), equalTo("/mnt/sda1/var/lib/docker"));
+        assertThat(info.initPath(), equalTo("/usr/local/bin/docker"));
     }
 
     @Test
@@ -57,4 +83,6 @@ public class DockerTest {
         DockerContainerResponse response = client.createContainer(request);
         assertThat(response.getId(), notNullValue());
     }
+
+
 }
