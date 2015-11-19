@@ -2,10 +2,7 @@ package com.shekhargulati.reactivex.docker.client;
 
 import com.shekhargulati.reactivex.docker.client.http_client.HttpStatus;
 import com.shekhargulati.reactivex.docker.client.representations.*;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +29,7 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.*;
 
+@Ignore
 public class RxDockerClientTest {
 
     private static final String DOCKER_MACHINE_NAME = "rx-docker-test";
@@ -50,12 +48,11 @@ public class RxDockerClientTest {
     @BeforeClass
     public static void setupInfra() throws Exception {
 //        createAndWaitForProcessExecution(new String[]{"docker-machine", "create", "--driver", "virtualbox", DOCKER_MACHINE_NAME});
-//        createAndWaitForProcessExecution(new String[]{"docker-machine", "start", DOCKER_MACHINE_NAME});
-//        createAndWaitForProcessExecution(new String[]{"docker-machine", "env", DOCKER_MACHINE_NAME});
-//        readOutputFileAndSetDockerProperties();
-//        String dockerHost = dockerConfiguration.get("DOCKER_HOST");
-//        client = DockerClient.newDockerClient(dockerHost, dockerConfiguration.get("DOCKER_CERT_PATH"));
-        client = DockerClient.fromDefaultEnv();
+        createAndWaitForProcessExecution(new String[]{"docker-machine", "start", DOCKER_MACHINE_NAME});
+        createAndWaitForProcessExecution(new String[]{"docker-machine", "env", DOCKER_MACHINE_NAME});
+        readOutputFileAndSetDockerProperties();
+        String dockerHost = dockerConfiguration.get("DOCKER_HOST");
+        client = DockerClient.newDockerClient(dockerHost, dockerConfiguration.get("DOCKER_CERT_PATH"));
 
     }
 
@@ -374,7 +371,7 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldBuildImageFromTarWithOnlyDockerFile() throws Exception {
-        Observable<String> buildImageObs = client.buildImageObs("test_rx_docker/my_hello_world_image", Paths.get("src", "test", "resources", "images", "my_hello_world_image.tar"));
+        Observable<String> buildImageObs = client.buildImageObs("test_rx_docker/my_hello_world_image", Paths.get("rx-docker-client", "src", "test", "resources", "images", "my_hello_world_image.tar"));
         final StringBuilder resultCapturer = new StringBuilder();
         buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
         assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
@@ -383,7 +380,7 @@ public class RxDockerClientTest {
     @Test
     public void shouldBuildImageWhenDockerFileIsPresentAtDifferentPathInsideTar() throws Exception {
         String repositoryName = "test_rx_docker/dockerfile_option_image";
-        Path path = Paths.get("src", "test", "resources", "images", "dockerfile_option_image.tar");
+        Path path = Paths.get("rx-docker-client", "src", "test", "resources", "images", "dockerfile_option_image.tar");
         Observable<String> buildImageObs = client.buildImageObs(repositoryName, path, new BuildImageQueryParameters("innerDir/innerDockerfile"));
         final StringBuilder resultCapturer = new StringBuilder();
         buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
@@ -401,7 +398,7 @@ public class RxDockerClientTest {
 
     @Test
     public void shouldTagAnImage() throws Exception {
-        Observable<String> buildImageObs = client.buildImageObs("my_hello_world_image", Paths.get("src", "test", "resources", "images", "my_hello_world_image.tar"));
+        Observable<String> buildImageObs = client.buildImageObs("my_hello_world_image", Paths.get("rx-docker-client", "src", "test", "resources", "images", "my_hello_world_image.tar"));
         buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> System.out.println("Completed!!!"));
         HttpStatus httpStatus = client.tagImage("my_hello_world_image", ImageTagQueryParameters.with("test_rx_docker/my_hello_world_image", "v42"));
         assertThat(httpStatus.code(), equalTo(201));
@@ -410,7 +407,7 @@ public class RxDockerClientTest {
     @Test
     public void shouldShowHistoryOfImage() throws Exception {
         String image = "test_rx_docker/my_hello_world_image";
-        Observable<String> buildImageObs = client.buildImageObs(image, Paths.get("src", "test", "resources", "images", "my_hello_world_image.tar"));
+        Observable<String> buildImageObs = client.buildImageObs(image, Paths.get("rx-docker-client", "src", "test", "resources", "images", "my_hello_world_image.tar"));
         buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> System.out.println("Completed!!!"));
 
         Stream<DockerImageHistory> dockerImageHistoryStream = client.imageHistory(image);
@@ -427,7 +424,7 @@ public class RxDockerClientTest {
     @Test
     public void pushImageToRepository() throws Exception {
         String image = "shekhar007/my_hello_world_image";
-        Observable<String> buildImageObs = client.buildImageObs(image, Paths.get("src", "test", "resources", "images", "my_hello_world_image.tar"));
+        Observable<String> buildImageObs = client.buildImageObs(image, Paths.get("rx-docker-client", "src", "test", "resources", "images", "my_hello_world_image.tar"));
         buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> System.out.println("Completed!!!"));
 
         final StringBuilder resultCapturer = new StringBuilder();
@@ -492,15 +489,15 @@ public class RxDockerClientTest {
     private static void createAndWaitForProcessExecution(String[] cmd) throws IOException, InterruptedException {
         ProcessBuilder builder = new ProcessBuilder(cmd);
         builder.redirectErrorStream(true);
-        builder.redirectError(Paths.get("build/error.txt").toFile());
-        builder.redirectOutput(Paths.get("build/output.txt").toFile());
+        builder.redirectError(Paths.get("rx-docker-client/build/error.txt").toFile());
+        builder.redirectOutput(Paths.get("rx-docker-client/build/output.txt").toFile());
         Process createMchProcess = builder.start();
         int createMchExitValue = createMchProcess.waitFor();
         System.out.println(String.format("%s >> %d", Arrays.toString(cmd), createMchExitValue));
     }
 
     private static void readOutputFileAndSetDockerProperties() throws Exception {
-        dockerConfiguration = Files.lines(Paths.get("build/output.txt")).filter(line -> line.contains("DOCKER_HOST") || line.contains("DOCKER_CERT_PATH")).map(line -> line.split("\\s")[1]).map(line -> {
+        dockerConfiguration = Files.lines(Paths.get("rx-docker-client/build/output.txt")).filter(line -> line.contains("DOCKER_HOST") || line.contains("DOCKER_CERT_PATH")).map(line -> line.split("\\s")[1]).map(line -> {
             String[] split = line.split("=");
             return new SimpleEntry<>(split[0], split[1].replace("\"", ""));
         }).collect(toMap(SimpleEntry::getKey, SimpleEntry::getValue));

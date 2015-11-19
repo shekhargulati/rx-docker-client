@@ -24,22 +24,36 @@
 
 package com.shekhargulati.reactivex.docker.client;
 
+import com.shekhargulati.reactivex.docker.client.representations.DockerContainerRequest;
+import com.shekhargulati.reactivex.docker.client.representations.DockerContainerRequestBuilder;
+import com.shekhargulati.reactivex.docker.client.representations.DockerContainerResponse;
 import com.shekhargulati.reactivex.docker.client.representations.DockerVersion;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 public class DockerTest {
+
+    private DockerClient client = DockerClient.fromDefaultEnv();
 
     @Test
     public void dockerHostEnvironmentVariableShouldBeFound() throws Exception {
         String dockerHost = System.getenv("DOCKER_HOST");
         System.out.println(String.format("Docker host >> %s", dockerHost));
-        DockerClient dockerClient = DockerClient.fromDefaultEnv();
-        System.out.println(dockerClient.getApiUri());
-        assertThat(dockerClient.getApiUri(), equalTo("http://127.0.0.1:2375"));
-        DockerVersion dockerVersion = dockerClient.serverVersion();
+        System.out.println(client.getApiUri());
+        assertThat(client.getApiUri(), equalTo("http://127.0.0.1:2375"));
+        DockerVersion dockerVersion = client.serverVersion();
         System.out.println(dockerVersion);
+    }
+
+    @Test
+    public void shouldCreateContainer() throws Exception {
+        DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
+        DockerContainerResponse response = client.createContainer(request);
+        assertThat(response.getId(), notNullValue());
     }
 }
