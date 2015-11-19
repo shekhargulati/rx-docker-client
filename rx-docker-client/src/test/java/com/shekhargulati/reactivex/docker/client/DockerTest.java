@@ -25,7 +25,6 @@
 package com.shekhargulati.reactivex.docker.client;
 
 import com.shekhargulati.reactivex.docker.client.representations.*;
-import org.junit.After;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -43,15 +42,6 @@ public class DockerTest {
     public static final String SECOND_CONTAINER_NAME = "my_second_container";
 
     private DockerClient client = DockerClient.fromDefaultEnv();
-
-
-    @After
-    public void tearDownInfra() throws Exception {
-        client.removeAllContainers();
-        assertThat(client.listAllContainers().size(), equalTo(0));
-        client.removeDanglingImages();
-        client.removeImages(dockerImage -> dockerImage.repoTags().stream().anyMatch(repo -> repo.contains("test_rx_docker")));
-    }
 
     @Test
     public void shouldFetchVersionInformationFromDocker() throws Exception {
@@ -72,23 +62,30 @@ public class DockerTest {
         client.pullImage("ubuntu");
         DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
         DockerContainerResponse response = client.createContainer(request);
-        assertThat(response.getId(), notNullValue());
+        String containerId = response.getId();
+        assertThat(containerId, notNullValue());
+        removeContainer(containerId);
     }
 
     @Test
     public void shouldCreateContainerWithName() throws Exception {
         client.pullImage("ubuntu");
         DockerContainerResponse response = createContainer(CONTAINER_NAME);
-        assertThat(response.getId(), notNullValue());
+        String containerId = response.getId();
+        assertThat(containerId, notNullValue());
+        removeContainer(containerId);
     }
 
     @Test
     public void shouldListAllContainers() throws Exception {
-        createContainer(CONTAINER_NAME);
-        createContainer(SECOND_CONTAINER_NAME);
+        client.pullImage("ubuntu");
+        String containerId1 = createContainer(CONTAINER_NAME).getId();
+        String containerId2 = createContainer(SECOND_CONTAINER_NAME).getId();
         List<DockerContainer> dockerContainers = client.listAllContainers();
         dockerContainers.forEach(container -> System.out.println("Docker Container >> \n " + container));
         assertThat(dockerContainers, hasSize(greaterThanOrEqualTo(2)));
+        removeContainer(containerId1);
+        removeContainer(containerId2);
     }
 
     private DockerContainerResponse createContainer(String containerName) {
@@ -99,6 +96,14 @@ public class DockerTest {
                 .setTty(true)
                 .createDockerContainerRequest();
         return client.createContainer(request, containerName);
+    }
+
+    private void removeContainer(String containerId) {
+        try {
+            client.removeContainer(containerId, false, false);
+        } catch (Exception e) {
+            // ignore as circle ci does not allow containers and images to be destroyed
+        }
     }
 
 
