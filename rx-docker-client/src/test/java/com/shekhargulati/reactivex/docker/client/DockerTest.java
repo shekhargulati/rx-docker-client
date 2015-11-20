@@ -25,15 +25,14 @@
 package com.shekhargulati.reactivex.docker.client;
 
 import com.shekhargulati.reactivex.docker.client.http_client.HttpStatus;
+import com.shekhargulati.reactivex.docker.client.junit.DockerContainerRule;
+import com.shekhargulati.reactivex.docker.client.junit.TestDockerContainer;
 import com.shekhargulati.reactivex.docker.client.representations.*;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExternalResource;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.containsString;
@@ -53,26 +52,8 @@ public class DockerTest {
         client.pullImage("ubuntu");
     }
 
-    private String containerId;
-
     @Rule
-    public ExternalResource dockerContainer = new ExternalResource() {
-
-        private DockerContainerResponse response;
-
-        @Override
-        protected void before() throws Throwable {
-            response = createContainer(CONTAINER_NAME);
-            containerId = response.getId();
-        }
-
-        @Override
-        protected void after() {
-            removeContainer(containerId);
-        }
-
-
-    };
+    public DockerContainerRule containerRule = new DockerContainerRule(client, CONTAINER_NAME);
 
     @Test
     public void shouldFetchVersionInformationFromDocker() throws Exception {
@@ -83,7 +64,7 @@ public class DockerTest {
 
     @Test
     public void shouldCreateContainer() throws Exception {
-        DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
+        DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Collections.singletonList("/bin/bash")).createDockerContainerRequest();
         DockerContainerResponse response = client.createContainer(request);
         String containerId = response.getId();
         assertThat(containerId, notNullValue());
@@ -92,13 +73,14 @@ public class DockerTest {
 
     @Test
     public void shouldCreateContainerWithName() throws Exception {
-        DockerContainerResponse response = createContainer("test_container");
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
         String containerId = response.getId();
         assertThat(containerId, notNullValue());
         removeContainer(containerId);
     }
 
     @Test
+    @TestDockerContainer
     public void shouldListAllContainers() throws Exception {
         String containerId2 = createContainer(SECOND_CONTAINER_NAME).getId();
         List<DockerContainer> dockerContainers = client.listAllContainers();
@@ -108,16 +90,43 @@ public class DockerTest {
     }
 
     @Test
+    @TestDockerContainer
     public void shouldInspectContainer() throws Exception {
-        ContainerInspectResponse containerInspectResponse = client.inspectContainer(containerId);
+        ContainerInspectResponse containerInspectResponse = client.inspectContainer(containerRule.containerId());
         assertThat(containerInspectResponse.path(), is(equalTo("/bin/bash")));
     }
 
     @Test
+    @TestDockerContainer
     public void shouldStartCreatedContainer() throws Exception {
-        HttpStatus httpStatus = client.startContainer(containerId);
+        HttpStatus httpStatus = client.startContainer(containerRule.containerId());
         assertThat(httpStatus.code(), is(equalTo(204)));
     }
+
+    @Test
+    public void shouldStartContainerWithAllExposedPortsPublished() throws Exception {
+        DockerContainerResponse response = createContainerWithPublishAllPorts(CONTAINER_NAME, "9999/tcp");
+        HttpStatus httpStatus = client.startContainer(response.getId());
+        assertThat(httpStatus.code(), is(equalTo(204)));
+        removeContainer(response.getId());
+    }
+
+    @Test
+    public void shouldStartContainerWithExposedPortsAndHostPortsPublished() throws Exception {
+        DockerContainerResponse response = createContainerWithExposedAndHostPorts(CONTAINER_NAME, new String[]{"9999/tcp"}, new String[]{"9999/tcp"});
+        HttpStatus httpStatus = client.startContainer(response.getId());
+        assertThat(httpStatus.code(), is(equalTo(204)));
+        removeContainer(response.getId());
+    }
+
+    @Test
+    @TestDockerContainer
+    public void shouldStopStartedContainer() throws Exception {
+        client.startContainer(containerRule.containerId());
+        HttpStatus status = client.stopContainer(containerRule.containerId(), 5);
+        assertThat(status.code(), is(equalTo(204)));
+    }
+
 
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
@@ -131,10 +140,42 @@ public class DockerTest {
 
     private void removeContainer(String containerId) {
         try {
-            client.removeContainer(containerId, false, false);
+            client.removeContainer(containerId, true, true);
         } catch (Exception e) {
             // ignore as circle ci does not allow containers and images to be destroyed
         }
+    }
+
+    private DockerContainerResponse createContainerWithPublishAllPorts(String containerName, String... ports) {
+        final HostConfig hostConfig = new HostConfigBuilder().setPublishAllPorts(true).createHostConfig();
+        DockerContainerRequest request = new DockerContainerRequestBuilder()
+                .setImage("ubuntu")
+                .setCmd(Arrays.asList("/bin/bash"))
+                .setAttachStdin(true)
+                .addExposedPort(ports)
+                .setHostConfig(hostConfig)
+                .setTty(true)
+                .createDockerContainerRequest();
+        return client.createContainer(request, containerName);
+    }
+
+    private DockerContainerResponse createContainerWithExposedAndHostPorts(String containerName, String[] exposedPorts, String[] hostPorts) {
+        final Map<String, List<PortBinding>> portBindings = new HashMap<>();
+        for (String hostPort : hostPorts) {
+            List<PortBinding> hostPortBinding = new ArrayList<>();
+            hostPortBinding.add(PortBinding.of("0.0.0.0", hostPort));
+            portBindings.put(hostPort, hostPortBinding);
+        }
+        final HostConfig hostConfig = new HostConfigBuilder().setPortBindings(portBindings).createHostConfig();
+        DockerContainerRequest request = new DockerContainerRequestBuilder()
+                .setImage("ubuntu")
+                .setCmd(Arrays.asList("/bin/bash"))
+                .setAttachStdin(true)
+                .addExposedPort(exposedPorts)
+                .setHostConfig(hostConfig)
+                .setTty(true)
+                .createDockerContainerRequest();
+        return client.createContainer(request, containerName);
     }
 
 
