@@ -24,10 +24,12 @@
 
 package com.shekhargulati.reactivex.docker.client;
 
+import com.shekhargulati.reactivex.docker.client.http_client.HttpStatus;
 import com.shekhargulati.reactivex.docker.client.representations.*;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.*;
@@ -41,7 +43,11 @@ public class DockerTest {
     public static final String CONTAINER_NAME = "my_first_container";
     public static final String SECOND_CONTAINER_NAME = "my_second_container";
 
-    private DockerClient client = DockerClient.fromDefaultEnv();
+    private static DockerClient client = DockerClient.fromDefaultEnv();
+
+    public static void init() throws Exception {
+        client.pullImage("ubuntu");
+    }
 
     @Test
     public void shouldFetchVersionInformationFromDocker() throws Exception {
@@ -52,7 +58,6 @@ public class DockerTest {
 
     @Test
     public void shouldCreateContainer() throws Exception {
-        client.pullImage("ubuntu");
         DockerContainerRequest request = new DockerContainerRequestBuilder().setImage("ubuntu").setCmd(Arrays.asList("/bin/bash")).createDockerContainerRequest();
         DockerContainerResponse response = client.createContainer(request);
         String containerId = response.getId();
@@ -62,7 +67,6 @@ public class DockerTest {
 
     @Test
     public void shouldCreateContainerWithName() throws Exception {
-        client.pullImage("ubuntu");
         DockerContainerResponse response = createContainer(CONTAINER_NAME);
         String containerId = response.getId();
         assertThat(containerId, notNullValue());
@@ -71,7 +75,6 @@ public class DockerTest {
 
     @Test
     public void shouldListAllContainers() throws Exception {
-        client.pullImage("ubuntu");
         String containerId1 = createContainer(CONTAINER_NAME).getId();
         String containerId2 = createContainer(SECOND_CONTAINER_NAME).getId();
         List<DockerContainer> dockerContainers = client.listAllContainers();
@@ -81,10 +84,26 @@ public class DockerTest {
         removeContainer(containerId2);
     }
 
+    @Test
+    public void shouldInspectContainer() throws Exception {
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
+        ContainerInspectResponse containerInspectResponse = client.inspectContainer(response.getId());
+        assertThat(containerInspectResponse.path(), is(equalTo("/bin/bash")));
+        removeContainer(response.getId());
+    }
+
+    @Test
+    public void shouldStartCreatedContainer() throws Exception {
+        DockerContainerResponse response = createContainer(CONTAINER_NAME);
+        HttpStatus httpStatus = client.startContainer(response.getId());
+        assertThat(httpStatus.code(), is(equalTo(204)));
+        removeContainer(response.getId());
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")
-                .setCmd(Arrays.asList("/bin/bash"))
+                .setCmd(Collections.singletonList("/bin/bash"))
                 .setAttachStdin(true)
                 .setTty(true)
                 .createDockerContainerRequest();
