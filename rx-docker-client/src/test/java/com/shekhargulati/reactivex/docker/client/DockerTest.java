@@ -26,6 +26,7 @@ package com.shekhargulati.reactivex.docker.client;
 
 import com.shekhargulati.reactivex.docker.client.http_client.HttpStatus;
 import com.shekhargulati.reactivex.docker.client.representations.*;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
@@ -47,6 +48,7 @@ public class DockerTest {
 
     private static DockerClient client = DockerClient.fromDefaultEnv();
 
+    @BeforeClass
     public static void init() throws Exception {
         client.pullImage("ubuntu");
     }
