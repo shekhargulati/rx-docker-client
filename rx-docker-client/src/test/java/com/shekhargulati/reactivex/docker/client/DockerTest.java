@@ -26,7 +26,9 @@ package com.shekhargulati.reactivex.docker.client;
 
 import com.shekhargulati.reactivex.docker.client.http_client.HttpStatus;
 import com.shekhargulati.reactivex.docker.client.representations.*;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExternalResource;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -49,6 +51,27 @@ public class DockerTest {
         client.pullImage("ubuntu");
     }
 
+    private String containerId;
+
+    @Rule
+    public ExternalResource dockerContainer = new ExternalResource() {
+
+        private DockerContainerResponse response;
+
+        @Override
+        protected void before() throws Throwable {
+            response = createContainer(CONTAINER_NAME);
+            containerId = response.getId();
+        }
+
+        @Override
+        protected void after() {
+            removeContainer(containerId);
+        }
+
+
+    };
+
     @Test
     public void shouldFetchVersionInformationFromDocker() throws Exception {
         DockerVersion dockerVersion = client.serverVersion();
@@ -67,7 +90,7 @@ public class DockerTest {
 
     @Test
     public void shouldCreateContainerWithName() throws Exception {
-        DockerContainerResponse response = createContainer(CONTAINER_NAME);
+        DockerContainerResponse response = createContainer("test_container");
         String containerId = response.getId();
         assertThat(containerId, notNullValue());
         removeContainer(containerId);
@@ -75,29 +98,23 @@ public class DockerTest {
 
     @Test
     public void shouldListAllContainers() throws Exception {
-        String containerId1 = createContainer(CONTAINER_NAME).getId();
         String containerId2 = createContainer(SECOND_CONTAINER_NAME).getId();
         List<DockerContainer> dockerContainers = client.listAllContainers();
         dockerContainers.forEach(container -> System.out.println("Docker Container >> \n " + container));
         assertThat(dockerContainers, hasSize(greaterThanOrEqualTo(2)));
-        removeContainer(containerId1);
         removeContainer(containerId2);
     }
 
     @Test
     public void shouldInspectContainer() throws Exception {
-        DockerContainerResponse response = createContainer(CONTAINER_NAME);
-        ContainerInspectResponse containerInspectResponse = client.inspectContainer(response.getId());
+        ContainerInspectResponse containerInspectResponse = client.inspectContainer(containerId);
         assertThat(containerInspectResponse.path(), is(equalTo("/bin/bash")));
-        removeContainer(response.getId());
     }
 
     @Test
     public void shouldStartCreatedContainer() throws Exception {
-        DockerContainerResponse response = createContainer(CONTAINER_NAME);
-        HttpStatus httpStatus = client.startContainer(response.getId());
+        HttpStatus httpStatus = client.startContainer(containerId);
         assertThat(httpStatus.code(), is(equalTo(204)));
-        removeContainer(response.getId());
     }
 
     private DockerContainerResponse createContainer(String containerName) {
