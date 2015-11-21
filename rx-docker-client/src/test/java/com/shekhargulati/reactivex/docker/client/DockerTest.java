@@ -414,7 +414,7 @@ public class DockerTest {
     @Test
     public void pushImageToRepository() throws Exception {
         String image = "shekhar007/my_hello_world_image";
-        Observable<String> buildImageObs = client.buildImageObs(image, Paths.get("rx-docker-client", "src", "test", "resources", "images", "my_hello_world_image.tar"));
+        Observable<String> buildImageObs = client.buildImageObs(image, Paths.get("src", "test", "resources", "images", "my_hello_world_image.tar"));
         buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> System.out.println("Completed!!!"));
 
         final StringBuilder resultCapturer = new StringBuilder();
