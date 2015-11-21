@@ -284,6 +284,23 @@ public class DockerTest {
         assertThat(status.code(), equalTo(HttpStatus.OK.code()));
     }
 
+    @Test
+    public void shouldPullLatestTagOfHelloWorldImageFromDockerHub() throws Exception {
+        HttpStatus status = client.pullImage("hello-world", "latest");
+        assertThat(status.code(), equalTo(HttpStatus.OK.code()));
+    }
+
+    @Test
+    public void shouldPullImageObsFromDockerHub() throws Exception {
+        client.pullImageObs("busybox").subscribe(System.out::println);
+    }
+
+    @Test
+    public void shouldPullLatestTagOfOpenShiftHelloImageFromDockerHub() throws Exception {
+        HttpStatus status = client.pullImage("hello-openshift", "openshift", "latest");
+        assertThat(status.code(), equalTo(HttpStatus.OK.code()));
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")
