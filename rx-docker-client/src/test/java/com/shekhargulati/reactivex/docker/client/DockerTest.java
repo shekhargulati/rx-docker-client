@@ -34,10 +34,12 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.Observable;
 import rx.Subscriber;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -248,7 +250,7 @@ public class DockerTest {
     public void shouldShowContainerLogs() throws Exception {
         String containerId = containerRule.containerIds().get(0);
         client.startContainer(containerId);
-        rx.Observable<String> logsObs = client.containerLogsObs(containerId);
+        Observable<String> logsObs = client.containerLogsObs(containerId);
         StringBuilder result = new StringBuilder();
         Subscriber<String> statsSub = new Subscriber<String>() {
 
@@ -342,6 +344,14 @@ public class DockerTest {
         Stream<DockerImageInfo> ubuntuImages = client.searchImages("ubuntu", image -> image.getStarCount() > 2400 && image.isOfficial());
         DockerImageInfo officialDockerImage = ubuntuImages.findFirst().get();
         assertThat(officialDockerImage.getName(), equalTo("ubuntu"));
+    }
+
+    @Test
+    public void shouldBuildImageFromTarWithOnlyDockerFile() throws Exception {
+        Observable<String> buildImageObs = client.buildImageObs("test_rx_docker/my_hello_world_image", Paths.get("rx-docker-client", "src", "test", "resources", "images", "my_hello_world_image.tar"));
+        final StringBuilder resultCapturer = new StringBuilder();
+        buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
+        assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
     }
 
     private DockerContainerResponse createContainer(String containerName) {
