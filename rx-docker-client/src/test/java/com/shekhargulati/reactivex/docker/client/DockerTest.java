@@ -320,7 +320,28 @@ public class DockerTest {
     public void shouldListImageByName() throws Exception {
         client.pullImage("busybox");
         Stream<DockerImage> images = client.listImages("busybox");
-        assertThat(images.count(), is(greaterThan(1L)));
+        assertThat(images.count(), is(greaterThan(0L)));
+    }
+
+
+    @Test
+    public void shouldListDanglingImages() throws Exception {
+        Stream<DockerImage> images = client.listDanglingImages();
+        images.forEach(System.out::println);
+    }
+
+    @Test
+    public void shouldSearchImage() throws Exception {
+        Stream<DockerImageInfo> ubuntuImages = client.searchImages("ubuntu");
+        long count = ubuntuImages.count();
+        assertThat(count, greaterThan(0L));
+    }
+
+    @Test
+    public void shouldSearchImageWithPredicate() throws Exception {
+        Stream<DockerImageInfo> ubuntuImages = client.searchImages("ubuntu", image -> image.getStarCount() > 2400 && image.isOfficial());
+        DockerImageInfo officialDockerImage = ubuntuImages.findFirst().get();
+        assertThat(officialDockerImage.getName(), equalTo("ubuntu"));
     }
 
     private DockerContainerResponse createContainer(String containerName) {
