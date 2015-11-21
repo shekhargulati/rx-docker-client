@@ -40,10 +40,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.*;
 
@@ -299,6 +302,25 @@ public class DockerTest {
     public void shouldPullLatestTagOfOpenShiftHelloImageFromDockerHub() throws Exception {
         HttpStatus status = client.pullImage("hello-openshift", "openshift", "latest");
         assertThat(status.code(), equalTo(HttpStatus.OK.code()));
+    }
+
+    @Test
+    public void shouldListImagesInLocalRepository() throws Exception {
+        Stream<DockerImage> images = client.listImages();
+        assertThat(images.count(), is(greaterThan(0L)));
+    }
+
+    @Test
+    public void shouldListAllImages() throws Exception {
+        Stream<DockerImage> images = client.listAllImages();
+        assertThat(images.count(), is(greaterThan(0L)));
+    }
+
+    @Test
+    public void shouldListImageByName() throws Exception {
+        client.pullImage("busybox");
+        Stream<DockerImage> images = client.listImages("busybox");
+        assertThat(images.count(), is(greaterThan(1L)));
     }
 
     private DockerContainerResponse createContainer(String containerName) {
