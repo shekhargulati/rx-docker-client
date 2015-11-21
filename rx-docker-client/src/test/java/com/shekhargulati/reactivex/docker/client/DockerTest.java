@@ -278,6 +278,12 @@ public class DockerTest {
         assertThat(result.toString(), equalTo("Completed!!"));
     }
 
+    @Test
+    public void shouldPullImageFromDockerHub() throws Exception {
+        HttpStatus status = client.pullImage("busybox");
+        assertThat(status.code(), equalTo(HttpStatus.OK.code()));
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")
