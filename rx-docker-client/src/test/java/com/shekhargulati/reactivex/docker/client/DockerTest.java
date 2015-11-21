@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
@@ -185,9 +186,8 @@ public class DockerTest {
     @CreateDockerContainer(containers = CONTAINER_NAME)
     public void shouldRemoveDockerContainerWithQueryParameters() throws Exception {
         String containerId = containerRule.containerIds().get(0);
-        HttpStatus status = null;
         try {
-            status = client.removeContainer(containerId, false, true);
+            HttpStatus status = client.removeContainer(containerId, false, true);
             assertThat(status.code(), is(equalTo(204)));
         } catch (Exception e) {
             // ignoring for Circle CI
@@ -403,6 +403,35 @@ public class DockerTest {
         Stream<DockerImageHistory> dockerImageHistoryStream = client.imageHistory(image);
         long historyCount = dockerImageHistoryStream.count();
         assertThat(historyCount, greaterThan(1L));
+    }
+
+    @Test
+    public void shouldInspectDockerImage() throws Exception {
+        DockerImageInspectDetails inspectDetails = client.inspectImage("ubuntu");
+        assertNotNull(inspectDetails);
+    }
+
+    @Test
+    public void pushImageToRepository() throws Exception {
+        String image = "shekhar007/my_hello_world_image";
+        Observable<String> buildImageObs = client.buildImageObs(image, Paths.get("rx-docker-client", "src", "test", "resources", "images", "my_hello_world_image.tar"));
+        buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> System.out.println("Completed!!!"));
+
+        final StringBuilder resultCapturer = new StringBuilder();
+        client.pushImageObs(image, AuthConfig.authConfig("xxxx", "xxx", "xxx")).subscribe(System.out::println, error -> resultCapturer.append(error.getMessage()), () -> fail("should not complete as authentication header was incorrect!!"));
+        assertThat(resultCapturer.toString(), anyOf(equalTo("Authentication is required."), equalTo("unauthorized: access to the requested resource is not authorized")));
+    }
+
+    @Test
+    public void shouldReturnHttpStatus500WhenAuthConfigurationIsInvalid() throws Exception {
+        HttpStatus httpStatus = client.checkAuth(AuthConfig.authConfig("xxx", "xxx", "xxxx"));
+        assertThat(httpStatus, is(equalTo(HttpStatus.SERVER_ERROR)));
+    }
+
+    @Test
+    public void shouldPingDockerServer() throws Exception {
+        HttpStatus httpStatus = client.ping();
+        assertThat(httpStatus, is(equalTo(HttpStatus.OK)));
     }
 
     private DockerContainerResponse createContainer(String containerName) {
