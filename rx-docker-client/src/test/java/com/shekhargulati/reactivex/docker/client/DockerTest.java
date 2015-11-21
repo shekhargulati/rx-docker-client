@@ -33,6 +33,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.containsString;
@@ -149,6 +150,33 @@ public class DockerTest {
         client.startContainer(containerId);
         HttpStatus status = client.killRunningContainer(containerId);
         assertThat(status.code(), is(equalTo(204)));
+    }
+
+    @Test
+    @CreateDockerContainer(containers = CONTAINER_NAME)
+    public void shouldRemoveDockerContainerWithQueryParameters() throws Exception {
+        HttpStatus status = client.removeContainer(containerRule.containerIds().get(0), true, true);
+        assertThat(status.code(), is(equalTo(204)));
+    }
+
+    @Test
+    @CreateDockerContainer(containers = CONTAINER_NAME)
+    public void shouldRenameDockerContainer() throws Exception {
+        HttpStatus status = client.renameContainer(containerRule.containerIds().get(0), "my_first_container-renamed");
+        assertThat(status.code(), is(equalTo(204)));
+    }
+
+    @Test
+    @CreateDockerContainer(containers = CONTAINER_NAME)
+    public void shouldWaitForARunningDockerContainer() throws Exception {
+        String containerId = containerRule.containerIds().get(0);
+        client.startContainer(containerId);
+        rx.Observable.timer(1, TimeUnit.SECONDS).forEach(t -> {
+            System.out.println("Stopping container after 1 second..");
+            client.stopContainer(containerId, 5);
+        });
+        HttpStatus status = client.waitContainer(containerId);
+        assertThat(status.code(), is(equalTo(200)));
     }
 
     private DockerContainerResponse createContainer(String containerName) {
