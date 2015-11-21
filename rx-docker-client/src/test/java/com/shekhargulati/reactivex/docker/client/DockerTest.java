@@ -28,6 +28,7 @@ import com.shekhargulati.reactivex.docker.client.http_client.HttpStatus;
 import com.shekhargulati.reactivex.docker.client.junit.CreateDockerContainer;
 import com.shekhargulati.reactivex.docker.client.junit.DockerContainerRule;
 import com.shekhargulati.reactivex.docker.client.representations.*;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -64,6 +65,18 @@ public class DockerTest {
     @BeforeClass
     public static void init() throws Exception {
         client.pullImage("ubuntu");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        client.listAllImages().filter(dockerImage -> dockerImage.repoTags().stream().anyMatch(repo -> repo.contains("test_rx_docker"))).forEach(dockerImage -> {
+
+            try {
+                client.removeImage(dockerImage.id());
+            } catch (Exception e) {
+                // ignore for CircleCI
+            }
+        });
     }
 
     @Rule
@@ -352,6 +365,44 @@ public class DockerTest {
         final StringBuilder resultCapturer = new StringBuilder();
         buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
         assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
+    }
+
+    @Test
+    public void shouldBuildImageWhenDockerFileIsPresentAtDifferentPathInsideTar() throws Exception {
+        String repositoryName = "test_rx_docker/dockerfile_option_image";
+        Path path = Paths.get("src", "test", "resources", "images", "dockerfile_option_image.tar");
+        Observable<String> buildImageObs = client.buildImageObs(repositoryName, path, new BuildImageQueryParameters("innerDir/innerDockerfile"));
+        final StringBuilder resultCapturer = new StringBuilder();
+        buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
+        assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
+    }
+
+    @Test
+    public void shouldBuildImageUsingRemoteDockerFile() throws Exception {
+        String repository = "test_rx_docker/hello_world_remote";
+        Observable<String> buildImageObs = client.buildImageObs(repository, BuildImageQueryParameters.withRemoteDockerfile("https://raw.githubusercontent.com/shekhargulati/hello-world-docker/master/Dockerfile"));
+        final StringBuilder resultCapturer = new StringBuilder();
+        buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
+        assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
+    }
+
+    @Test
+    public void shouldTagAnImage() throws Exception {
+        Observable<String> buildImageObs = client.buildImageObs("my_hello_world_image", Paths.get("src", "test", "resources", "images", "my_hello_world_image.tar"));
+        buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> System.out.println("Completed!!!"));
+        HttpStatus httpStatus = client.tagImage("my_hello_world_image", ImageTagQueryParameters.with("test_rx_docker/my_hello_world_image", "v42"));
+        assertThat(httpStatus.code(), equalTo(201));
+    }
+
+    @Test
+    public void shouldShowHistoryOfImage() throws Exception {
+        String image = "test_rx_docker/my_hello_world_image";
+        Observable<String> buildImageObs = client.buildImageObs(image, Paths.get("src", "test", "resources", "images", "my_hello_world_image.tar"));
+        buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> System.out.println("Completed!!!"));
+
+        Stream<DockerImageHistory> dockerImageHistoryStream = client.imageHistory(image);
+        long historyCount = dockerImageHistoryStream.count();
+        assertThat(historyCount, greaterThan(1L));
     }
 
     private DockerContainerResponse createContainer(String containerName) {
