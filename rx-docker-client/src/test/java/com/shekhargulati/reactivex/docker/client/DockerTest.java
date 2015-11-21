@@ -348,7 +348,7 @@ public class DockerTest {
 
     @Test
     public void shouldBuildImageFromTarWithOnlyDockerFile() throws Exception {
-        Observable<String> buildImageObs = client.buildImageObs("test_rx_docker/my_hello_world_image", Paths.get("rx-docker-client", "src", "test", "resources", "images", "my_hello_world_image.tar"));
+        Observable<String> buildImageObs = client.buildImageObs("test_rx_docker/my_hello_world_image", Paths.get("src", "test", "resources", "images", "my_hello_world_image.tar"));
         final StringBuilder resultCapturer = new StringBuilder();
         buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> resultCapturer.append("Completed!!!"));
         assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
