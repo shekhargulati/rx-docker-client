@@ -31,7 +31,13 @@ import com.shekhargulati.reactivex.docker.client.representations.*;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import rx.Subscriber;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -39,9 +45,11 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 public class DockerTest {
+
+    private final Logger logger = LoggerFactory.getLogger(RxDockerClientTest.class);
 
     public static final String CONTAINER_NAME = "my_first_container";
     public static final String SECOND_CONTAINER_NAME = "my_second_container";
@@ -55,6 +63,9 @@ public class DockerTest {
 
     @Rule
     public DockerContainerRule containerRule = new DockerContainerRule(client);
+
+    @Rule
+    public TemporaryFolder tmp = new TemporaryFolder();
 
     @Test
     public void shouldFetchVersionInformationFromDocker() throws Exception {
@@ -183,6 +194,88 @@ public class DockerTest {
         });
         HttpStatus status = client.waitContainer(containerId);
         assertThat(status.code(), is(equalTo(200)));
+    }
+
+
+    @Test
+    @CreateDockerContainer(containers = CONTAINER_NAME)
+    public void shouldExportContainer() throws Exception {
+        String containerId = containerRule.containerIds().get(0);
+        Path pathToExportTo = tmp.newFolder().toPath();
+        client.exportContainer(containerId, pathToExportTo);
+        assertTrue(Files.newDirectoryStream(pathToExportTo, p -> p.toFile().isFile()).iterator().hasNext());
+    }
+
+    @Test
+    @CreateDockerContainer(containers = CONTAINER_NAME)
+    public void shouldShowContainerStats() throws Exception {
+        String containerId = containerRule.containerIds().get(0);
+        client.startContainer(containerId);
+        rx.Observable<ContainerStats> containerStatsObservable = client.containerStatsObs(containerId);
+        Subscriber<ContainerStats> containerStatsSubscriber = new Subscriber<ContainerStats>() {
+
+            @Override
+            public void onCompleted() {
+                logger.info("Successfully received all the container stats for container with id {}", containerId);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                logger.error("Error encountered while processing container stats for container with id {}", containerId);
+            }
+
+            @Override
+            public void onNext(ContainerStats msg) {
+                logger.info("Received a new message for container '{}'", containerId);
+                assertNotNull(msg);
+            }
+        };
+
+        rx.Observable.timer(5, TimeUnit.SECONDS).forEach(t -> {
+            logger.info("Unsubscribing subscriber...");
+            containerStatsSubscriber.unsubscribe();
+            logger.info("Unsubscribed subscriber...");
+        });
+
+        containerStatsObservable.subscribe(containerStatsSubscriber);
+    }
+
+    @Test
+    @CreateDockerContainer(containers = CONTAINER_NAME)
+    public void shouldShowContainerLogs() throws Exception {
+        String containerId = containerRule.containerIds().get(0);
+        client.startContainer(containerId);
+        rx.Observable<String> logsObs = client.containerLogsObs(containerId);
+        StringBuilder result = new StringBuilder();
+        Subscriber<String> statsSub = new Subscriber<String>() {
+
+            @Override
+            public void onCompleted() {
+                logger.info("Successfully received all the container logs for container with id {}", containerId);
+                result.append("Completed!!");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                logger.error(String.format("Error encountered while processing container logs for container with id %s", containerId), e);
+                fail("Should not throw error");
+            }
+
+            @Override
+            public void onNext(String msg) {
+                logger.info("Received a new message for container '{}'", containerId);
+                assertNotNull(msg);
+            }
+        };
+
+        rx.Observable.timer(5, TimeUnit.SECONDS).forEach(t -> {
+            logger.info("Unsubscribing subscriber...");
+            statsSub.unsubscribe();
+            logger.info("Unsubscribed subscriber...");
+        });
+
+        logsObs.subscribe(statsSub);
+        assertThat(result.toString(), equalTo("Completed!!"));
     }
 
     private DockerContainerResponse createContainer(String containerName) {
