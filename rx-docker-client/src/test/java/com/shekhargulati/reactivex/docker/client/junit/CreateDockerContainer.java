@@ -7,5 +7,13 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD})
-public @interface TestDockerContainer {
+public @interface CreateDockerContainer {
+
+    /**
+     * Name for containers
+     *
+     * @return container names
+     */
+    public String[] containers();
+
 }
