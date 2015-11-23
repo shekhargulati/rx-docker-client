@@ -24,10 +24,10 @@
 
 package com.shekhargulati.reactivex.docker.client;
 
-import com.shekhargulati.reactivex.docker.client.http_client.HttpStatus;
 import com.shekhargulati.reactivex.docker.client.junit.CreateDockerContainer;
 import com.shekhargulati.reactivex.docker.client.junit.DockerContainerRule;
 import com.shekhargulati.reactivex.docker.client.representations.*;
+import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Rule;

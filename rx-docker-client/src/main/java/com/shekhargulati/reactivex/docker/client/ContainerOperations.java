@@ -24,8 +24,8 @@
 
 package com.shekhargulati.reactivex.docker.client;
 
-import com.shekhargulati.reactivex.docker.client.http_client.HttpStatus;
 import com.shekhargulati.reactivex.docker.client.representations.*;
+import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

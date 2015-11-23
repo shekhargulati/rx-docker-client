@@ -24,9 +24,9 @@
 
 package com.shekhargulati.reactivex.docker.client;
 
-import com.shekhargulati.reactivex.docker.client.http_client.HttpStatus;
 import com.shekhargulati.reactivex.docker.client.representations.DockerInfo;
 import com.shekhargulati.reactivex.docker.client.representations.DockerVersion;
+import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
 import rx.Observable;
 
 public interface MiscOperations {

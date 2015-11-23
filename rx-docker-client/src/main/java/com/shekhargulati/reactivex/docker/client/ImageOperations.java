@@ -24,11 +24,11 @@
 
 package com.shekhargulati.reactivex.docker.client;
 
-import com.shekhargulati.reactivex.docker.client.http_client.HttpStatus;
 import com.shekhargulati.reactivex.docker.client.representations.DockerImage;
 import com.shekhargulati.reactivex.docker.client.representations.DockerImageHistory;
 import com.shekhargulati.reactivex.docker.client.representations.DockerImageInfo;
 import com.shekhargulati.reactivex.docker.client.representations.DockerImageInspectDetails;
+import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
 import rx.Observable;
 
 import java.nio.file.Path;

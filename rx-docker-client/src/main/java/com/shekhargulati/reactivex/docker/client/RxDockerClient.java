@@ -28,17 +28,17 @@ package com.shekhargulati.reactivex.docker.client;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.shekhargulati.reactivex.docker.client.function.ResponseTransformer;
-import com.shekhargulati.reactivex.docker.client.function.StringResponseToCollectionTransformer;
-import com.shekhargulati.reactivex.docker.client.function.StringResponseTransformer;
-import com.shekhargulati.reactivex.docker.client.http_client.HttpStatus;
-import com.shekhargulati.reactivex.docker.client.http_client.HttpStatusSubscriber;
-import com.shekhargulati.reactivex.docker.client.http_client.RxHttpClient;
-import com.shekhargulati.reactivex.docker.client.http_client.ServiceException;
 import com.shekhargulati.reactivex.docker.client.representations.*;
 import com.shekhargulati.reactivex.docker.client.utils.Dates;
 import com.shekhargulati.reactivex.docker.client.utils.Strings;
 import com.shekhargulati.reactivex.docker.client.utils.Validations;
+import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
+import com.shekhargulati.reactivex.rxokhttp.HttpStatusSubscriber;
+import com.shekhargulati.reactivex.rxokhttp.RxHttpClient;
+import com.shekhargulati.reactivex.rxokhttp.ServiceException;
+import com.shekhargulati.reactivex.rxokhttp.functions.ResponseTransformer;
+import com.shekhargulati.reactivex.rxokhttp.functions.StringResponseToCollectionTransformer;
+import com.shekhargulati.reactivex.rxokhttp.functions.StringResponseTransformer;
 import com.squareup.okhttp.ResponseBody;
 import okio.Buffer;
 import org.slf4j.Logger;
@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -573,8 +574,10 @@ class RxDockerClient implements DockerClient {
     public Observable<String> pushImageObs(final String image, AuthConfig authConfig) {
         Validations.validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
+        Map<String, String> headers = new HashMap<>();
+        headers.put("X-Registry-Auth", authConfig.xAuthHeader());
         return httpClient
-                .postAndReceiveResponse(endpoint, authConfig, r -> r.contains("errorDetail"));
+                .postAndReceiveResponse(endpoint, headers, r -> r.contains("errorDetail"));
     }
 
 }
