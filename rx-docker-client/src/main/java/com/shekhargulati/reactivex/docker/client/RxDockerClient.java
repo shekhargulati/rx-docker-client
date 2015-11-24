@@ -30,6 +30,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.shekhargulati.reactivex.docker.client.representations.*;
 import com.shekhargulati.reactivex.docker.client.utils.Dates;
+import com.shekhargulati.reactivex.docker.client.utils.StreamUtils;
 import com.shekhargulati.reactivex.docker.client.utils.Strings;
 import com.shekhargulati.reactivex.docker.client.utils.Validations;
 import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
@@ -56,11 +57,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
 import static com.shekhargulati.reactivex.docker.client.utils.StreamUtils.iteratorToStream;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 class RxDockerClient implements DockerClient {
 
@@ -393,9 +395,26 @@ class RxDockerClient implements DockerClient {
         Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_LOGS_ENDPOINT, containerId) + queryParameters.toQueryParametersString();
         Map<String, String> headers = Stream.of(new SimpleEntry<>("Accept", "application/vnd.docker.raw-stream"))
-                .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
+                .collect(toMap(SimpleEntry::getKey, SimpleEntry::getValue));
         return httpClient
                 .getResponseStream(endpointUri, headers);
+    }
+
+    @Override
+    public List<ContainerChange> inspectChangesOnContainerFilesystem(final String containerId) {
+        return StreamUtils.iteratorToStream(inspectChangesOnContainerFilesystemObs(containerId).toBlocking().getIterator()).collect(toList());
+    }
+
+    @Override
+    public Observable<ContainerChange> inspectChangesOnContainerFilesystemObs(final String containerId) {
+        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        final String endpoint = String.format(CONTAINER_CHANGES_ENDPOINT, containerId);
+        return httpClient.get(endpoint,
+                (StringResponseToCollectionTransformer<ContainerChange>) json -> {
+                    logger.info("Received json >>> {}", json);
+                    return gson.fromJson(json, new TypeToken<List<ContainerChange>>() {
+                    }.getType());
+                });
     }
 
     // Image Endpoint

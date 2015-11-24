@@ -50,6 +50,7 @@ public interface ContainerOperations {
     String CONTAINER_EXPORT_ENDPOINT = CONTAINERS_ENDPOINT + "/export";
     String CONTAINER_STATS_ENDPOINT = CONTAINERS_ENDPOINT + "/stats";
     String CONTAINER_LOGS_ENDPOINT = CONTAINERS_ENDPOINT + "/logs";
+    String CONTAINER_CHANGES_ENDPOINT = CONTAINERS_ENDPOINT + "/changes";
 
     Logger logger = LoggerFactory.getLogger(ContainerOperations.class);
 
@@ -136,4 +137,8 @@ public interface ContainerOperations {
     Observable<String> containerLogsObs(String containerId);
 
     Observable<DockerContainerResponse> createContainerObs(DockerContainerRequest request, String name);
+
+    List<ContainerChange> inspectChangesOnContainerFilesystem(String containerId);
+
+    Observable<ContainerChange> inspectChangesOnContainerFilesystemObs(String containerId);
 }

@@ -29,10 +29,7 @@ import com.shekhargulati.reactivex.docker.client.junit.DockerContainerRule;
 import com.shekhargulati.reactivex.docker.client.representations.*;
 import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
 import com.shekhargulati.reactivex.rxokhttp.StreamResponseException;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -433,6 +430,16 @@ public class RxDockerClientTest {
     public void shouldPingDockerServer() throws Exception {
         HttpStatus httpStatus = client.ping();
         assertThat(httpStatus, is(equalTo(HttpStatus.OK)));
+    }
+
+    @Ignore // enable it when we have exec operation available
+    @Test
+    @CreateDockerContainer(containers = CONTAINER_NAME)
+    public void shouldInspectAContainerForFileSystemChanges() throws Exception {
+        String containerId = containerRule.containerIds().get(0);
+        client.startContainer(containerId);
+        List<ContainerChange> containerChanges = client.inspectChangesOnContainerFilesystem(containerId);
+        containerChanges.forEach(System.out::println);
     }
 
     private DockerContainerResponse createContainer(String containerName) {
