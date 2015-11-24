@@ -28,6 +28,7 @@ import com.shekhargulati.reactivex.docker.client.junit.CreateDockerContainer;
 import com.shekhargulati.reactivex.docker.client.junit.DockerContainerRule;
 import com.shekhargulati.reactivex.docker.client.representations.*;
 import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
+import com.shekhargulati.reactivex.rxokhttp.StreamResponseException;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -45,11 +46,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.*;
@@ -417,8 +413,13 @@ public class RxDockerClientTest {
         Observable<String> buildImageObs = client.buildImageObs(image, Paths.get("src", "test", "resources", "images", "my_hello_world_image.tar"));
         buildImageObs.subscribe(System.out::println, error -> fail("Should not fail but failed with message " + error.getMessage()), () -> System.out.println("Completed!!!"));
 
-        final StringBuilder resultCapturer = new StringBuilder();
-        client.pushImageObs(image, AuthConfig.authConfig("xxxx", "xxx", "xxx")).subscribe(System.out::println, error -> resultCapturer.append(error.getMessage()), () -> fail("should not complete as authentication header was incorrect!!"));
+        StringBuilder resultCapturer = new StringBuilder();
+        client.pushImageObs(image, AuthConfig.authConfig("xxxx", "xxx", "xxx")).subscribe(System.out::println, error -> {
+            assertThat(error, is(instanceOf(StreamResponseException.class)));
+            String message = DockerErrorDetails.errorDetails(((StreamResponseException) error).getJson()).getError();
+            resultCapturer.append(message);
+        }, () -> fail("should not complete as authentication header was incorrect!!"));
+
         assertThat(resultCapturer.toString(), anyOf(equalTo("Authentication is required."), equalTo("unauthorized: access to the requested resource is not authorized")));
     }
 
