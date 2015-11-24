@@ -25,27 +25,29 @@ public class DockerContainerRule implements TestRule {
 
     @Override
     public Statement apply(Statement base, Description description) {
-
-        CreateDockerContainer createDockerContainerAnnotation = description.getAnnotation(CreateDockerContainer.class);
-        if (createDockerContainerAnnotation != null) {
-            return new Statement() {
-                @Override
-                public void evaluate() throws Throwable {
-                    containerIds = createContainers(createDockerContainerAnnotation.containers());
-                    try {
-                        base.evaluate();
-                    } finally {
-                        containerIds.forEach(DockerContainerRule.this::removeContainer);
+        try {
+            CreateDockerContainer[] containerAnnotations = description.getTestClass().getDeclaredMethod(description.getMethodName()).getAnnotationsByType(CreateDockerContainer.class);
+            if (containerAnnotations != null && containerAnnotations.length > 0) {
+                return new Statement() {
+                    @Override
+                    public void evaluate() throws Throwable {
+                        containerIds = createContainers(Stream.of(containerAnnotations).map(c -> c.container()));
+                        try {
+                            base.evaluate();
+                        } finally {
+                            containerIds.forEach(DockerContainerRule.this::removeContainer);
+                        }
                     }
-                }
-            };
-        } else {
+                };
+            }
             return base;
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private List<String> createContainers(String[] containers) {
-        return Stream.of(containers).map(this::createContainer).map(DockerContainerResponse::getId).collect(toList());
+    private List<String> createContainers(Stream<String> containers) {
+        return containers.map(this::createContainer).map(DockerContainerResponse::getId).collect(toList());
     }
 
     private DockerContainerResponse createContainer(String containerName) {

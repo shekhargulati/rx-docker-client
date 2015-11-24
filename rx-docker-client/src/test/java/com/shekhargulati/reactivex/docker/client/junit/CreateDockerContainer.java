@@ -1,12 +1,10 @@
 package com.shekhargulati.reactivex.docker.client.junit;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.METHOD})
+@Target(ElementType.METHOD)
+@Repeatable(CreateDockerContainers.class)
 public @interface CreateDockerContainer {
 
     /**
@@ -14,6 +12,10 @@ public @interface CreateDockerContainer {
      *
      * @return container names
      */
-    public String[] containers();
+    public String container();
 
 }
+
+
+
+

@@ -104,7 +104,8 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(containers = {CONTAINER_NAME, SECOND_CONTAINER_NAME})
+    @CreateDockerContainer(container = CONTAINER_NAME)
+    @CreateDockerContainer(container = SECOND_CONTAINER_NAME)
     public void shouldListAllContainers() throws Exception {
         List<DockerContainer> dockerContainers = client.listAllContainers();
         dockerContainers.forEach(container -> System.out.println("Docker Container >> \n " + container));
@@ -112,14 +113,14 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(containers = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldInspectContainer() throws Exception {
         ContainerInspectResponse containerInspectResponse = client.inspectContainer(containerRule.containerIds().get(0));
         assertThat(containerInspectResponse.path(), is(equalTo("/bin/bash")));
     }
 
     @Test
-    @CreateDockerContainer(containers = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldStartCreatedContainer() throws Exception {
         HttpStatus httpStatus = client.startContainer(containerRule.containerIds().get(0));
         assertThat(httpStatus.code(), is(equalTo(204)));
@@ -142,7 +143,7 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(containers = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldStopStartedContainer() throws Exception {
         String containerId = containerRule.containerIds().get(0);
         client.startContainer(containerId);
@@ -152,7 +153,8 @@ public class RxDockerClientTest {
 
 
     @Test
-    @CreateDockerContainer(containers = {CONTAINER_NAME, SECOND_CONTAINER_NAME})
+    @CreateDockerContainer(container = CONTAINER_NAME)
+    @CreateDockerContainer(container = SECOND_CONTAINER_NAME)
     public void shouldQueryContainersByFilters() throws Exception {
         QueryParameters queryParameters = new QueryParametersBuilder().withAll(true).withLimit(3).withFilter("status", "exited").createQueryParameters();
         List<DockerContainer> containers = client.listContainers(queryParameters);
@@ -160,14 +162,14 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(containers = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldRestartAContainer() throws Exception {
         HttpStatus status = client.restartContainer(containerRule.containerIds().get(0), 5);
         assertThat(status.code(), is(equalTo(204)));
     }
 
     @Test
-    @CreateDockerContainer(containers = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldKillARunningContainer() throws Exception {
         String containerId = containerRule.containerIds().get(0);
         client.startContainer(containerId);
@@ -176,7 +178,7 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(containers = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldRemoveDockerContainerWithQueryParameters() throws Exception {
         String containerId = containerRule.containerIds().get(0);
         try {
@@ -188,14 +190,14 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(containers = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldRenameDockerContainer() throws Exception {
         HttpStatus status = client.renameContainer(containerRule.containerIds().get(0), "my_first_container-renamed");
         assertThat(status.code(), is(equalTo(204)));
     }
 
     @Test
-    @CreateDockerContainer(containers = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldWaitForARunningDockerContainer() throws Exception {
         String containerId = containerRule.containerIds().get(0);
         client.startContainer(containerId);
@@ -209,7 +211,7 @@ public class RxDockerClientTest {
 
 
     @Test
-    @CreateDockerContainer(containers = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldExportContainer() throws Exception {
         String containerId = containerRule.containerIds().get(0);
         Path pathToExportTo = tmp.newFolder().toPath();
@@ -218,7 +220,7 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(containers = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldShowContainerStats() throws Exception {
         String containerId = containerRule.containerIds().get(0);
         client.startContainer(containerId);
@@ -252,7 +254,7 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(containers = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldShowContainerLogs() throws Exception {
         String containerId = containerRule.containerIds().get(0);
         client.startContainer(containerId);
@@ -434,7 +436,7 @@ public class RxDockerClientTest {
 
     @Ignore // enable it when we have exec operation available
     @Test
-    @CreateDockerContainer(containers = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldInspectAContainerForFileSystemChanges() throws Exception {
         String containerId = containerRule.containerIds().get(0);
         client.startContainer(containerId);
