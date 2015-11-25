@@ -28,6 +28,7 @@ import com.shekhargulati.reactivex.docker.client.junit.CreateDockerContainer;
 import com.shekhargulati.reactivex.docker.client.junit.DockerContainerRule;
 import com.shekhargulati.reactivex.docker.client.representations.*;
 import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
+import com.shekhargulati.reactivex.rxokhttp.QueryParameter;
 import com.shekhargulati.reactivex.rxokhttp.StreamResponseException;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
@@ -442,6 +443,12 @@ public class RxDockerClientTest {
         client.startContainer(containerId);
         List<ContainerChange> containerChanges = client.inspectChangesOnContainerFilesystem(containerId);
         containerChanges.forEach(System.out::println);
+    }
+
+    @Test
+    public void shouldResizeContainerTtyToUserGivenValues() throws Exception {
+        HttpStatus httpStatus = client.resizeContainerTty("a86cfeade493", QueryParameter.of("h", 10), QueryParameter.of("w", 80));
+        assertThat(httpStatus, equalTo(HttpStatus.OK));
     }
 
     private DockerContainerResponse createContainer(String containerName) {

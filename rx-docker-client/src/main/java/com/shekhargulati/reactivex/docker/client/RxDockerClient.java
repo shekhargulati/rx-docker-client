@@ -33,10 +33,7 @@ import com.shekhargulati.reactivex.docker.client.utils.Dates;
 import com.shekhargulati.reactivex.docker.client.utils.StreamUtils;
 import com.shekhargulati.reactivex.docker.client.utils.Strings;
 import com.shekhargulati.reactivex.docker.client.utils.Validations;
-import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
-import com.shekhargulati.reactivex.rxokhttp.HttpStatusSubscriber;
-import com.shekhargulati.reactivex.rxokhttp.RxHttpClient;
-import com.shekhargulati.reactivex.rxokhttp.ServiceException;
+import com.shekhargulati.reactivex.rxokhttp.*;
 import com.shekhargulati.reactivex.rxokhttp.functions.ResponseTransformer;
 import com.shekhargulati.reactivex.rxokhttp.functions.StringResponseToCollectionTransformer;
 import com.shekhargulati.reactivex.rxokhttp.functions.StringResponseTransformer;
@@ -415,6 +412,19 @@ class RxDockerClient implements DockerClient {
                     return gson.fromJson(json, new TypeToken<List<ContainerChange>>() {
                     }.getType());
                 });
+    }
+
+
+    @Override
+    public HttpStatus resizeContainerTty(final String containerId, QueryParameter... queryParameters) {
+        return resizeContainerTtyObs(containerId, queryParameters).toBlocking().last();
+    }
+
+    @Override
+    public Observable<HttpStatus> resizeContainerTtyObs(final String containerId, QueryParameter... queryParameters) {
+        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        final String endpoint = String.format(CONTAINER_RESIZE_ENDPOINT, containerId);
+        return httpClient.post(endpoint, queryParameters);
     }
 
     // Image Endpoint

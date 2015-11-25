@@ -26,6 +26,7 @@ package com.shekhargulati.reactivex.docker.client;
 
 import com.shekhargulati.reactivex.docker.client.representations.*;
 import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
+import com.shekhargulati.reactivex.rxokhttp.QueryParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -51,6 +52,7 @@ public interface ContainerOperations {
     String CONTAINER_STATS_ENDPOINT = CONTAINERS_ENDPOINT + "/stats";
     String CONTAINER_LOGS_ENDPOINT = CONTAINERS_ENDPOINT + "/logs";
     String CONTAINER_CHANGES_ENDPOINT = CONTAINERS_ENDPOINT + "/changes";
+    String CONTAINER_RESIZE_ENDPOINT = CONTAINERS_ENDPOINT + "/resize";
 
     Logger logger = LoggerFactory.getLogger(ContainerOperations.class);
 
@@ -141,4 +143,8 @@ public interface ContainerOperations {
     List<ContainerChange> inspectChangesOnContainerFilesystem(String containerId);
 
     Observable<ContainerChange> inspectChangesOnContainerFilesystemObs(String containerId);
+
+    HttpStatus resizeContainerTty(String containerId, QueryParameter... queryParameters);
+
+    Observable<HttpStatus> resizeContainerTtyObs(String containerId, QueryParameter... queryParameters);
 }
