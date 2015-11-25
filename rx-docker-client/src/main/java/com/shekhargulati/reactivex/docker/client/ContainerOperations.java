@@ -54,6 +54,7 @@ public interface ContainerOperations {
     String CONTAINER_CHANGES_ENDPOINT = CONTAINERS_ENDPOINT + "/changes";
     String CONTAINER_RESIZE_ENDPOINT = CONTAINERS_ENDPOINT + "/resize";
     String CONTAINER_PAUSE_ENDPOINT = CONTAINERS_ENDPOINT + "/pause";
+    String CONTAINER_UNPAUSE_ENDPOINT = CONTAINERS_ENDPOINT + "/unpause";
 
     Logger logger = LoggerFactory.getLogger(ContainerOperations.class);
 
@@ -152,4 +153,8 @@ public interface ContainerOperations {
     HttpStatus pauseContainer(String containerId);
 
     Observable<HttpStatus> pauseContainerObs(String containerId);
+
+    HttpStatus unpauseContainer(String containerId);
+
+    Observable<HttpStatus> unpauseContainerObs(String containerId);
 }

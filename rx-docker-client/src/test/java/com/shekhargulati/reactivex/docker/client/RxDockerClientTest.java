@@ -457,13 +457,18 @@ public class RxDockerClientTest {
 
     @Test
     @CreateDockerContainer(container = CONTAINER_NAME)
-    public void shouldPauseAContainer() throws Exception {
+    public void shouldPauseAndUnpauseAContainer() throws Exception {
         String containerId = containerRule.containerIds().get(0);
         client.startContainer(containerId);
         HttpStatus httpStatus = client.pauseContainer(containerId);
         assertThat(httpStatus, equalTo(HttpStatus.NO_CONTENT));
         DockerContainer pausedContainer = client.listAllContainers().stream().filter(c -> c.getId().equals(containerId)).findFirst().get();
         assertThat(pausedContainer.getStatus(), containsString("Paused"));
+        HttpStatus httpStatus1 = client.unpauseContainer(containerId);
+        assertThat(httpStatus1, equalTo(HttpStatus.NO_CONTENT));
+
+        DockerContainer unpausedContainer = client.listAllContainers().stream().filter(c -> c.getId().equals(containerId)).findFirst().get();
+        assertThat(unpausedContainer.getStatus(), not(containsString("Paused")));
     }
 
 
