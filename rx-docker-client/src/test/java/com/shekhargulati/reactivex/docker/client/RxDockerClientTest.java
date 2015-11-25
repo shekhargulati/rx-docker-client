@@ -446,10 +446,26 @@ public class RxDockerClientTest {
     }
 
     @Test
+    @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldResizeContainerTtyToUserGivenValues() throws Exception {
-        HttpStatus httpStatus = client.resizeContainerTty("a86cfeade493", QueryParameter.of("h", 10), QueryParameter.of("w", 80));
+        String containerId = containerRule.containerIds().get(0);
+        client.startContainer(containerId);
+        HttpStatus httpStatus = client.resizeContainerTty(containerId, QueryParameter.of("h", 10), QueryParameter.of("w", 80));
         assertThat(httpStatus, equalTo(HttpStatus.OK));
     }
+
+
+    @Test
+    @CreateDockerContainer(container = CONTAINER_NAME)
+    public void shouldPauseAContainer() throws Exception {
+        String containerId = containerRule.containerIds().get(0);
+        client.startContainer(containerId);
+        HttpStatus httpStatus = client.pauseContainer(containerId);
+        assertThat(httpStatus, equalTo(HttpStatus.NO_CONTENT));
+        DockerContainer pausedContainer = client.listAllContainers().stream().filter(c -> c.getId().equals(containerId)).findFirst().get();
+        assertThat(pausedContainer.getStatus(), containsString("Paused"));
+    }
+
 
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()

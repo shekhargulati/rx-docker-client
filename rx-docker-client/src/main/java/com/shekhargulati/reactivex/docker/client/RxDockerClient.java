@@ -427,6 +427,19 @@ class RxDockerClient implements DockerClient {
         return httpClient.post(endpoint, queryParameters);
     }
 
+    @Override
+    public HttpStatus pauseContainer(final String containerId) {
+        return pauseContainerObs(containerId).toBlocking().last();
+    }
+
+    @Override
+    public Observable<HttpStatus> pauseContainerObs(final String containerId) {
+        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        final String endpoint = String.format(CONTAINER_PAUSE_ENDPOINT, containerId);
+        return httpClient.post(endpoint);
+    }
+
+
     // Image Endpoint
     @Override
     public HttpStatus pullImage(final String fromImage) {
