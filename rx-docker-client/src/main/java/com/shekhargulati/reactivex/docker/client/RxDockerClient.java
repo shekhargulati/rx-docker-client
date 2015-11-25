@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
@@ -423,8 +424,10 @@ class RxDockerClient implements DockerClient {
     @Override
     public Observable<HttpStatus> resizeContainerTtyObs(final String containerId, QueryParameter... queryParameters) {
         Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
-        final String endpoint = String.format(CONTAINER_RESIZE_ENDPOINT, containerId);
-        return httpClient.post(endpoint, queryParameters);
+        // TODO: remove this after rx-okhttp 0.1.1 version is released as that can handle query parameters
+        String queryString = Optional.ofNullable(queryParameters).map(qps -> Stream.of(qps).map(qp -> String.format("%s=%s", qp.param(), qp.value())).collect(Collectors.joining("&", "?", ""))).orElse("");
+        final String endpoint = String.format(CONTAINER_RESIZE_ENDPOINT, containerId) + queryString;
+        return httpClient.post(endpoint);
     }
 
     @Override
