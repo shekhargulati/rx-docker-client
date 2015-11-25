@@ -47,6 +47,7 @@ import java.util.stream.Stream;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.*;
+import static org.junit.Assume.assumeTrue;
 
 public class RxDockerClientTest {
 
@@ -458,6 +459,7 @@ public class RxDockerClientTest {
     @Test
     @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldPauseAndUnpauseAContainer() throws Exception {
+        assumeTrue(System.getenv("CIRCLE_USERNAME") == null);
         String containerId = containerRule.containerIds().get(0);
         client.startContainer(containerId);
         HttpStatus httpStatus = client.pauseContainer(containerId);
