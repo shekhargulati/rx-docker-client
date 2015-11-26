@@ -32,7 +32,6 @@ import com.shekhargulati.reactivex.docker.client.representations.*;
 import com.shekhargulati.reactivex.docker.client.utils.Dates;
 import com.shekhargulati.reactivex.docker.client.utils.StreamUtils;
 import com.shekhargulati.reactivex.docker.client.utils.Strings;
-import com.shekhargulati.reactivex.docker.client.utils.Validations;
 import com.shekhargulati.reactivex.rxokhttp.*;
 import com.shekhargulati.reactivex.rxokhttp.functions.ResponseTransformer;
 import com.shekhargulati.reactivex.rxokhttp.functions.StringResponseToCollectionTransformer;
@@ -54,11 +53,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
 import static com.shekhargulati.reactivex.docker.client.utils.StreamUtils.iteratorToStream;
+import static com.shekhargulati.reactivex.docker.client.utils.Validations.validate;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -136,7 +135,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> checkAuthObs(final AuthConfig authConfig) {
-        Validations.validate(authConfig, cfg -> cfg == null, () -> "authConfig can't be null.");
+        validate(authConfig, cfg -> cfg == null, () -> "authConfig can't be null.");
         final String endpoint = CHECK_AUTH_ENDPOINT;
         return httpClient.post(endpoint, authConfig.toJson());
     }
@@ -219,7 +218,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<ContainerInspectResponse> inspectContainerObs(final String containerId) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_JSON_ENDPOINT, containerId);
         return httpClient
                 .get(uri,
@@ -233,7 +232,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<ProcessListResponse> listProcessesObs(final String containerId) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_LIST_PROCESS_ENDPOINT, containerId);
         return httpClient
                 .get(uri,
@@ -258,7 +257,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> stopContainerObs(final String containerId, final int waitInSecs) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_STOP_ENDPOINT, containerId) + "?t=" + waitInSecs;
         return httpClient.post(uri, EMPTY_BODY, ResponseTransformer.httpStatus());
     }
@@ -270,7 +269,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> restartContainerObs(final String containerId, final int waitInSecs) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_RESTART_ENDPOINT, containerId) + "?t=" + waitInSecs;
         return httpClient.post(uri, EMPTY_BODY, ResponseTransformer.httpStatus());
     }
@@ -282,7 +281,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> killRunningContainerObs(final String containerId) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_KILL_ENDPOINT, containerId);
         return httpClient.post(uri, EMPTY_BODY, ResponseTransformer.httpStatus());
     }
@@ -294,7 +293,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public HttpStatus removeContainer(final String containerId, final boolean removeVolume, final boolean force) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         return removeContainerObs(containerId, removeVolume, force).toBlocking().single();
     }
 
@@ -305,7 +304,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> removeContainerObs(final String containerId, final boolean removeVolume, final boolean force) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_REMOVE_ENDPOINT, containerId) + "?v=" + removeVolume + "&force=" + force;
         return httpClient.delete(uri);
     }
@@ -317,8 +316,8 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> renameContainerObs(final String containerId, final String newName) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
-        Validations.validate(newName, Strings::isEmptyOrNull, () -> "Please provide newName that you want't to use for container.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(newName, Strings::isEmptyOrNull, () -> "Please provide newName that you want't to use for container.");
         final String uri = String.format(CONTAINER_RENAME_ENDPOINT, containerId) + "?name=" + newName;
         return httpClient.post(uri, EMPTY_BODY, ResponseTransformer.httpStatus());
     }
@@ -330,14 +329,14 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> waitContainerObs(final String containerId) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String uri = String.format(CONTAINER_WAIT_ENDPOINT, containerId);
         return httpClient.post(uri, EMPTY_BODY, ResponseTransformer.httpStatus());
     }
 
     @Override
     public void exportContainer(final String containerId, final Path pathToExportTo) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_EXPORT_ENDPOINT, containerId);
         Observable<Buffer> bufferStream = httpClient.getResponseBufferStream(endpointUri);
 
@@ -378,7 +377,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<ContainerStats> containerStatsObs(final String containerId) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_STATS_ENDPOINT, containerId);
         return httpClient.getResponseStream(endpointUri).map(json -> gson.fromJson(json, ContainerStats.class));
     }
@@ -390,7 +389,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<String> containerLogsObs(final String containerId, ContainerLogQueryParameters queryParameters) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_LOGS_ENDPOINT, containerId) + queryParameters.toQueryParametersString();
         Map<String, String> headers = Stream.of(new SimpleEntry<>("Accept", "application/vnd.docker.raw-stream"))
                 .collect(toMap(SimpleEntry::getKey, SimpleEntry::getValue));
@@ -405,7 +404,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<ContainerChange> inspectChangesOnContainerFilesystemObs(final String containerId) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpoint = String.format(CONTAINER_CHANGES_ENDPOINT, containerId);
         return httpClient.get(endpoint,
                 (StringResponseToCollectionTransformer<ContainerChange>) json -> {
@@ -423,11 +422,9 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> resizeContainerTtyObs(final String containerId, QueryParameter... queryParameters) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
-        // TODO: remove this after rx-okhttp 0.1.1 version is released as that can handle query parameters
-        String queryString = Optional.ofNullable(queryParameters).map(qps -> Stream.of(qps).map(qp -> String.format("%s=%s", qp.param(), qp.value())).collect(Collectors.joining("&", "?", ""))).orElse("");
-        final String endpoint = String.format(CONTAINER_RESIZE_ENDPOINT, containerId) + queryString;
-        return httpClient.post(endpoint);
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        final String endpoint = String.format(CONTAINER_RESIZE_ENDPOINT, containerId);
+        return httpClient.post(endpoint, queryParameters);
     }
 
     @Override
@@ -437,7 +434,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> pauseContainerObs(final String containerId) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpoint = String.format(CONTAINER_PAUSE_ENDPOINT, containerId);
         return httpClient.post(endpoint);
     }
@@ -449,7 +446,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> unpauseContainerObs(final String containerId) {
-        Validations.validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpoint = String.format(CONTAINER_UNPAUSE_ENDPOINT, containerId);
         return httpClient.post(endpoint);
     }
@@ -486,7 +483,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<String> pullImageObs(final String fromImage, final Optional<String> user, final Optional<String> tag) {
-        Validations.validate(fromImage, Strings::isEmptyOrNull, () -> "fromImage can't be null or empty.");
+        validate(fromImage, Strings::isEmptyOrNull, () -> "fromImage can't be null or empty.");
         final String endpoint = String.format(IMAGE_CREATE_ENDPOINT, user.map(u -> u + "/").orElse(""), fromImage, tag.orElse("latest"));
         return httpClient.postAndReceiveResponse(endpoint);
     }
@@ -542,7 +539,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> removeImageObs(final String imageName, final boolean noPrune, final boolean force) {
-        Validations.validate(imageName, Strings::isEmptyOrNull, () -> "imageName can't be null or empty.");
+        validate(imageName, Strings::isEmptyOrNull, () -> "imageName can't be null or empty.");
         final String endpoint = String.format(IMAGE_REMOVE_ENDPOINT, imageName) + "?noprune=" + noPrune + "&force=" + force;
         return httpClient.delete(endpoint);
     }
@@ -554,7 +551,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<DockerImageInfo> searchImagesObs(final String searchTerm, Predicate<DockerImageInfo> predicate) {
-        Validations.validate(searchTerm, Strings::isEmptyOrNull, () -> "searchTerm can't be null or empty.");
+        validate(searchTerm, Strings::isEmptyOrNull, () -> "searchTerm can't be null or empty.");
         final String endpoint = String.format("%s?term=%s", IMAGE_SEARCH_ENDPOINT, searchTerm);
         return httpClient.get(endpoint,
                 (StringResponseToCollectionTransformer<DockerImageInfo>) json -> gson.fromJson(json, new TypeToken<List<DockerImageInfo>>() {
@@ -568,8 +565,8 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<String> buildImageObs(final String repositoryName, final Path pathToTarArchive, BuildImageQueryParameters queryParameters) {
-        Validations.validate(pathToTarArchive, path -> path == null, () -> "path to archive can't be null");
-        Validations.validate(pathToTarArchive, path -> !path.toFile().exists(), () -> String.format("%s can't be resolved to a tar file", pathToTarArchive.toAbsolutePath().toString()));
+        validate(pathToTarArchive, path -> path == null, () -> "path to archive can't be null");
+        validate(pathToTarArchive, path -> !path.toFile().exists(), () -> String.format("%s can't be resolved to a tar file", pathToTarArchive.toAbsolutePath().toString()));
         final String endpoint = String.format("%s?t=%s", IMAGE_BUILD_ENDPOINT, repositoryName) + queryParameters.toQueryParameterString();
         return httpClient.postTarStream(endpoint, pathToTarArchive, buf -> buf.readString(Charset.defaultCharset()));
     }
@@ -587,7 +584,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<HttpStatus> tagImageObs(final String image, final ImageTagQueryParameters queryParameters) {
-        Validations.validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
+        validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_TAG_ENDPOINT, image) + queryParameters.toQuery();
         return httpClient.post(endpoint);
     }
@@ -599,7 +596,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<DockerImageHistory> imageHistoryObs(final String image) {
-        Validations.validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
+        validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_HISTORY_ENDPOINT, image);
         return httpClient.get(endpoint,
                 (StringResponseToCollectionTransformer<DockerImageHistory>) json -> gson.fromJson(json, new TypeToken<List<DockerImageHistory>>() {
@@ -613,7 +610,7 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public Observable<DockerImageInspectDetails> inspectImageObs(final String image) {
-        Validations.validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
+        validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_INSPECT_ENDPOINT, image);
         return httpClient.get(endpoint,
                 (StringResponseTransformer<DockerImageInspectDetails>) json -> gson.fromJson(json, new TypeToken<DockerImageInspectDetails>() {
@@ -622,14 +619,14 @@ class RxDockerClient implements DockerClient {
 
     @Override
     public HttpStatus pushImage(final String image, AuthConfig authConfig) {
-        Validations.validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
+        validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
         return httpClient.post(endpoint).toBlocking().last();
     }
 
     @Override
     public Observable<String> pushImageObs(final String image, AuthConfig authConfig) {
-        Validations.validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
+        validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
         Map<String, String> headers = new HashMap<>();
         headers.put("X-Registry-Auth", authConfig.xAuthHeader());
