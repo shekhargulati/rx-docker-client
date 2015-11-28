@@ -473,6 +473,15 @@ public class RxDockerClientTest {
         assertThat(unpausedContainer.getStatus(), not(containsString("Paused")));
     }
 
+    @Test
+    @CreateDockerContainer(container = CONTAINER_NAME, command = {"ls", "-la"})
+    public void shouldAttachToAContainer() throws Exception {
+        String containerId = containerRule.first();
+        client.startContainer(containerId);
+        QueryParameter[] queryParameters = {QueryParameter.of("stream", true), QueryParameter.of("stdout", true)};
+        Observable<String> containerStream = client.attachContainerObs(containerId, queryParameters);
+        containerStream.subscribe(System.out::println, System.out::println, System.out::println);
+    }
 
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()

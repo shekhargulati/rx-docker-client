@@ -12,8 +12,20 @@ public @interface CreateDockerContainer {
      *
      * @return container names
      */
-    public String container();
+    String container();
 
+    /**
+     * Command to run
+     *
+     * @return command
+     */
+    String[] command() default "/bin/bash";
+
+    String image() default "ubuntu";
+
+    boolean attachStdin() default true;
+
+    boolean tty() default true;
 }
 
 

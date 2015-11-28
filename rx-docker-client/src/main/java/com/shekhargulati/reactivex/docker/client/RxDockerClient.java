@@ -58,6 +58,7 @@ import java.util.stream.Stream;
 import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
 import static com.shekhargulati.reactivex.docker.client.utils.StreamUtils.iteratorToStream;
 import static com.shekhargulati.reactivex.docker.client.utils.Validations.validate;
+import static com.shekhargulati.reactivex.rxokhttp.ClientConfig.defaultConfig;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -84,7 +85,7 @@ class RxDockerClient implements DockerClient {
 
         apiUri = scheme + "://" + hostAndPort.getHost() + ":" + hostAndPort.getPort();
         logger.info("Docker API uri {}", apiUri);
-        httpClient = RxHttpClient.newRxClient(hostAndPort.getHost(), hostAndPort.getPort(), dockerCertPath);
+        httpClient = RxHttpClient.newRxClient(hostAndPort.getHost(), hostAndPort.getPort(), dockerCertPath, defaultConfig());
     }
 
     @Override
@@ -449,6 +450,13 @@ class RxDockerClient implements DockerClient {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpoint = String.format(CONTAINER_UNPAUSE_ENDPOINT, containerId);
         return httpClient.post(endpoint);
+    }
+
+    @Override
+    public Observable<String> attachContainerObs(final String containerId, QueryParameter... queryParameters) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        final String endpoint = String.format(CONTAINER_ATTACH_ENDPOINT, containerId);
+        return httpClient.postAndReceiveResponse(endpoint, queryParameters);
     }
 
 

@@ -55,6 +55,7 @@ public interface ContainerOperations {
     String CONTAINER_RESIZE_ENDPOINT = CONTAINERS_ENDPOINT + "/resize";
     String CONTAINER_PAUSE_ENDPOINT = CONTAINERS_ENDPOINT + "/pause";
     String CONTAINER_UNPAUSE_ENDPOINT = CONTAINERS_ENDPOINT + "/unpause";
+    String CONTAINER_ATTACH_ENDPOINT = CONTAINERS_ENDPOINT + "/attach";
 
     Logger logger = LoggerFactory.getLogger(ContainerOperations.class);
 
@@ -157,4 +158,6 @@ public interface ContainerOperations {
     HttpStatus unpauseContainer(String containerId);
 
     Observable<HttpStatus> unpauseContainerObs(String containerId);
+
+    Observable<String> attachContainerObs(String containerId, QueryParameter... queryParameters);
 }

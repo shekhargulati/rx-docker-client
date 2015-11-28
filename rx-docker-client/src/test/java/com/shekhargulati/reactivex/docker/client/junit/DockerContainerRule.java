@@ -8,8 +8,9 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
@@ -31,7 +32,7 @@ public class DockerContainerRule implements TestRule {
                 return new Statement() {
                     @Override
                     public void evaluate() throws Throwable {
-                        containerIds = createContainers(Stream.of(containerAnnotations).map(c -> c.container()));
+                        containerIds = createContainers(containerAnnotations);
                         try {
                             base.evaluate();
                         } finally {
@@ -46,18 +47,18 @@ public class DockerContainerRule implements TestRule {
         }
     }
 
-    private List<String> createContainers(Stream<String> containers) {
-        return containers.map(this::createContainer).map(DockerContainerResponse::getId).collect(toList());
+    private List<String> createContainers(CreateDockerContainer[] containers) {
+        return Stream.of(containers).map(this::createContainer).map(DockerContainerResponse::getId).collect(toList());
     }
 
-    private DockerContainerResponse createContainer(String containerName) {
+    private DockerContainerResponse createContainer(CreateDockerContainer c) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
-                .setImage("ubuntu")
-                .setCmd(Collections.singletonList("/bin/bash"))
-                .setAttachStdin(true)
-                .setTty(true)
+                .setImage(c.image())
+                .setCmd(Arrays.asList(c.command()))
+                .setAttachStdin(c.attachStdin())
+                .setTty(c.tty())
                 .createDockerContainerRequest();
-        return client.createContainer(request, containerName);
+        return client.createContainer(request, c.container());
 
     }
 
@@ -72,5 +73,12 @@ public class DockerContainerRule implements TestRule {
 
     public List<String> containerIds() {
         return containerIds;
+    }
+
+    public String first() {
+        if (containerIds.isEmpty()) {
+            throw new NoSuchElementException("No container found");
+        }
+        return containerIds.get(0);
     }
 }
