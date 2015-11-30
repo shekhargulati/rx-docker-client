@@ -66,11 +66,11 @@ public class RxDockerClientTest {
     @After
     public void tearDown() throws Exception {
         client.listAllImages().filter(dockerImage -> dockerImage.repoTags().stream().anyMatch(repo -> repo.contains("test_rx_docker"))).forEach(dockerImage -> {
-
             try {
-                client.removeImage(dockerImage.id());
+                logger.info("Removing image {}", dockerImage.id());
+                client.removeImage(dockerImage.id(), true, true);
             } catch (Exception e) {
-                // ignore for CircleCI
+                // ignoring for CircleCI
             }
         });
     }
@@ -145,10 +145,9 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(container = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME, start = true)
     public void shouldStopStartedContainer() throws Exception {
-        String containerId = containerRule.containerIds().get(0);
-        client.startContainer(containerId);
+        String containerId = containerRule.first();
         HttpStatus status = client.stopContainer(containerId, 5);
         assertThat(status.code(), is(equalTo(204)));
     }
@@ -171,10 +170,9 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(container = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME, start = true)
     public void shouldKillARunningContainer() throws Exception {
-        String containerId = containerRule.containerIds().get(0);
-        client.startContainer(containerId);
+        String containerId = containerRule.first();
         HttpStatus status = client.killRunningContainer(containerId);
         assertThat(status.code(), is(equalTo(204)));
     }
@@ -182,7 +180,7 @@ public class RxDockerClientTest {
     @Test
     @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldRemoveDockerContainerWithQueryParameters() throws Exception {
-        String containerId = containerRule.containerIds().get(0);
+        String containerId = containerRule.first();
         try {
             HttpStatus status = client.removeContainer(containerId, false, true);
             assertThat(status.code(), is(equalTo(204)));
@@ -199,10 +197,9 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(container = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME, start = true)
     public void shouldWaitForARunningDockerContainer() throws Exception {
-        String containerId = containerRule.containerIds().get(0);
-        client.startContainer(containerId);
+        String containerId = containerRule.first();
         rx.Observable.timer(1, TimeUnit.SECONDS).forEach(t -> {
             System.out.println("Stopping container after 1 second..");
             client.stopContainer(containerId, 5);
@@ -215,17 +212,16 @@ public class RxDockerClientTest {
     @Test
     @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldExportContainer() throws Exception {
-        String containerId = containerRule.containerIds().get(0);
+        String containerId = containerRule.first();
         Path pathToExportTo = tmp.newFolder().toPath();
         client.exportContainer(containerId, pathToExportTo);
         assertTrue(Files.newDirectoryStream(pathToExportTo, p -> p.toFile().isFile()).iterator().hasNext());
     }
 
     @Test
-    @CreateDockerContainer(container = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME, start = true)
     public void shouldShowContainerStats() throws Exception {
-        String containerId = containerRule.containerIds().get(0);
-        client.startContainer(containerId);
+        String containerId = containerRule.first();
         rx.Observable<ContainerStats> containerStatsObservable = client.containerStatsObs(containerId);
         Subscriber<ContainerStats> containerStatsSubscriber = new Subscriber<ContainerStats>() {
 
@@ -256,10 +252,9 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(container = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME, start = true)
     public void shouldShowContainerLogs() throws Exception {
         String containerId = containerRule.containerIds().get(0);
-        client.startContainer(containerId);
         Observable<String> logsObs = client.containerLogsObs(containerId);
         StringBuilder result = new StringBuilder();
         Subscriber<String> statsSub = new Subscriber<String>() {
@@ -447,21 +442,19 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(container = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME, start = true)
     public void shouldResizeContainerTtyToUserGivenValues() throws Exception {
         String containerId = containerRule.containerIds().get(0);
-        client.startContainer(containerId);
         HttpStatus httpStatus = client.resizeContainerTty(containerId, QueryParameter.of("h", 10), QueryParameter.of("w", 80));
         assertThat(httpStatus, equalTo(HttpStatus.OK));
     }
 
 
     @Test
-    @CreateDockerContainer(container = CONTAINER_NAME)
+    @CreateDockerContainer(container = CONTAINER_NAME, start = true)
     public void shouldPauseAndUnpauseAContainer() throws Exception {
         assumeTrue(System.getenv("CIRCLE_USERNAME") == null);
         String containerId = containerRule.containerIds().get(0);
-        client.startContainer(containerId);
         HttpStatus httpStatus = client.pauseContainer(containerId);
         assertThat(httpStatus, equalTo(HttpStatus.NO_CONTENT));
         DockerContainer pausedContainer = client.listAllContainers().stream().filter(c -> c.getId().equals(containerId)).findFirst().get();
@@ -474,13 +467,25 @@ public class RxDockerClientTest {
     }
 
     @Test
-    @CreateDockerContainer(container = CONTAINER_NAME, command = {"ls", "-la"})
+    @CreateDockerContainer(container = CONTAINER_NAME, command = {"ls", "-la"}, start = true)
     public void shouldAttachToAContainer() throws Exception {
         String containerId = containerRule.first();
-        client.startContainer(containerId);
         QueryParameter[] queryParameters = {QueryParameter.of("stream", true), QueryParameter.of("stdout", true)};
         Observable<String> containerStream = client.attachContainerObs(containerId, queryParameters);
         containerStream.subscribe(System.out::println, System.out::println, System.out::println);
+    }
+
+    @Test
+    @CreateDockerContainer(container = CONTAINER_NAME, start = true)
+    public void shouldRetrieveArchiveInformationOfContainer() throws Exception {
+        String containerId = containerRule.first();
+
+        ContainerArchiveInformation containerArchiveInformation = client.containerArchiveInformation(containerId, "/root");
+
+        System.out.println(containerArchiveInformation);
+
+        assertThat(containerArchiveInformation.getName(), is(equalTo("root")));
+        assertThat(containerArchiveInformation.getSize(), is(equalTo(4096)));
     }
 
     private DockerContainerResponse createContainer(String containerName) {

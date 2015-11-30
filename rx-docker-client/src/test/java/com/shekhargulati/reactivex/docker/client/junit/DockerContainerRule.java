@@ -48,18 +48,22 @@ public class DockerContainerRule implements TestRule {
     }
 
     private List<String> createContainers(CreateDockerContainer[] containers) {
-        return Stream.of(containers).map(this::createContainer).map(DockerContainerResponse::getId).collect(toList());
+        return Stream.of(containers).map(this::createAndStartContainer).map(DockerContainerResponse::getId).collect(toList());
     }
 
-    private DockerContainerResponse createContainer(CreateDockerContainer c) {
+    private DockerContainerResponse createAndStartContainer(CreateDockerContainer c) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage(c.image())
                 .setCmd(Arrays.asList(c.command()))
                 .setAttachStdin(c.attachStdin())
                 .setTty(c.tty())
                 .createDockerContainerRequest();
-        return client.createContainer(request, c.container());
 
+        DockerContainerResponse response = client.createContainer(request, c.container());
+        if (c.start()) {
+            client.startContainer(response.getId());
+        }
+        return response;
     }
 
 

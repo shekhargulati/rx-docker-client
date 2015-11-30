@@ -27,6 +27,7 @@ package com.shekhargulati.reactivex.docker.client;
 import com.shekhargulati.reactivex.docker.client.representations.*;
 import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
 import com.shekhargulati.reactivex.rxokhttp.QueryParameter;
+import com.squareup.okhttp.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -56,6 +57,7 @@ public interface ContainerOperations {
     String CONTAINER_PAUSE_ENDPOINT = CONTAINERS_ENDPOINT + "/pause";
     String CONTAINER_UNPAUSE_ENDPOINT = CONTAINERS_ENDPOINT + "/unpause";
     String CONTAINER_ATTACH_ENDPOINT = CONTAINERS_ENDPOINT + "/attach";
+    String CONTAINER_ARCHIVE_ENDPOINT = CONTAINERS_ENDPOINT + "/archive";
 
     Logger logger = LoggerFactory.getLogger(ContainerOperations.class);
 
@@ -160,4 +162,8 @@ public interface ContainerOperations {
     Observable<HttpStatus> unpauseContainerObs(String containerId);
 
     Observable<String> attachContainerObs(String containerId, QueryParameter... queryParameters);
+
+    ContainerArchiveInformation containerArchiveInformation(String containerId, String path);
+
+    Observable<Response> containerArchiveInformationObs(String containerId, String path);
 }

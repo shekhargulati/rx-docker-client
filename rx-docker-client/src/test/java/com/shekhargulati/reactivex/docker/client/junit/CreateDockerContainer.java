@@ -26,6 +26,8 @@ public @interface CreateDockerContainer {
     boolean attachStdin() default true;
 
     boolean tty() default true;
+
+    boolean start() default false;
 }
 
 

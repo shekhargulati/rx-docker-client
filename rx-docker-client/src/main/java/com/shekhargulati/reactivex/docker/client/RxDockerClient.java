@@ -36,6 +36,7 @@ import com.shekhargulati.reactivex.rxokhttp.*;
 import com.shekhargulati.reactivex.rxokhttp.functions.ResponseTransformer;
 import com.shekhargulati.reactivex.rxokhttp.functions.StringResponseToCollectionTransformer;
 import com.shekhargulati.reactivex.rxokhttp.functions.StringResponseTransformer;
+import com.squareup.okhttp.Response;
 import com.squareup.okhttp.ResponseBody;
 import okio.Buffer;
 import org.slf4j.Logger;
@@ -48,10 +49,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -459,6 +457,21 @@ class RxDockerClient implements DockerClient {
         return httpClient.postAndReceiveResponse(endpoint, queryParameters);
     }
 
+    @Override
+    public ContainerArchiveInformation containerArchiveInformation(final String containerId, final String path) {
+        Response response = containerArchiveInformationObs(containerId, path).toBlocking().last();
+        String containerInfo = response.header("X-Docker-Container-Path-Stat");
+
+        final String containerInfoJson = new String(Base64.getDecoder().decode(containerInfo), Charset.defaultCharset());
+        return gson.fromJson(containerInfoJson, ContainerArchiveInformation.class);
+    }
+
+    @Override
+    public Observable<Response> containerArchiveInformationObs(final String containerId, final String path) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        final String endpoint = String.format(CONTAINER_ARCHIVE_ENDPOINT, containerId);
+        return httpClient.head(endpoint, QueryParameter.of("path", path));
+    }
 
     // Image Endpoint
     @Override
