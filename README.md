@@ -1,4 +1,4 @@
-Rx Docker Client [![Circle CI](https://circleci.com/gh/shekhargulati/rx-docker-client.png?style=shield)](https://circleci.com/gh/shekhargulati/rx-docker-client)![](https://img.shields.io/maven-central/v/com.shekhargulati.reactivex/rx-docker-client.svg)
+Rx Docker Client [![Circle CI](https://circleci.com/gh/shekhargulati/rx-docker-client.png?style=shield)](https://circleci.com/gh/shekhargulati/rx-docker-client) [![](https://img.shields.io/maven-central/v/com.shekhargulati.reactivex/rx-docker-client.svg)](http://search.maven.org/#search%7Cga%7C1%7Crx-docker-client)
 =========
 
 rx-docker-client is a reactive Java REST API client for Docker REST API(http://docs.docker.com/engine/reference/api/docker_remote_api/). The API uses JDK 8. It makes use of following awesome libraries to get the job done:
