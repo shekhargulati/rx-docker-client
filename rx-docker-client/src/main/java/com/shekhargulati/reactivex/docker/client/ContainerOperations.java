@@ -166,4 +166,6 @@ public interface ContainerOperations {
     ContainerArchiveInformation containerArchiveInformation(String containerId, String path);
 
     Observable<Response> containerArchiveInformationObs(String containerId, String path);
+
+    void containerArchive(String containerId, String path, Path pathToExportTo);
 }

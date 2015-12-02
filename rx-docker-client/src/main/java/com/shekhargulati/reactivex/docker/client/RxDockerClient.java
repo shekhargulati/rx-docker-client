@@ -473,6 +473,46 @@ class RxDockerClient implements DockerClient {
         return httpClient.head(endpoint, QueryParameter.of("path", path));
     }
 
+    @Override
+    public void containerArchive(final String containerId, final String path, Path pathToExportTo) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        final String endpointUri = String.format(CONTAINER_ARCHIVE_ENDPOINT, containerId);
+        Observable<Buffer> bufferStream = httpClient.getResponseBufferStream(endpointUri, QueryParameter.of("path", path));
+
+        String exportFilePath = pathToExportTo.toString() + "/" + containerId + ".tar";
+        try (FileOutputStream out = new FileOutputStream(exportFilePath)) {
+            Subscriber<Buffer> httpSubscriber = new Subscriber<Buffer>() {
+                @Override
+                public void onCompleted() {
+                    logger.info("Exported container archive to path {}", exportFilePath);
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    logger.error("Error encountered >> ", e);
+                }
+
+                @Override
+                public void onNext(Buffer res) {
+                    try {
+                        logger.info("Exporting to path {}", exportFilePath);
+                        final byte[] buffer = new byte[1024];
+                        int n;
+                        while (-1 != (n = res.read(buffer))) {
+                            out.write(buffer, 0, n);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+            bufferStream.subscribe(httpSubscriber);
+            httpSubscriber.unsubscribe();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // Image Endpoint
     @Override
     public HttpStatus pullImage(final String fromImage) {

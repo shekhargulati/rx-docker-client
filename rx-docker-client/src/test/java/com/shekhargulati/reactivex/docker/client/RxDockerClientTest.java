@@ -488,6 +488,17 @@ public class RxDockerClientTest {
         assertThat(containerArchiveInformation.getSize(), is(greaterThan(0))); // as CircleCI returns different value than 4096
     }
 
+    @Test
+    @CreateDockerContainer(container = CONTAINER_NAME, start = true)
+    public void shouldRetrieveContainerArchive() throws Exception {
+        String containerId = containerRule.first();
+
+        Path pathToExportTo = tmp.newFolder().toPath();
+        client.containerArchive(containerId, "/root", pathToExportTo);
+        assertTrue(Files.newDirectoryStream(pathToExportTo, p -> p.toFile().isFile()).iterator().hasNext());
+    }
+
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")
