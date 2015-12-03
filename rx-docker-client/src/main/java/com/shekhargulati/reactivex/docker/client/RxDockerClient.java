@@ -338,40 +338,8 @@ class RxDockerClient implements DockerClient {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_EXPORT_ENDPOINT, containerId);
         Observable<Buffer> bufferStream = httpClient.getResponseBufferStream(endpointUri);
-
         String exportFilePath = pathToExportTo.toString() + "/" + containerId + ".tar";
-        try (FileOutputStream out = new FileOutputStream(exportFilePath)) {
-            Subscriber<Buffer> httpSubscriber = new Subscriber<Buffer>() {
-                @Override
-                public void onCompleted() {
-                    logger.info("Exported container to path {}", exportFilePath);
-                }
-
-                @Override
-                public void onError(Throwable e) {
-                    logger.error("Error encountered >> ", e);
-                }
-
-                @Override
-                public void onNext(Buffer res) {
-                    try {
-                        logger.info("Exporting to path {}", exportFilePath);
-                        final byte[] buffer = new byte[1024];
-                        int n;
-                        while (-1 != (n = res.read(buffer))) {
-                            out.write(buffer, 0, n);
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            };
-            bufferStream.subscribe(httpSubscriber);
-            httpSubscriber.unsubscribe();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
+        writeToOutputDir(bufferStream, exportFilePath);
     }
 
     @Override
@@ -478,39 +446,8 @@ class RxDockerClient implements DockerClient {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
         final String endpointUri = String.format(CONTAINER_ARCHIVE_ENDPOINT, containerId);
         Observable<Buffer> bufferStream = httpClient.getResponseBufferStream(endpointUri, QueryParameter.of("path", path));
-
         String exportFilePath = pathToExportTo.toString() + "/" + containerId + ".tar";
-        try (FileOutputStream out = new FileOutputStream(exportFilePath)) {
-            Subscriber<Buffer> httpSubscriber = new Subscriber<Buffer>() {
-                @Override
-                public void onCompleted() {
-                    logger.info("Exported container archive to path {}", exportFilePath);
-                }
-
-                @Override
-                public void onError(Throwable e) {
-                    logger.error("Error encountered >> ", e);
-                }
-
-                @Override
-                public void onNext(Buffer res) {
-                    try {
-                        logger.info("Exporting to path {}", exportFilePath);
-                        final byte[] buffer = new byte[1024];
-                        int n;
-                        while (-1 != (n = res.read(buffer))) {
-                            out.write(buffer, 0, n);
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            };
-            bufferStream.subscribe(httpSubscriber);
-            httpSubscriber.unsubscribe();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        writeToOutputDir(bufferStream, exportFilePath);
     }
 
     // Image Endpoint
@@ -694,6 +631,50 @@ class RxDockerClient implements DockerClient {
         return httpClient
                 .postAndReceiveResponse(endpoint, headers, r -> r.contains("errorDetail"));
     }
+
+    @Override
+    public void exportAllImagesToTar(final String image, Path exportDir) {
+        validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
+        final String endpoint = String.format(IMAGE_GET_ARCHIVE_TARBALL, image);
+        Observable<Buffer> bufferStream = httpClient.getResponseBufferStream(endpoint);
+        String exportFilePath = exportDir.toString() + "/" + image + ".tar";
+        writeToOutputDir(bufferStream, exportFilePath);
+    }
+
+    private void writeToOutputDir(Observable<Buffer> bufferStream, final String exportFilePath) {
+        try (FileOutputStream out = new FileOutputStream(exportFilePath)) {
+            Subscriber<Buffer> httpSubscriber = new Subscriber<Buffer>() {
+                @Override
+                public void onCompleted() {
+                    logger.info("Exported to path {}", exportFilePath);
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    logger.error("Error encountered >> ", e);
+                }
+
+                @Override
+                public void onNext(Buffer res) {
+                    try {
+                        logger.debug("Exporting to path {}", exportFilePath);
+                        final byte[] buffer = new byte[1024];
+                        int n;
+                        while (-1 != (n = res.read(buffer))) {
+                            out.write(buffer, 0, n);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+            bufferStream.subscribe(httpSubscriber);
+            httpSubscriber.unsubscribe();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
 }
 

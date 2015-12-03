@@ -48,6 +48,7 @@ public interface ImageOperations {
     String IMAGE_HISTORY_ENDPOINT = IMAGE_ENDPOINT + "/%s/history";
     String IMAGE_INSPECT_ENDPOINT = IMAGE_ENDPOINT + "/%s/json";
     String IMAGE_PUSH_ENDPOINT = IMAGE_ENDPOINT + "/%s/push";
+    String IMAGE_GET_ARCHIVE_TARBALL = IMAGE_ENDPOINT + "/%s/get";
 
     Observable<String> pullImageObs(String image, final Optional<String> user, final Optional<String> tag);
 
@@ -131,4 +132,18 @@ public interface ImageOperations {
     Observable<String> buildImageObs(String repositoryName, BuildImageQueryParameters queryParameters);
 
     Observable<String> pullImageObs(String fromImage);
+
+    /**
+     * Get a tarball containing all images and metadata for the repository specified by <code>image</code>.
+     * For example,
+     * <p>
+     * <pre>exportAllImagesToTar("ubuntu","/tmp")</pre>
+     *
+     * <p><b>REST Endpoint:</b></p>
+     * <pre>GET /images/(name)/get</pre>
+     *
+     * @param image     name of the image like <code>ubuntu</code>
+     * @param exportDir directory to export tar file to
+     */
+    void exportAllImagesToTar(String image, Path exportDir);
 }
