@@ -501,8 +501,15 @@ public class RxDockerClientTest {
     @Test
     public void shouldGetTarballArchiveContainingAllImagesInRepository() throws Exception {
         Path pathToExportTo = tmp.newFolder().toPath();
-        client.getTarballForAllImagesInRepository("ubuntu", pathToExportTo);
-        assertTrue(Files.newDirectoryStream(pathToExportTo, p -> p.toFile().isFile()).iterator().hasNext());
+        Path filepath = client.getTarballForAllImagesInRepository("ubuntu", pathToExportTo);
+        assertTrue(filepath.toFile().exists());
+    }
+
+    @Test
+    public void shouldGetTarballArchiveContainingAllImages() throws Exception {
+        Path pathToExportTo = tmp.newFolder().toPath();
+        Path filepath = client.getTarballContainingAllImages(pathToExportTo, "rx-docker-test", ImageTag.of("ubuntu"));
+        assertTrue(filepath.toFile().exists());
     }
 
     private DockerContainerResponse createContainer(String containerName) {

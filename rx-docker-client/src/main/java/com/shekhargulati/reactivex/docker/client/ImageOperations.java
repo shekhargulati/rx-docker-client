@@ -24,10 +24,7 @@
 
 package com.shekhargulati.reactivex.docker.client;
 
-import com.shekhargulati.reactivex.docker.client.representations.DockerImage;
-import com.shekhargulati.reactivex.docker.client.representations.DockerImageHistory;
-import com.shekhargulati.reactivex.docker.client.representations.DockerImageInfo;
-import com.shekhargulati.reactivex.docker.client.representations.DockerImageInspectDetails;
+import com.shekhargulati.reactivex.docker.client.representations.*;
 import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
 import rx.Observable;
 
@@ -48,7 +45,8 @@ public interface ImageOperations {
     String IMAGE_HISTORY_ENDPOINT = IMAGE_ENDPOINT + "/%s/history";
     String IMAGE_INSPECT_ENDPOINT = IMAGE_ENDPOINT + "/%s/json";
     String IMAGE_PUSH_ENDPOINT = IMAGE_ENDPOINT + "/%s/push";
-    String IMAGE_GET_ARCHIVE_TARBALL = IMAGE_ENDPOINT + "/%s/get";
+    String IMAGE_GET_ARCHIVE_TARBALL_FOR_REPOSITORY = IMAGE_ENDPOINT + "/%s/get";
+    String IMAGE_GET_ARCHIVE_TARBALL = IMAGE_ENDPOINT + "/get";
 
     Observable<String> pullImageObs(String image, final Optional<String> user, final Optional<String> tag);
 
@@ -138,12 +136,37 @@ public interface ImageOperations {
      * For example,
      * <p>
      * <pre>getTarballForAllImagesInRepository("ubuntu","/tmp")</pre>
+     * </p>
      *
      * <p><b>REST Endpoint:</b></p>
      * <pre>GET /images/(name)/get</pre>
      *
+     * <p>Documentation: <a href="https://docs.docker.com/engine/reference/api/docker_remote_api_v1.20/#get-a-tarball-containing-all-images-in-a-repository">https://docs.docker.com/engine/reference/api/docker_remote_api_v1.20/#get-a-tarball-containing-all-images-in-a-repository</a> </p>
+     *
      * @param image     name of the image like <code>ubuntu</code>
      * @param exportDir directory to export tar file to
+     * @return file path of the tar file.
      */
-    void getTarballForAllImagesInRepository(String image, Path exportDir);
+    Path getTarballForAllImagesInRepository(String image, Path exportDir);
+
+    /**
+     * Get a tarball containing all images and metadata for one or more repositories. You can use it like as shown below.
+     * <p>
+     * <p>
+     * <pre>
+     *         getTarballContainingAllImages()
+     *     </pre>
+     * </p>
+     * <p>
+     * <p><b>REST Endpoint:</b></p>
+     * <pre>GET /images/(name)/get</pre>
+     *
+     * <p>Documentation: <a href="https://docs.docker.com/engine/reference/api/docker_remote_api_v1.20/#get-a-tarball-containing-all-images">https://docs.docker.com/engine/reference/api/docker_remote_api_v1.20/#get-a-tarball-containing-all-images</a> </p>
+     *
+     * @param exportDir directory to export tar file to
+     * @param filename  name of the tar file
+     * @param imageTags image name and tag
+     * @return file path of the tarball
+     */
+    Path getTarballContainingAllImages(Path exportDir, String filename, ImageTag... imageTags);
 }

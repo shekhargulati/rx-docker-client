@@ -633,12 +633,29 @@ class RxDockerClient implements DockerClient {
     }
 
     @Override
-    public void getTarballForAllImagesInRepository(final String image, Path exportDir) {
+    public Path getTarballForAllImagesInRepository(final String image, Path exportDir) {
         validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
-        final String endpoint = String.format(IMAGE_GET_ARCHIVE_TARBALL, image);
+        validate(exportDir, p -> !p.toFile().exists(), () -> "exportDir should exists.");
+        final String endpoint = String.format(IMAGE_GET_ARCHIVE_TARBALL_FOR_REPOSITORY, image);
         Observable<Buffer> bufferStream = httpClient.getResponseBufferStream(endpoint);
-        String exportFilePath = exportDir.toString() + "/" + image + ".tar";
+        Path exportFilePath = exportDir.resolve(image + ".tar");
         writeToOutputDir(bufferStream, exportFilePath);
+        return exportFilePath;
+    }
+
+    @Override
+    public Path getTarballContainingAllImages(Path exportDir, String filename, ImageTag... imageTags) {
+        validate(filename, Strings::isEmptyOrNull, () -> "filename can't be null or empty.");
+        validate(exportDir, p -> !p.toFile().exists(), () -> "exportDir should exists.");
+        QueryParameter[] queryParameters = Arrays.stream(imageTags).map(i -> QueryParameter.of("names", String.format("%s%s", i.getImage(), i.getTag().map(t -> String.format(":%s", t)).orElse("")))).toArray(index -> new QueryParameter[index]);
+        Observable<Buffer> bufferStream = httpClient.getResponseBufferStream(IMAGE_GET_ARCHIVE_TARBALL, queryParameters);
+        Path exportFilePath = exportDir.resolve(filename + ".tar");
+        writeToOutputDir(bufferStream, exportFilePath.toAbsolutePath());
+        return exportFilePath;
+    }
+
+    private void writeToOutputDir(Observable<Buffer> bufferStream, final Path exportFilePath) {
+        writeToOutputDir(bufferStream, exportFilePath.toAbsolutePath().toString());
     }
 
     private void writeToOutputDir(Observable<Buffer> bufferStream, final String exportFilePath) {
@@ -657,7 +674,7 @@ class RxDockerClient implements DockerClient {
                 @Override
                 public void onNext(Buffer res) {
                     try {
-                        logger.debug("Exporting to path {}", exportFilePath);
+                        logger.info("Exporting to path {}", exportFilePath);
                         final byte[] buffer = new byte[1024];
                         int n;
                         while (-1 != (n = res.read(buffer))) {
