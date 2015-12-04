@@ -137,7 +137,7 @@ public interface ImageOperations {
      * Get a tarball containing all images and metadata for the repository specified by <code>image</code>.
      * For example,
      * <p>
-     * <pre>exportAllImagesToTar("ubuntu","/tmp")</pre>
+     * <pre>getTarballForAllImagesInRepository("ubuntu","/tmp")</pre>
      *
      * <p><b>REST Endpoint:</b></p>
      * <pre>GET /images/(name)/get</pre>
@@ -145,5 +145,5 @@ public interface ImageOperations {
      * @param image     name of the image like <code>ubuntu</code>
      * @param exportDir directory to export tar file to
      */
-    void exportAllImagesToTar(String image, Path exportDir);
+    void getTarballForAllImagesInRepository(String image, Path exportDir);
 }

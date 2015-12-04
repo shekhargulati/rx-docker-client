@@ -633,7 +633,7 @@ class RxDockerClient implements DockerClient {
     }
 
     @Override
-    public void exportAllImagesToTar(final String image, Path exportDir) {
+    public void getTarballForAllImagesInRepository(final String image, Path exportDir) {
         validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_GET_ARCHIVE_TARBALL, image);
         Observable<Buffer> bufferStream = httpClient.getResponseBufferStream(endpoint);
