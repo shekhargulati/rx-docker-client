@@ -171,7 +171,25 @@ public interface ImageOperations {
      */
     Path getTarballContainingAllImages(Path exportDir, String filename, ImageTag... imageTags);
 
+    /**
+     * Load a set of images and tags into a Docker repository.
+     * <p>
+     * <p><b>REST Endpoint:</b></p>
+     * <pre>POST /images/load</pre>
+     *
+     * @param pathToTarArchive path of the tar archive
+     * @return 200 HttpStatus if successful else 500 HttpStatus when error
+     */
     HttpStatus loadImagesAndTagsTarball(Path pathToTarArchive);
 
+    /**
+     * Load a set of images and tags into a Docker repository.
+     * <p>
+     * <p><b>REST Endpoint:</b></p>
+     * <pre>POST /images/load</pre>
+     *
+     * @param pathToTarArchive path of the tar archive
+     * @return 200 HttpStatus if successful else 500 HttpStatus when error
+     */
     Observable<HttpStatus> loadImagesAndTagsTarballObs(Path pathToTarArchive);
 }

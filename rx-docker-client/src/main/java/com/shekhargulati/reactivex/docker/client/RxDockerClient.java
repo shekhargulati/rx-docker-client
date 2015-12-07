@@ -668,7 +668,6 @@ class RxDockerClient implements DockerClient {
         return httpClient.postTarStream(endpoint, pathToTarArchive);
     }
 
-
     private void writeToOutputDir(Observable<Buffer> bufferStream, final Path exportFilePath) {
         writeToOutputDir(bufferStream, exportFilePath.toAbsolutePath().toString());
     }
