@@ -512,6 +512,13 @@ public class RxDockerClientTest {
         assertTrue(filepath.toFile().exists());
     }
 
+    @Test
+    public void shouldLoadHelloWorldImagesTarballIntoDocker() throws Exception {
+        Path tarFilePath = Paths.get("src", "test", "resources", "images", "hello-world.tar");
+        HttpStatus httpStatus = client.loadImagesAndTagsTarball(tarFilePath);
+        assertThat(httpStatus, is(equalTo(HttpStatus.OK)));
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")

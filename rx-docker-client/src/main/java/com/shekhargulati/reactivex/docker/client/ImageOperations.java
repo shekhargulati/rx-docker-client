@@ -47,6 +47,7 @@ public interface ImageOperations {
     String IMAGE_PUSH_ENDPOINT = IMAGE_ENDPOINT + "/%s/push";
     String IMAGE_GET_ARCHIVE_TARBALL_FOR_REPOSITORY = IMAGE_ENDPOINT + "/%s/get";
     String IMAGE_GET_ARCHIVE_TARBALL = IMAGE_ENDPOINT + "/get";
+    String IMAGE_LOAD = IMAGE_ENDPOINT + "/load";
 
     Observable<String> pullImageObs(String image, final Optional<String> user, final Optional<String> tag);
 
@@ -169,4 +170,8 @@ public interface ImageOperations {
      * @return file path of the tarball
      */
     Path getTarballContainingAllImages(Path exportDir, String filename, ImageTag... imageTags);
+
+    HttpStatus loadImagesAndTagsTarball(Path pathToTarArchive);
+
+    Observable<HttpStatus> loadImagesAndTagsTarballObs(Path pathToTarArchive);
 }

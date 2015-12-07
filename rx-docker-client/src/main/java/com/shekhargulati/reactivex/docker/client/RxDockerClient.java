@@ -33,6 +33,7 @@ import com.shekhargulati.reactivex.docker.client.utils.Dates;
 import com.shekhargulati.reactivex.docker.client.utils.StreamUtils;
 import com.shekhargulati.reactivex.docker.client.utils.Strings;
 import com.shekhargulati.reactivex.rxokhttp.*;
+import com.shekhargulati.reactivex.rxokhttp.functions.BufferTransformer;
 import com.shekhargulati.reactivex.rxokhttp.functions.ResponseTransformer;
 import com.shekhargulati.reactivex.rxokhttp.functions.StringResponseToCollectionTransformer;
 import com.shekhargulati.reactivex.rxokhttp.functions.StringResponseTransformer;
@@ -566,7 +567,7 @@ class RxDockerClient implements DockerClient {
         validate(pathToTarArchive, path -> path == null, () -> "path to archive can't be null");
         validate(pathToTarArchive, path -> !path.toFile().exists(), () -> String.format("%s can't be resolved to a tar file", pathToTarArchive.toAbsolutePath().toString()));
         final String endpoint = String.format("%s?t=%s", IMAGE_BUILD_ENDPOINT, repositoryName) + queryParameters.toQueryParameterString();
-        return httpClient.postTarStream(endpoint, pathToTarArchive, buf -> buf.readString(Charset.defaultCharset()));
+        return httpClient.postTarStream(endpoint, pathToTarArchive, (BufferTransformer<String>) buf -> buf.readString(Charset.defaultCharset()));
     }
 
     @Override
@@ -653,6 +654,20 @@ class RxDockerClient implements DockerClient {
         writeToOutputDir(bufferStream, exportFilePath.toAbsolutePath());
         return exportFilePath;
     }
+
+    @Override
+    public HttpStatus loadImagesAndTagsTarball(final Path pathToTarArchive) {
+        return loadImagesAndTagsTarballObs(pathToTarArchive).toBlocking().last();
+    }
+
+    @Override
+    public Observable<HttpStatus> loadImagesAndTagsTarballObs(final Path pathToTarArchive) {
+        validate(pathToTarArchive, path -> path == null, () -> "path to archive can't be null");
+        validate(pathToTarArchive, path -> !path.toFile().exists(), () -> String.format("%s can't be resolved to a tar file", pathToTarArchive.toAbsolutePath().toString()));
+        final String endpoint = IMAGE_LOAD;
+        return httpClient.postTarStream(endpoint, pathToTarArchive);
+    }
+
 
     private void writeToOutputDir(Observable<Buffer> bufferStream, final Path exportFilePath) {
         writeToOutputDir(bufferStream, exportFilePath.toAbsolutePath().toString());
