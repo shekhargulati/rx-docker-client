@@ -172,7 +172,7 @@ public interface ContainerOperations {
 
     /**
      * Sets up an exec instance in a running container
-     * <p>
+     *
      * <p><b>REST Endpoint:</b></p>
      * <pre>POST /containers/(id)/exec</pre>
      *

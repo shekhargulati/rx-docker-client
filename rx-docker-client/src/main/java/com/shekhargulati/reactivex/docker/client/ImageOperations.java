@@ -135,9 +135,8 @@ public interface ImageOperations {
     /**
      * Get a tarball containing all images and metadata for the repository specified by <code>image</code>.
      * For example,
-     * <p>
+     *
      * <pre>getTarballForAllImagesInRepository("ubuntu","/tmp")</pre>
-     * </p>
      *
      * <p><b>REST Endpoint:</b></p>
      * <pre>GET /images/(name)/get</pre>
@@ -152,13 +151,9 @@ public interface ImageOperations {
 
     /**
      * Get a tarball containing all images and metadata for one or more repositories. You can use it like as shown below.
-     * <p>
-     * <p>
      * <pre>
      *         getTarballContainingAllImages()
      *     </pre>
-     * </p>
-     * <p>
      * <p><b>REST Endpoint:</b></p>
      * <pre>GET /images/(name)/get</pre>
      *
@@ -173,7 +168,7 @@ public interface ImageOperations {
 
     /**
      * Load a set of images and tags into a Docker repository.
-
+     *
      * <p><b>REST Endpoint:</b></p>
      * <pre>POST /images/load</pre>
      *
@@ -184,7 +179,7 @@ public interface ImageOperations {
 
     /**
      * Load a set of images and tags into a Docker repository.
-     * <p>
+     *
      * <p><b>REST Endpoint:</b></p>
      * <pre>POST /images/load</pre>
      *

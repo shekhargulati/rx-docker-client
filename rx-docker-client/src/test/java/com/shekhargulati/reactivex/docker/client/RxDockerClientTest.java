@@ -522,6 +522,7 @@ public class RxDockerClientTest {
     @Test
     @CreateDockerContainer(container = CONTAINER_NAME, start = true)
     public void shouldExecuteACommandAgainstARunningContainer() throws Exception {
+        assumeTrue(System.getenv("CIRCLE_USERNAME") == null);
         String containerId = containerRule.first();
         Observable<ExecCreateResponse> responseObs = client.execCreateObs(containerId, "date");
         ExecCreateResponse response = responseObs.toBlocking().last();
