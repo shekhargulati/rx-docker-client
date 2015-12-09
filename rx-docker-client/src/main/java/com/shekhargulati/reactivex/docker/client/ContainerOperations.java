@@ -58,6 +58,7 @@ public interface ContainerOperations {
     String CONTAINER_UNPAUSE_ENDPOINT = CONTAINERS_ENDPOINT + "/unpause";
     String CONTAINER_ATTACH_ENDPOINT = CONTAINERS_ENDPOINT + "/attach";
     String CONTAINER_ARCHIVE_ENDPOINT = CONTAINERS_ENDPOINT + "/archive";
+    String CONTAINER_EXEC_ENDPOINT = CONTAINERS_ENDPOINT + "/exec";
 
     Logger logger = LoggerFactory.getLogger(ContainerOperations.class);
 
@@ -168,4 +169,16 @@ public interface ContainerOperations {
     Observable<Response> containerArchiveInformationObs(String containerId, String path);
 
     void containerArchive(String containerId, String path, Path pathToExportTo);
+
+    /**
+     * Sets up an exec instance in a running container
+     * <p>
+     * <p><b>REST Endpoint:</b></p>
+     * <pre>POST /containers/(id)/exec</pre>
+     *
+     * @param containerId id of the running container
+     * @param cmd         command to run inside the container
+     * @return response object with exec instance id
+     */
+    Observable<ExecCreateResponse> execCreateObs(String containerId, String... cmd);
 }

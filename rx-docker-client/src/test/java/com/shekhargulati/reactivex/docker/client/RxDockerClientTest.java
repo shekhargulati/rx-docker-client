@@ -519,6 +519,15 @@ public class RxDockerClientTest {
         assertThat(httpStatus, is(equalTo(HttpStatus.OK)));
     }
 
+    @Test
+    @CreateDockerContainer(container = CONTAINER_NAME, start = true)
+    public void shouldExecuteACommandAgainstARunningContainer() throws Exception {
+        String containerId = containerRule.first();
+        Observable<ExecCreateResponse> responseObs = client.execCreateObs(containerId, "date");
+        ExecCreateResponse response = responseObs.toBlocking().last();
+        assertNotNull(response.getId());
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")

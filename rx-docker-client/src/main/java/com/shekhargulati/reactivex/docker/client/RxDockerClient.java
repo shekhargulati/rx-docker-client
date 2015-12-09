@@ -33,10 +33,7 @@ import com.shekhargulati.reactivex.docker.client.utils.Dates;
 import com.shekhargulati.reactivex.docker.client.utils.StreamUtils;
 import com.shekhargulati.reactivex.docker.client.utils.Strings;
 import com.shekhargulati.reactivex.rxokhttp.*;
-import com.shekhargulati.reactivex.rxokhttp.functions.BufferTransformer;
-import com.shekhargulati.reactivex.rxokhttp.functions.ResponseTransformer;
-import com.shekhargulati.reactivex.rxokhttp.functions.StringResponseToCollectionTransformer;
-import com.shekhargulati.reactivex.rxokhttp.functions.StringResponseTransformer;
+import com.shekhargulati.reactivex.rxokhttp.functions.*;
 import com.squareup.okhttp.Response;
 import com.squareup.okhttp.ResponseBody;
 import okio.Buffer;
@@ -451,6 +448,19 @@ class RxDockerClient implements DockerClient {
         writeToOutputDir(bufferStream, exportFilePath);
     }
 
+    @Override
+    public Observable<ExecCreateResponse> execCreateObs(final String containerId, final String... cmd) {
+        validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
+        validate(cmd, c -> c == null || c.length == 0, () -> "containerId can't be null or empty.");
+        final String endpointUri = String.format(CONTAINER_EXEC_ENDPOINT, containerId);
+        ExecCreateRequest requestBody = ExecCreateRequest.withCmd(Arrays.asList(cmd));
+        String jsonBody = gson.toJson(requestBody);
+        return httpClient.post(endpointUri, jsonBody, (ResponseBodyTransformer<ExecCreateResponse>) (responseBody) -> {
+            String json = responseBody.string();
+            return gson.fromJson(json, ExecCreateResponse.class);
+        });
+    }
+
     // Image Endpoint
     @Override
     public HttpStatus pullImage(final String fromImage) {
@@ -667,6 +677,7 @@ class RxDockerClient implements DockerClient {
         final String endpoint = IMAGE_LOAD;
         return httpClient.postTarStream(endpoint, pathToTarArchive);
     }
+
 
     private void writeToOutputDir(Observable<Buffer> bufferStream, final Path exportFilePath) {
         writeToOutputDir(bufferStream, exportFilePath.toAbsolutePath().toString());

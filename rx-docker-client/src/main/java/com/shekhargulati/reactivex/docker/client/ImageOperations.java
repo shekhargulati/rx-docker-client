@@ -173,7 +173,7 @@ public interface ImageOperations {
 
     /**
      * Load a set of images and tags into a Docker repository.
-     * <p>
+
      * <p><b>REST Endpoint:</b></p>
      * <pre>POST /images/load</pre>
      *
