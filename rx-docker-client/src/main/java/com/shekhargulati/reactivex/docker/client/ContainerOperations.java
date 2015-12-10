@@ -58,7 +58,9 @@ public interface ContainerOperations {
     String CONTAINER_UNPAUSE_ENDPOINT = CONTAINERS_ENDPOINT + "/unpause";
     String CONTAINER_ATTACH_ENDPOINT = CONTAINERS_ENDPOINT + "/attach";
     String CONTAINER_ARCHIVE_ENDPOINT = CONTAINERS_ENDPOINT + "/archive";
-    String CONTAINER_EXEC_ENDPOINT = CONTAINERS_ENDPOINT + "/exec";
+    String CONTAINER_EXEC_CREATE_ENDPOINT = CONTAINERS_ENDPOINT + "/exec";
+    String CONTAINER_EXEC_ENDPOINT = "/exec/%s";
+    String CONTAINER_EXEC_START_ENDPOINT = CONTAINER_EXEC_ENDPOINT + "/start";
 
     Logger logger = LoggerFactory.getLogger(ContainerOperations.class);
 
@@ -172,7 +174,7 @@ public interface ContainerOperations {
 
     /**
      * Sets up an exec instance in a running container
-     *
+     * <p>
      * <p><b>REST Endpoint:</b></p>
      * <pre>POST /containers/(id)/exec</pre>
      *
@@ -181,4 +183,40 @@ public interface ContainerOperations {
      * @return response object with exec instance id
      */
     Observable<ExecCreateResponse> execCreateObs(String containerId, String... cmd);
+
+    /**
+     * Sets up an exec instance in a running container
+     * <p>
+     * <p><b>REST Endpoint:</b></p>
+     * <pre>POST /containers/(id)/exec</pre>
+     *
+     * @param containerId id of the running container
+     * @param request     exec create request
+     * @return response object with exec instance id
+     */
+    Observable<ExecCreateResponse> execCreateObs(String containerId, ExecCreateRequest request);
+
+    /**
+     * Starts the exec using the defaults i.e. Detach=false and Tty=False
+     * <p>
+     * <p><b>REST Endpoint:</b></p>
+     * <pre>POST /exec/(id)/start</pre>
+     *
+     * @param execId exec instance id
+     * @return an Observable stream
+     */
+    Observable<String> execStartObs(String execId);
+
+    /**
+     * Starts the exec using the defaults i.e. Detach=false and Tty=False
+     * <p>
+     * <p><b>REST Endpoint:</b></p>
+     * <pre>POST /exec/(id)/start</pre>
+     *
+     * @param execId  exec instance id
+     * @param request exec start request
+     * @return an Observable stream
+     */
+    Observable<String> execStartObs(String execId, ExecStartRequest request);
+
 }

@@ -449,16 +449,33 @@ class RxDockerClient implements DockerClient {
     }
 
     @Override
-    public Observable<ExecCreateResponse> execCreateObs(final String containerId, final String... cmd) {
+    public Observable<ExecCreateResponse> execCreateObs(final String containerId, ExecCreateRequest request) {
         validate(containerId, Strings::isEmptyOrNull, () -> "containerId can't be null or empty.");
-        validate(cmd, c -> c == null || c.length == 0, () -> "containerId can't be null or empty.");
-        final String endpointUri = String.format(CONTAINER_EXEC_ENDPOINT, containerId);
-        ExecCreateRequest requestBody = ExecCreateRequest.withCmd(Arrays.asList(cmd));
-        String jsonBody = gson.toJson(requestBody);
+        validate(request.getCmd(), c -> c == null || c.size() == 0, () -> "cmd can't be empty");
+        final String endpointUri = String.format(CONTAINER_EXEC_CREATE_ENDPOINT, containerId);
+        String jsonBody = gson.toJson(request);
         return httpClient.post(endpointUri, jsonBody, (ResponseBodyTransformer<ExecCreateResponse>) (responseBody) -> {
             String json = responseBody.string();
             return gson.fromJson(json, ExecCreateResponse.class);
         });
+    }
+
+    @Override
+    public Observable<ExecCreateResponse> execCreateObs(final String containerId, final String... cmd) {
+        return execCreateObs(containerId, ExecCreateRequest.withCmd(Arrays.asList(cmd)));
+    }
+
+    @Override
+    public Observable<String> execStartObs(final String execId, ExecStartRequest request) {
+        validate(execId, Strings::isEmptyOrNull, () -> "execId can't be null or empty.");
+        final String endpointUri = String.format(CONTAINER_EXEC_START_ENDPOINT, execId);
+        String jsonBody = gson.toJson(request);
+        return httpClient.postAndReceiveStream(endpointUri, jsonBody);
+    }
+
+    @Override
+    public Observable<String> execStartObs(final String execId) {
+        return execStartObs(execId, ExecStartRequest.withDefaults());
     }
 
     // Image Endpoint
@@ -658,7 +675,7 @@ class RxDockerClient implements DockerClient {
     public Path getTarballContainingAllImages(Path exportDir, String filename, ImageTag... imageTags) {
         validate(filename, Strings::isEmptyOrNull, () -> "filename can't be null or empty.");
         validate(exportDir, p -> !p.toFile().exists(), () -> "exportDir should exists.");
-        QueryParameter[] queryParameters = Arrays.stream(imageTags).map(i -> QueryParameter.of("names", String.format("%s%s", i.getImage(), i.getTag().map(t -> String.format(":%s", t)).orElse("")))).toArray(index -> new QueryParameter[index]);
+        QueryParameter[] queryParameters = Arrays.stream(imageTags).map(i -> QueryParameter.of("names", String.format("%s%s", i.getImage(), i.getTag().map(t -> String.format(":%s", t)).orElse("")))).toArray(QueryParameter[]::new);
         Observable<Buffer> bufferStream = httpClient.getResponseBufferStream(IMAGE_GET_ARCHIVE_TARBALL, queryParameters);
         Path exportFilePath = exportDir.resolve(filename + ".tar");
         writeToOutputDir(bufferStream, exportFilePath.toAbsolutePath());

@@ -28,50 +28,35 @@ package com.shekhargulati.reactivex.docker.client.representations;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.util.List;
+public class ExecStartRequest {
 
-public class ExecCreateRequest {
-
-    @SerializedName("AttachStdin")
-    private boolean attachStdin = true;
-
-    @SerializedName("AttachStdout")
-    private boolean attachStdout = true;
-
-    @SerializedName("AttachStderr")
-    private boolean attachStderr = true;
+    @SerializedName("Detach")
+    private boolean detach = false;
 
     @SerializedName("Tty")
     private boolean tty = false;
 
-    @SerializedName("Cmd")
-    private List<String> cmd;
-
-    private ExecCreateRequest(List<String> cmd) {
-        this.cmd = cmd;
+    private ExecStartRequest() {
     }
 
-    public static ExecCreateRequest withCmd(List<String> cmd) {
-        return new ExecCreateRequest(cmd);
+    private ExecStartRequest(boolean detach, boolean tty) {
+        this.detach = detach;
+        this.tty = tty;
     }
 
-    public boolean isAttachStdin() {
-        return attachStdin;
+    public static ExecStartRequest withDefaults() {
+        return new ExecStartRequest();
     }
 
-    public boolean isAttachStdout() {
-        return attachStdout;
+    public static ExecStartRequest withParameters(boolean detach, boolean tty) {
+        return new ExecStartRequest(detach, tty);
     }
 
-    public boolean isAttachStderr() {
-        return attachStderr;
+    public boolean isDetach() {
+        return detach;
     }
 
     public boolean isTty() {
         return tty;
-    }
-
-    public List<String> getCmd() {
-        return cmd;
     }
 }

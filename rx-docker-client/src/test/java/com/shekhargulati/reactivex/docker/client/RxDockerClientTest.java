@@ -254,7 +254,7 @@ public class RxDockerClientTest {
     @Test
     @CreateDockerContainer(container = CONTAINER_NAME, start = true)
     public void shouldShowContainerLogs() throws Exception {
-        String containerId = containerRule.containerIds().get(0);
+        String containerId = containerRule.first();
         Observable<String> logsObs = client.containerLogsObs(containerId);
         StringBuilder result = new StringBuilder();
         Subscriber<String> statsSub = new Subscriber<String>() {
@@ -521,12 +521,52 @@ public class RxDockerClientTest {
 
     @Test
     @CreateDockerContainer(container = CONTAINER_NAME, start = true)
-    public void shouldExecuteACommandAgainstARunningContainer() throws Exception {
+    public void shouldCreateExecAgainstRunningContainer() throws Exception {
         assumeTrue(System.getenv("CIRCLE_USERNAME") == null);
         String containerId = containerRule.first();
         Observable<ExecCreateResponse> responseObs = client.execCreateObs(containerId, "date");
         ExecCreateResponse response = responseObs.toBlocking().last();
         assertNotNull(response.getId());
+    }
+
+    @Test
+    @CreateDockerContainer(container = CONTAINER_NAME, start = true)
+    public void shouldStartExecAgainstRunningContainer() throws Exception {
+        assumeTrue(System.getenv("CIRCLE_USERNAME") == null);
+        String containerId = containerRule.first();
+        Observable<String> startResponseObs = client.execCreateObs(containerId, "ping", "google.com")
+                .flatMap(r -> client.execStartObs(r.getId()));
+
+        StringBuilder result = new StringBuilder();
+        Subscriber<String> sub = new Subscriber<String>() {
+
+            @Override
+            public void onCompleted() {
+                logger.info("Successfully received all events");
+                result.append("Completed!!");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                logger.error("Error encountered", e);
+                fail("Should not throw error");
+            }
+
+            @Override
+            public void onNext(String msg) {
+                logger.info("Received >> {}", msg);
+                assertNotNull(msg);
+            }
+        };
+
+        Observable.timer(5, TimeUnit.SECONDS).forEach(t -> {
+            logger.info("Unsubscribing subscriber...");
+            sub.unsubscribe();
+            logger.info("Unsubscribed subscriber...");
+        });
+
+        startResponseObs.subscribe(sub);
+
     }
 
     private DockerContainerResponse createContainer(String containerName) {
