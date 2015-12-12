@@ -116,6 +116,25 @@ client.createContainerObs(request, container)
         .subscribe(System.out::println);
 ```
 
+#### Creating and starting multiple containers 
+
+
+```java
+DockerClient dockerClient = DockerClient.fromDefaultEnv();
+
+DockerContainerRequest request = new DockerContainerRequestBuilder()
+                .setImage("ubuntu:latest")
+                .setCmd(Arrays.asList("/bin/bash"))
+                .setAttachStdin(true)
+                .setTty(true)
+                .createDockerContainerRequest();
+                
+Observable.range(1, 10)
+                .flatMap(i -> dockerClient.createContainerObs(request, "container-" + i))
+                .flatMap(r -> dockerClient.startContainerObs(r.getId()), (containerResponse, status) -> String.format("%s >> %d", containerResponse.getId(), status.code()))
+                .forEach(System.out::println);
+```
+
 ### Create and start container with exposed ports
 
 ```java
@@ -141,26 +160,6 @@ DockerContainerRequest request = new DockerContainerRequestBuilder()
 DockerContainerResponse response = client.createContainer(request, "my_container");
 client.startContainer(response.getId());
 ```
-
-#### Creating and starting multiple containers 
-
-
-```java
-DockerClient dockerClient = DockerClient.fromDefaultEnv();
-
-DockerContainerRequest request = new DockerContainerRequestBuilder()
-                .setImage("ubuntu:latest")
-                .setCmd(Arrays.asList("/bin/bash"))
-                .setAttachStdin(true)
-                .setTty(true)
-                .createDockerContainerRequest();
-                
-Observable.range(1, 10)
-                .flatMap(i -> dockerClient.createContainerObs(request, "container-" + i))
-                .flatMap(r -> dockerClient.startContainerObs(r.getId()), (containerResponse, status) -> String.format("%s >> %d", containerResponse.getId(), status.code()))
-                .forEach(System.out::println);
-```
-
 
 ### Container Stats
 
