@@ -29,7 +29,6 @@ import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
 import rx.Observable;
 
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -49,7 +48,7 @@ public interface ImageOperations {
     String IMAGE_GET_ARCHIVE_TARBALL = IMAGE_ENDPOINT + "/get";
     String IMAGE_LOAD = IMAGE_ENDPOINT + "/load";
 
-    Observable<String> pullImageObs(String image, final Optional<String> user, final Optional<String> tag);
+    Observable<String> pullImageObs(String image, final String user, final String tag);
 
     HttpStatus pullImage(String fromImage, String user, String tag);
 
@@ -187,4 +186,12 @@ public interface ImageOperations {
      * @return 200 HttpStatus if successful else 500 HttpStatus when error
      */
     Observable<HttpStatus> loadImagesAndTagsTarballObs(Path pathToTarArchive);
+
+    HttpStatus pullImage(String fromImage, AuthConfig authConfig);
+
+    HttpStatus pullImage(String fromImage, String tag, AuthConfig authConfig);
+
+    HttpStatus pullImage(String fromImage, String user, String tag, AuthConfig authConfig);
+
+    Observable<String> pullImageObs(String fromImage, String user, String tag, AuthConfig authConfig);
 }

@@ -481,7 +481,12 @@ class DefaultRxDockerClient implements RxDockerClient {
     // Image Endpoint
     @Override
     public HttpStatus pullImage(final String fromImage) {
-        return pullImage(fromImage, Optional.empty(), Optional.empty());
+        return pullImage(fromImage, (String) null);
+    }
+
+    @Override
+    public HttpStatus pullImage(final String fromImage, AuthConfig authConfig) {
+        return pullImage(fromImage, null, authConfig);
     }
 
     @Override
@@ -490,12 +495,22 @@ class DefaultRxDockerClient implements RxDockerClient {
     }
 
     @Override
-    public HttpStatus pullImage(final String fromImage, final String user, final String tag) {
-        return pullImage(fromImage, Optional.ofNullable(user), Optional.ofNullable(tag));
+    public HttpStatus pullImage(final String fromImage, final String tag, AuthConfig authConfig) {
+        return pullImage(fromImage, null, tag, authConfig);
     }
 
-    private HttpStatus pullImage(final String fromImage, final Optional<String> user, final Optional<String> tag) {
-        Observable<String> imageObs = pullImageObs(fromImage, user, tag);
+    @Override
+    public HttpStatus pullImage(final String fromImage, final String user, final String tag) {
+        return pullImage(fromImage, user, tag, null);
+    }
+
+    @Override
+    public HttpStatus pullImage(final String fromImage, final String user, final String tag, AuthConfig authConfig) {
+        return pullImageInternal(fromImage, user, tag, authConfig);
+    }
+
+    private HttpStatus pullImageInternal(final String fromImage, final String user, final String tag, AuthConfig authConfig) {
+        Observable<String> imageObs = pullImageObs(fromImage, user, tag, authConfig);
         HttpStatusSubscriber subscriber = new HttpStatusSubscriber();
         imageObs.subscribe(subscriber);
         subscriber.unsubscribe();
@@ -504,14 +519,27 @@ class DefaultRxDockerClient implements RxDockerClient {
 
     @Override
     public Observable<String> pullImageObs(final String fromImage) {
-        return pullImageObs(fromImage, Optional.<String>empty(), Optional.<String>empty());
+        return pullImageObs(fromImage, null, null, null);
     }
 
     @Override
-    public Observable<String> pullImageObs(final String fromImage, final Optional<String> user, final Optional<String> tag) {
+    public Observable<String> pullImageObs(final String fromImage, final String user, final String tag) {
+        return pullImageObs(fromImage, user, tag, null);
+    }
+
+    @Override
+    public Observable<String> pullImageObs(final String fromImage, final String user, final String tag, AuthConfig authConfig) {
+        return pullImageObsInternal(fromImage, Optional.ofNullable(user), Optional.ofNullable(tag), Optional.ofNullable(authConfig));
+    }
+
+    private Observable<String> pullImageObsInternal(final String fromImage, final Optional<String> user, final Optional<String> tag, Optional<AuthConfig> authConfig) {
         validate(fromImage, Strings::isEmptyOrNull, () -> "fromImage can't be null or empty.");
         final String endpoint = String.format(IMAGE_CREATE_ENDPOINT, user.map(u -> u + "/").orElse(""), fromImage, tag.orElse("latest"));
-        return httpClient.postAndReceiveResponse(endpoint);
+        Map<String, String> headers = new HashMap<>();
+        if (authConfig.isPresent()) {
+            headers.put("X-Registry-Auth", authConfig.get().xAuthHeader());
+        }
+        return httpClient.postAndReceiveResponse(endpoint, headers);
     }
 
     @Override
@@ -647,7 +675,9 @@ class DefaultRxDockerClient implements RxDockerClient {
     public HttpStatus pushImage(final String image, AuthConfig authConfig) {
         validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
-        return httpClient.post(endpoint).toBlocking().last();
+        Map<String, String> headers = new HashMap<>();
+        headers.put("X-Registry-Auth", authConfig.xAuthHeader());
+        return httpClient.post(endpoint, headers).toBlocking().last();
     }
 
     @Override
