@@ -49,14 +49,14 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 
-public class RxDockerClientTest {
+public class DefaultRxDockerClientTest {
 
-    private final Logger logger = LoggerFactory.getLogger(RxDockerClientTest.class);
+    private final Logger logger = LoggerFactory.getLogger(DefaultRxDockerClientTest.class);
 
     public static final String CONTAINER_NAME = "my_first_container";
     public static final String SECOND_CONTAINER_NAME = "my_second_container";
 
-    private static DockerClient client = DockerClient.fromDefaultEnv();
+    private static RxDockerClient client = RxDockerClient.fromDefaultEnv();
 
     @BeforeClass
     public static void init() throws Exception {

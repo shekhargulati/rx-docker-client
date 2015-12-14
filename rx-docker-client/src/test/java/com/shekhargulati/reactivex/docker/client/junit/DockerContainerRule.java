@@ -1,6 +1,6 @@
 package com.shekhargulati.reactivex.docker.client.junit;
 
-import com.shekhargulati.reactivex.docker.client.DockerClient;
+import com.shekhargulati.reactivex.docker.client.RxDockerClient;
 import com.shekhargulati.reactivex.docker.client.representations.DockerContainerRequest;
 import com.shekhargulati.reactivex.docker.client.representations.DockerContainerRequestBuilder;
 import com.shekhargulati.reactivex.docker.client.representations.DockerContainerResponse;
@@ -17,10 +17,10 @@ import static java.util.stream.Collectors.toList;
 
 public class DockerContainerRule implements TestRule {
 
-    private final DockerClient client;
+    private final RxDockerClient client;
     private List<String> containerIds;
 
-    public DockerContainerRule(DockerClient client) {
+    public DockerContainerRule(RxDockerClient client) {
         this.client = client;
     }
 
