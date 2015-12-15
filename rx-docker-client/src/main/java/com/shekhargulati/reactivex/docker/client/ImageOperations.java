@@ -37,6 +37,7 @@ public interface ImageOperations {
     String IMAGE_ENDPOINT = "images";
     String IMAGE_BUILD_ENDPOINT = "build";
     String IMAGE_CREATE_ENDPOINT = IMAGE_ENDPOINT + "/create?fromImage=%s%s&tag=%s";
+    String IMAGE_CREATE_ENDPOINT_FROM_SRC = IMAGE_ENDPOINT + "/create?fromSrc=%s&tag=%s";
     String IMAGE_LIST_ENDPOINT = IMAGE_ENDPOINT + "/json";
     String IMAGE_REMOVE_ENDPOINT = IMAGE_ENDPOINT + "/%s";
     String IMAGE_SEARCH_ENDPOINT = IMAGE_ENDPOINT + "/search";
@@ -47,6 +48,7 @@ public interface ImageOperations {
     String IMAGE_GET_ARCHIVE_TARBALL_FOR_REPOSITORY = IMAGE_ENDPOINT + "/%s/get";
     String IMAGE_GET_ARCHIVE_TARBALL = IMAGE_ENDPOINT + "/get";
     String IMAGE_LOAD = IMAGE_ENDPOINT + "/load";
+
 
     Observable<String> pullImageObs(String image, final String user, final String tag);
 
@@ -194,4 +196,22 @@ public interface ImageOperations {
     HttpStatus pullImage(String fromImage, String user, String tag, AuthConfig authConfig);
 
     Observable<String> pullImageObs(String fromImage, String user, String tag, AuthConfig authConfig);
+
+    /**
+     * Create an image by importing it from the given tar file
+     *
+     * @param name        name of the image to create
+     * @param imageToLoad Path of tar file
+     * @return 200 HttpStatus if successful else 500 HttpStatus when error
+     */
+    Observable<String> createImageObs(String name, Path imageToLoad);
+
+    /**
+     * Create an image by importing it from the given tar file
+     *
+     * @param name        name of the image to create
+     * @param imageToLoad Path of tar file
+     * @return 200 HttpStatus if successful else 500 HttpStatus when error
+     */
+    HttpStatus createImage(String name, Path imageToLoad);
 }

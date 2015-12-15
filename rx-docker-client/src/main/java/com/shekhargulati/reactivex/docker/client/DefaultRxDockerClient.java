@@ -725,6 +725,23 @@ class DefaultRxDockerClient implements RxDockerClient {
         return httpClient.postTarStream(endpoint, pathToTarArchive);
     }
 
+    @Override
+    public HttpStatus createImage(final String name, final Path imageToLoad) {
+        String response = createImageObs(name, imageToLoad).toBlocking().last();
+        Map<String, String> o = gson.fromJson(response, new TypeToken<Map<String, String>>() {
+        }.getType());
+        tagImage(o.get("status"), ImageTagQueryParameters.with(name, "latest"));
+        return HttpStatus.OK;
+    }
+
+    @Override
+    public Observable<String> createImageObs(final String name, final Path imageToLoad) {
+        validate(imageToLoad, path -> path == null, () -> "imageToLoad path can't be null");
+        validate(imageToLoad, path -> !path.toFile().exists(), () -> String.format("%s can't be resolved to a tar file", imageToLoad.toAbsolutePath().toString()));
+        final String endpoint = String.format(IMAGE_CREATE_ENDPOINT_FROM_SRC, "-", name);
+        return httpClient.postTarStream(endpoint, imageToLoad, ResponseTransformer.fromBody(responseBody -> responseBody.string()));
+    }
+
 
     private void writeToOutputDir(Observable<Buffer> bufferStream, final Path exportFilePath) {
         writeToOutputDir(bufferStream, exportFilePath.toAbsolutePath().toString());

@@ -569,6 +569,12 @@ public class DefaultRxDockerClientTest {
 
     }
 
+    @Test
+    public void shouldCreateImageFromTar() throws Exception {
+        HttpStatus httpStatus = client.createImage("test_rx_docker/docker_hello-world", Paths.get("src", "test", "resources", "images", "hello-world-image.tar"));
+        assertThat(httpStatus, is(equalTo(HttpStatus.OK)));
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")
