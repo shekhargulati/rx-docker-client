@@ -485,9 +485,21 @@ class DefaultRxDockerClient implements RxDockerClient {
     }
 
     @Override
-    public HttpStatus pullImage(final String fromImage, AuthConfig authConfig) {
-        return pullImage(fromImage, null, authConfig);
+    public HttpStatus pullImageFromRegistry(final String image, final String registry) {
+        validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
+        final String endpoint = String.format(IMAGE_PULL_FROM_REGISTRY_ENDPOINT, registry, image);
+        Observable<String> obs = httpClient.postAndReceiveResponse(endpoint, Collections.emptyMap(), r -> r.contains("errorDetail"));
+        HttpStatusSubscriber subscriber = new HttpStatusSubscriber();
+        obs.subscribe(subscriber);
+        subscriber.unsubscribe();
+        return subscriber.getStatus();
     }
+
+    @Override
+    public HttpStatus pullImage(final String image, AuthConfig authConfig) {
+        return pullImage(image, null, authConfig);
+    }
+
 
     @Override
     public HttpStatus pullImage(final String fromImage, final String tag) {
@@ -495,8 +507,8 @@ class DefaultRxDockerClient implements RxDockerClient {
     }
 
     @Override
-    public HttpStatus pullImage(final String fromImage, final String tag, AuthConfig authConfig) {
-        return pullImage(fromImage, null, tag, authConfig);
+    public HttpStatus pullImage(final String image, final String tag, AuthConfig authConfig) {
+        return pullImage(image, null, tag, authConfig);
     }
 
     @Override
@@ -505,8 +517,8 @@ class DefaultRxDockerClient implements RxDockerClient {
     }
 
     @Override
-    public HttpStatus pullImage(final String fromImage, final String user, final String tag, AuthConfig authConfig) {
-        return pullImageInternal(fromImage, user, tag, authConfig);
+    public HttpStatus pullImage(final String image, final String user, final String tag, AuthConfig authConfig) {
+        return pullImageInternal(image, user, tag, authConfig);
     }
 
     private HttpStatus pullImageInternal(final String fromImage, final String user, final String tag, AuthConfig authConfig) {
@@ -519,7 +531,7 @@ class DefaultRxDockerClient implements RxDockerClient {
 
     @Override
     public Observable<String> pullImageObs(final String fromImage) {
-        return pullImageObs(fromImage, null, null, null);
+        return pullImageObs(fromImage, null, null);
     }
 
     @Override
@@ -532,9 +544,9 @@ class DefaultRxDockerClient implements RxDockerClient {
         return pullImageObsInternal(fromImage, Optional.ofNullable(user), Optional.ofNullable(tag), Optional.ofNullable(authConfig));
     }
 
-    private Observable<String> pullImageObsInternal(final String fromImage, final Optional<String> user, final Optional<String> tag, Optional<AuthConfig> authConfig) {
+    private Observable<String> pullImageObsInternal(final String fromImage, final Optional<String> repo, final Optional<String> tag, Optional<AuthConfig> authConfig) {
         validate(fromImage, Strings::isEmptyOrNull, () -> "fromImage can't be null or empty.");
-        final String endpoint = String.format(IMAGE_CREATE_ENDPOINT, user.map(u -> u + "/").orElse(""), fromImage, tag.orElse("latest"));
+        final String endpoint = String.format(IMAGE_PULL_ENDPOINT, repo.map(u -> u + "/").orElse(""), fromImage, tag.orElse("latest"));
         Map<String, String> headers = new HashMap<>();
         if (authConfig.isPresent()) {
             headers.put("X-Registry-Auth", authConfig.get().xAuthHeader());
@@ -676,7 +688,9 @@ class DefaultRxDockerClient implements RxDockerClient {
         validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
         Map<String, String> headers = new HashMap<>();
-        headers.put("X-Registry-Auth", authConfig.xAuthHeader());
+        if (Optional.ofNullable(authConfig).isPresent()) {
+            headers.put("X-Registry-Auth", authConfig.xAuthHeader());
+        }
         return httpClient.post(endpoint, headers).toBlocking().last();
     }
 
@@ -685,7 +699,9 @@ class DefaultRxDockerClient implements RxDockerClient {
         validate(image, Strings::isEmptyOrNull, () -> "image can't be null or empty.");
         final String endpoint = String.format(IMAGE_PUSH_ENDPOINT, image);
         Map<String, String> headers = new HashMap<>();
-        headers.put("X-Registry-Auth", authConfig.xAuthHeader());
+        if (Optional.ofNullable(authConfig).isPresent()) {
+            headers.put("X-Registry-Auth", authConfig.xAuthHeader());
+        }
         return httpClient
                 .postAndReceiveResponse(endpoint, headers, r -> r.contains("errorDetail"));
     }
@@ -739,7 +755,7 @@ class DefaultRxDockerClient implements RxDockerClient {
         validate(imageToLoad, path -> path == null, () -> "imageToLoad path can't be null");
         validate(imageToLoad, path -> !path.toFile().exists(), () -> String.format("%s can't be resolved to a tar file", imageToLoad.toAbsolutePath().toString()));
         final String endpoint = String.format(IMAGE_CREATE_ENDPOINT_FROM_SRC, "-", name);
-        return httpClient.postTarStream(endpoint, imageToLoad, ResponseTransformer.fromBody(responseBody -> responseBody.string()));
+        return httpClient.postTarStream(endpoint, imageToLoad, ResponseTransformer.fromBody(ResponseBody::string));
     }
 
 

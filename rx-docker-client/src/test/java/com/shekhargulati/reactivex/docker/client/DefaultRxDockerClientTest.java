@@ -575,6 +575,43 @@ public class DefaultRxDockerClientTest {
         assertThat(httpStatus, is(equalTo(HttpStatus.OK)));
     }
 
+    @Test
+    public void shouldPullImageFromLocalRegistry() throws Exception {
+        final String[] exposedPorts = new String[]{"5000/tcp"};
+        final String[] hostPorts = new String[]{"5000/tcp"};
+
+        final Map<String, List<PortBinding>> portBindings = new HashMap<>();
+        for (String hostPort : hostPorts) {
+            List<PortBinding> hostPortBinding = new ArrayList<>();
+            hostPortBinding.add(PortBinding.of("0.0.0.0", hostPort));
+            portBindings.put(hostPort, hostPortBinding);
+        }
+        final HostConfig hostConfig = new HostConfigBuilder().setPortBindings(portBindings).createHostConfig();
+        DockerContainerRequest request = new DockerContainerRequestBuilder()
+                .setImage("registry")
+                .setAttachStdin(true)
+                .addExposedPort(exposedPorts)
+                .setHostConfig(hostConfig)
+                .setTty(true)
+                .createDockerContainerRequest();
+
+
+        client.pullImageObs("registry")
+                .subscribe(System.out::println, System.out::println, System.out::println);
+
+
+        client.createContainerObs(request, "registry")
+                .flatMap(r ->
+                        client.startContainerObs(r.getId()))
+                .flatMap(s -> client.tagImageObs("busybox", ImageTagQueryParameters.with("localhost:5000/busybox", "latest")))
+                .subscribe(System.out::println, System.out::println, System.out::println);
+
+        client.pushImageObs("localhost:5000/busybox", AuthConfig.authConfig("test", "test", "test").withServerAddress("http://localhost:5000"))
+                .subscribe(System.out::println, System.out::println, System.out::println);
+        HttpStatus httpStatus = client.pullImageFromRegistry("busybox", "localhost:5000");
+        assertThat(httpStatus, is(equalTo(HttpStatus.OK)));
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")

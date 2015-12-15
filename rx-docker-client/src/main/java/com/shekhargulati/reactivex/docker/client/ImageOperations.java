@@ -36,7 +36,8 @@ public interface ImageOperations {
 
     String IMAGE_ENDPOINT = "images";
     String IMAGE_BUILD_ENDPOINT = "build";
-    String IMAGE_CREATE_ENDPOINT = IMAGE_ENDPOINT + "/create?fromImage=%s%s&tag=%s";
+    String IMAGE_PULL_ENDPOINT = IMAGE_ENDPOINT + "/create?fromImage=%s%s&tag=%s";
+    String IMAGE_PULL_FROM_REGISTRY_ENDPOINT = IMAGE_ENDPOINT + "/create?fromImage=%s/%s";
     String IMAGE_CREATE_ENDPOINT_FROM_SRC = IMAGE_ENDPOINT + "/create?fromSrc=%s&tag=%s";
     String IMAGE_LIST_ENDPOINT = IMAGE_ENDPOINT + "/json";
     String IMAGE_REMOVE_ENDPOINT = IMAGE_ENDPOINT + "/%s";
@@ -189,13 +190,11 @@ public interface ImageOperations {
      */
     Observable<HttpStatus> loadImagesAndTagsTarballObs(Path pathToTarArchive);
 
-    HttpStatus pullImage(String fromImage, AuthConfig authConfig);
+    HttpStatus pullImage(String image, AuthConfig authConfig);
 
-    HttpStatus pullImage(String fromImage, String tag, AuthConfig authConfig);
+    HttpStatus pullImage(String image, String tag, AuthConfig authConfig);
 
-    HttpStatus pullImage(String fromImage, String user, String tag, AuthConfig authConfig);
-
-    Observable<String> pullImageObs(String fromImage, String user, String tag, AuthConfig authConfig);
+    HttpStatus pullImage(String image, String user, String tag, AuthConfig authConfig);
 
     /**
      * Create an image by importing it from the given tar file
@@ -214,4 +213,25 @@ public interface ImageOperations {
      * @return 200 HttpStatus if successful else 500 HttpStatus when error
      */
     HttpStatus createImage(String name, Path imageToLoad);
+
+    /**
+     * Pulls image from the mentioned repository
+     *
+     * @param image    name of the image to pull
+     * @param registry registry url to pull from without protocol
+     * @return 200 HttpStatus if successful else 500 HttpStatus when error
+     */
+    HttpStatus pullImageFromRegistry(String image, String registry);
+
+    /**
+     * Create an image either by pulling from mentioned docker registry
+     *
+     * @param fromImage  image to pull
+     * @param user       Repository name
+     * @param tag        Tag
+     * @param authConfig base64-encoded AuthConfig object
+     * @return response
+     */
+    Observable<String> pullImageObs(String fromImage, String user, String tag, AuthConfig authConfig);
+
 }
