@@ -174,7 +174,7 @@ public interface ContainerOperations {
 
     /**
      * Sets up an exec instance in a running container
-     * <p>
+     *
      * <p><b>REST Endpoint:</b></p>
      * <pre>POST /containers/(id)/exec</pre>
      *
@@ -186,7 +186,7 @@ public interface ContainerOperations {
 
     /**
      * Sets up an exec instance in a running container
-     * <p>
+     *
      * <p><b>REST Endpoint:</b></p>
      * <pre>POST /containers/(id)/exec</pre>
      *
@@ -198,7 +198,7 @@ public interface ContainerOperations {
 
     /**
      * Starts the exec using the defaults i.e. Detach=false and Tty=False
-     * <p>
+     *
      * <p><b>REST Endpoint:</b></p>
      * <pre>POST /exec/(id)/start</pre>
      *
@@ -209,7 +209,7 @@ public interface ContainerOperations {
 
     /**
      * Starts the exec using the defaults i.e. Detach=false and Tty=False
-     * <p>
+     *
      * <p><b>REST Endpoint:</b></p>
      * <pre>POST /exec/(id)/start</pre>
      *

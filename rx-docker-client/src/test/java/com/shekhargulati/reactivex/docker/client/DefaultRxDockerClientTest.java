@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscriber;
+import rx.schedulers.Schedulers;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,7 +61,8 @@ public class DefaultRxDockerClientTest {
 
     @BeforeClass
     public static void init() throws Exception {
-        client.pullImage("ubuntu");
+        client.pullImage("ubuntu", "latest");
+        client.pullImage("busybox", "latest");
     }
 
     @After
@@ -73,6 +75,7 @@ public class DefaultRxDockerClientTest {
                 // ignoring for CircleCI
             }
         });
+
     }
 
     @Rule
@@ -576,38 +579,17 @@ public class DefaultRxDockerClientTest {
     }
 
     @Test
+    @CreateDockerContainer(container = "registry", command = {}, image = "registry", start = true, pullImage = true, exposedPorts = {"5000/tcp"}, hostPorts = {"5000/tcp"})
     public void shouldPullImageFromLocalRegistry() throws Exception {
-        final String[] exposedPorts = new String[]{"5000/tcp"};
-        final String[] hostPorts = new String[]{"5000/tcp"};
 
-        final Map<String, List<PortBinding>> portBindings = new HashMap<>();
-        for (String hostPort : hostPorts) {
-            List<PortBinding> hostPortBinding = new ArrayList<>();
-            hostPortBinding.add(PortBinding.of("0.0.0.0", hostPort));
-            portBindings.put(hostPort, hostPortBinding);
-        }
-        final HostConfig hostConfig = new HostConfigBuilder().setPortBindings(portBindings).createHostConfig();
-        DockerContainerRequest request = new DockerContainerRequestBuilder()
-                .setImage("registry")
-                .setAttachStdin(true)
-                .addExposedPort(exposedPorts)
-                .setHostConfig(hostConfig)
-                .setTty(true)
-                .createDockerContainerRequest();
-
-
-        client.pullImageObs("registry")
+        client.tagImageObs("busybox", ImageTagQueryParameters.with("localhost:5000/busybox", "latest"))
                 .subscribe(System.out::println, System.out::println, System.out::println);
 
-
-        client.createContainerObs(request, "registry")
-                .flatMap(r ->
-                        client.startContainerObs(r.getId()))
-                .flatMap(s -> client.tagImageObs("busybox", ImageTagQueryParameters.with("localhost:5000/busybox", "latest")))
-                .subscribe(System.out::println, System.out::println, System.out::println);
+        Observable.timer(15, TimeUnit.SECONDS, Schedulers.immediate()).subscribe();
 
         client.pushImageObs("localhost:5000/busybox", AuthConfig.authConfig("test", "test", "test").withServerAddress("http://localhost:5000"))
                 .subscribe(System.out::println, System.out::println, System.out::println);
+
         HttpStatus httpStatus = client.pullImageFromRegistry("busybox", "localhost:5000");
         assertThat(httpStatus, is(equalTo(HttpStatus.OK)));
     }

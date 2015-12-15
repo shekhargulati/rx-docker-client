@@ -1,16 +1,12 @@
 package com.shekhargulati.reactivex.docker.client.junit;
 
 import com.shekhargulati.reactivex.docker.client.RxDockerClient;
-import com.shekhargulati.reactivex.docker.client.representations.DockerContainerRequest;
-import com.shekhargulati.reactivex.docker.client.representations.DockerContainerRequestBuilder;
-import com.shekhargulati.reactivex.docker.client.representations.DockerContainerResponse;
+import com.shekhargulati.reactivex.docker.client.representations.*;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
@@ -52,11 +48,24 @@ public class DockerContainerRule implements TestRule {
     }
 
     private DockerContainerResponse createAndStartContainer(CreateDockerContainer c) {
+        if (c.pullImage()) {
+            client.pullImage("registry");
+        }
+        final Map<String, List<PortBinding>> portBindings = new HashMap<>();
+        for (String hostPort : c.hostPorts()) {
+            List<PortBinding> hostPortBinding = new ArrayList<>();
+            hostPortBinding.add(PortBinding.of("0.0.0.0", hostPort));
+            portBindings.put(hostPort, hostPortBinding);
+        }
+        final HostConfig hostConfig = new HostConfigBuilder().setPortBindings(portBindings).createHostConfig();
+
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage(c.image())
                 .setCmd(Arrays.asList(c.command()))
                 .setAttachStdin(c.attachStdin())
                 .setTty(c.tty())
+                .addExposedPort(c.exposedPorts())
+                .setHostConfig(hostConfig)
                 .createDockerContainerRequest();
 
         DockerContainerResponse response = client.createContainer(request, c.container());

@@ -28,6 +28,12 @@ public @interface CreateDockerContainer {
     boolean tty() default true;
 
     boolean start() default false;
+
+    boolean pullImage() default false;
+
+    String[] exposedPorts() default {};
+
+    String[] hostPorts() default {};
 }
 
 
