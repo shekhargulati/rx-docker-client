@@ -481,7 +481,6 @@ public class DefaultRxDockerClientTest {
     @Test
     @CreateDockerContainer(container = CONTAINER_NAME, start = true)
     public void shouldRetrieveArchiveInformationOfContainer() throws Exception {
-        assumeTrue(System.getenv("CIRCLE_USERNAME") == null);
         String containerId = containerRule.first();
 
         ContainerArchiveInformation containerArchiveInformation = client.containerArchiveInformation(containerId, "/root");
@@ -582,7 +581,7 @@ public class DefaultRxDockerClientTest {
     @Test
     @CreateDockerContainer(container = "registry", command = {}, image = "registry", start = true, pullImage = true, exposedPorts = {"5000/tcp"}, hostPorts = {"5000/tcp"})
     public void shouldPullImageFromLocalRegistry() throws Exception {
-
+        assumeTrue(System.getenv("CIRCLE_USERNAME") == null);
         client.tagImageObs("busybox", ImageTagQueryParameters.with("localhost:5000/busybox", "latest"))
                 .subscribe(System.out::println, System.out::println, System.out::println);
 
