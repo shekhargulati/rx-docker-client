@@ -481,6 +481,7 @@ public class DefaultRxDockerClientTest {
     @Test
     @CreateDockerContainer(container = CONTAINER_NAME, start = true)
     public void shouldRetrieveArchiveInformationOfContainer() throws Exception {
+        assumeTrue(System.getenv("CIRCLE_USERNAME") == null);
         String containerId = containerRule.first();
 
         ContainerArchiveInformation containerArchiveInformation = client.containerArchiveInformation(containerId, "/root");
