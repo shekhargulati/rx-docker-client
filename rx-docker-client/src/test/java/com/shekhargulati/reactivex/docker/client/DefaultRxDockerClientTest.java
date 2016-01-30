@@ -614,7 +614,10 @@ public class DefaultRxDockerClientTest {
     }
 
     private DockerContainerResponse createContainerWithPublishAllPorts(String containerName, String... ports) {
-        final HostConfig hostConfig = new HostConfigBuilder().setPublishAllPorts(true).createHostConfig();
+        final HostConfig hostConfig = new HostConfigBuilder()
+                .setPublishAllPorts(true)
+                .setNetworkMode("bridge")
+                .createHostConfig();
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")
                 .setCmd(Collections.singletonList("/bin/bash"))
