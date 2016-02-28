@@ -21,7 +21,7 @@ Most of the existing Java Docker client are synchronous in nature. This API make
 To show the power of rx-docker-client API, let's suppose you want to search **ubuntu** image and then pull the image corresponding to the first search result. You can do this very easily with rx-docker-client as shown below.
 
 ```java
-DockerClient client = DockerClient.fromDefaultEnv();
+RxDockerClient client = RxDockerClient.fromDefaultEnv();
 client.searchImagesObs("ubuntu")
           .first()
           .flatMap(imageInfo -> client.pullImageObs(imageInfo.getName()))
@@ -66,7 +66,7 @@ Below are few examples of some of the blocking methods. When you make call to th
 
 ```java
 //Create a new Docker client using DOCKER_HOST and DOCKER_CERT_PATH environment variables
-DockerClient client = DockerClient.fromDefaultEnv();
+RxDockerClient client = RxDockerClient.fromDefaultEnv();
 
 // Getting Docker version
 DockerVersion dockerVersion = client.serverVersion();
@@ -91,7 +91,7 @@ It is suggested that you use methods which return an Observable as they allow yo
 
 ```java
 //Create a new Docker client using DOCKER_HOST and DOCKER_CERT_PATH environment variables
-DockerClient client = DockerClient.fromDefaultEnv();
+RxDockerClient client = RxDockerClient.fromDefaultEnv();
 
 // pull the latest image from Docker Hub
 Observable<String> pullImageObs = client.pullImageObs("busybox");
@@ -116,11 +116,11 @@ client.createContainerObs(request, container)
         .subscribe(System.out::println);
 ```
 
-#### Creating and starting multiple containers 
+#### Creating and starting multiple containers
 
 
 ```java
-DockerClient dockerClient = DockerClient.fromDefaultEnv();
+RxDockerClient dockerClient = RxDockerClient.fromDefaultEnv();
 
 DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu:latest")
@@ -128,7 +128,7 @@ DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setAttachStdin(true)
                 .setTty(true)
                 .createDockerContainerRequest();
-                
+
 Observable.range(1, 10)
                 .flatMap(i -> dockerClient.createContainerObs(request, "container-" + i))
                 .flatMap(r -> dockerClient.startContainerObs(r.getId()), (containerResponse, status) -> String.format("%s >> %d", containerResponse.getId(), status.code()))
@@ -138,7 +138,7 @@ Observable.range(1, 10)
 ### Create and start container with exposed ports
 
 ```java
-DockerClient client = DockerClient.fromDefaultEnv();
+RxDockerClient client = RxDockerClient.fromDefaultEnv();
 final String[] exposedPorts = new String[]{"9999/tcp"};
 final String[] hostPorts = new String[]{"9999/tcp"};
 
