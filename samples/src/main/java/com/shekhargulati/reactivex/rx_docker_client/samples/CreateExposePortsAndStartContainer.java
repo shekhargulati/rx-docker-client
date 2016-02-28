@@ -24,7 +24,7 @@
 
 package com.shekhargulati.reactivex.rx_docker_client.samples;
 
-import com.shekhargulati.reactivex.docker.client.DockerClient;
+import com.shekhargulati.reactivex.docker.client.RxDockerClient;
 import com.shekhargulati.reactivex.docker.client.representations.*;
 
 import java.util.*;
@@ -32,7 +32,7 @@ import java.util.*;
 public class CreateExposePortsAndStartContainer {
 
     public static void main(String[] args) {
-        DockerClient client = DockerClient.fromDefaultEnv();
+        RxDockerClient client = RxDockerClient.fromDefaultEnv();
 
         final String[] exposedPorts = new String[]{"9999/tcp"};
         final String[] hostPorts = new String[]{"9999/tcp"};

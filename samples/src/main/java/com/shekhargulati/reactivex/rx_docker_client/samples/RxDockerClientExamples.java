@@ -24,7 +24,7 @@
 
 package com.shekhargulati.reactivex.rx_docker_client.samples;
 
-import com.shekhargulati.reactivex.docker.client.DockerClient;
+import com.shekhargulati.reactivex.docker.client.RxDockerClient;
 import com.shekhargulati.reactivex.docker.client.representations.DockerContainerRequest;
 import com.shekhargulati.reactivex.docker.client.representations.DockerContainerRequestBuilder;
 import rx.Observable;
@@ -35,7 +35,7 @@ import java.util.Arrays;
 public class RxDockerClientExamples {
 
     public static void main(String[] args) {
-        DockerClient client = DockerClient.fromDefaultEnv();
+        RxDockerClient client = RxDockerClient.fromDefaultEnv();
 
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu:latest")
