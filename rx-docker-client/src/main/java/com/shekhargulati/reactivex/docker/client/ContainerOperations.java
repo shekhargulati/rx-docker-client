@@ -148,6 +148,8 @@ public interface ContainerOperations {
 
     Observable<DockerContainerResponse> createContainerObs(DockerContainerRequest request, String name);
 
+    Observable<DockerContainerResponse> createContainerObs(DockerContainerRequest request);
+
     List<ContainerChange> inspectChangesOnContainerFilesystem(String containerId);
 
     Observable<ContainerChange> inspectChangesOnContainerFilesystemObs(String containerId);

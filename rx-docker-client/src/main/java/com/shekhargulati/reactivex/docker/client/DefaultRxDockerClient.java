@@ -201,6 +201,11 @@ class DefaultRxDockerClient implements RxDockerClient {
     }
 
     @Override
+    public Observable<DockerContainerResponse> createContainerObs(DockerContainerRequest request) {
+        return createContainerObs(request, Optional.empty());
+    }
+
+    @Override
     public Observable<DockerContainerResponse> createContainerObs(final DockerContainerRequest request, final Optional<String> name) {
         String content = request.toJson();
         logger.info("Creating container for json request >>\n'{}'", content);
