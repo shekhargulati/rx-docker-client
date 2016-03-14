@@ -65,6 +65,8 @@ public class HostConfig {
     private String cpusetCpus;
     @SerializedName("CgroupParent")
     private String cgroupParent;
+    @SerializedName("CapAdd")
+    private List<String> capAdd;
 
     HostConfig(HostConfigBuilder builder) {
         this.binds = builder.binds;
@@ -84,6 +86,7 @@ public class HostConfig {
         this.cpuShares = builder.cpuShares;
         this.cpusetCpus = builder.cpusetCpus;
         this.cgroupParent = builder.cgroupParent;
+        this.capAdd = builder.capAdd;
     }
 
     public List<String> getBinds() {
@@ -152,6 +155,10 @@ public class HostConfig {
 
     public String getCgroupParent() {
         return cgroupParent;
+    }
+
+    public List<String> getCapAdd() {
+        return capAdd;
     }
 
     public static class LxcConfParameter {

@@ -45,6 +45,7 @@ public class HostConfigBuilder {
     Long cpuShares;
     String cpusetCpus;
     String cgroupParent;
+    List<String> capAdd;
 
     public HostConfigBuilder setBinds(List<String> binds) {
         this.binds = binds;
@@ -128,6 +129,11 @@ public class HostConfigBuilder {
 
     public HostConfigBuilder setCgroupParent(String cgroupParent) {
         this.cgroupParent = cgroupParent;
+        return this;
+    }
+
+    public HostConfigBuilder setCapAdd(List<String> capAdd) {
+        this.capAdd = capAdd;
         return this;
     }
 
