@@ -419,7 +419,7 @@ public class DefaultRxDockerClientTest {
             resultCapturer.append(message);
         }, () -> fail("should not complete as authentication header was incorrect!!"));
 
-        assertThat(resultCapturer.toString(), anyOf(equalTo("Authentication is required."), equalTo("unauthorized: access to the requested resource is not authorized")));
+        assertThat(resultCapturer.toString(), anyOf(containsString("unauthorized"), equalTo("Authentication is required."), equalTo("unauthorized: access to the requested resource is not authorized")));
     }
 
     @Test
