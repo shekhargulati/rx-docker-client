@@ -142,15 +142,17 @@ public class DefaultRxDockerClientTest {
 
     @Test
     public void shouldInspectContainerWithVolume() throws Exception {
+        Map<String, Object> volumes = Stream.of(new SimpleEntry<>("/tmp/data", emptyMap())).collect(toMap(SimpleEntry::getKey, SimpleEntry::getValue));
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")
                 .setCmd(Collections.singletonList("/bin/bash"))
-                .setVolumes(Stream.of(new SimpleEntry<>("/tmp/data", emptyMap())).collect(toMap(SimpleEntry::getKey, SimpleEntry::getValue)))
+                .setVolumes(volumes)
                 .createDockerContainerRequest();
         DockerContainerResponse response = client.createContainer(request);
         String containerId = response.getId();
         ContainerInspectResponse containerInspectResponse = client.inspectContainer(containerId);
         assertThat(containerInspectResponse.path(), is(equalTo("/bin/bash")));
+        assertThat(containerInspectResponse.config().getVolumes(), is(equalTo(volumes)));
         removeContainer(containerId);
     }
 
