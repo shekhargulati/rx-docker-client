@@ -141,6 +141,20 @@ public class DefaultRxDockerClientTest {
     }
 
     @Test
+    public void shouldInspectContainerWithVolume() throws Exception {
+        DockerContainerRequest request = new DockerContainerRequestBuilder()
+                .setImage("ubuntu")
+                .setCmd(Collections.singletonList("/bin/bash"))
+                .setVolumes(Stream.of(new SimpleEntry<>("/tmp/data", emptyMap())).collect(toMap(SimpleEntry::getKey, SimpleEntry::getValue)))
+                .createDockerContainerRequest();
+        DockerContainerResponse response = client.createContainer(request);
+        String containerId = response.getId();
+        ContainerInspectResponse containerInspectResponse = client.inspectContainer(containerId);
+        assertThat(containerInspectResponse.path(), is(equalTo("/bin/bash")));
+        removeContainer(containerId);
+    }
+
+    @Test
     @CreateDockerContainer(container = CONTAINER_NAME)
     public void shouldStartCreatedContainer() throws Exception {
         HttpStatus httpStatus = client.startContainer(containerRule.containerIds().get(0));
@@ -441,7 +455,15 @@ public class DefaultRxDockerClientTest {
     }
 
     @Test
+    public void shouldReturnHttpStatus500WhenAuthConfigurationIsInvalid() throws Exception {
+        assumeTrue(System.getenv("CIRCLE_USERNAME") != null);
+        HttpStatus httpStatus = client.checkAuth(AuthConfig.authConfig("xxx", "xxx", "xxxx"));
+        assertThat(httpStatus, is(equalTo(HttpStatus.SERVER_ERROR)));
+    }
+
+    @Test
     public void shouldReturnHttpStatus401WhenAuthConfigurationIsInvalid() throws Exception {
+        assumeTrue(System.getenv("CIRCLE_USERNAME") == null);
         HttpStatus httpStatus = client.checkAuth(AuthConfig.authConfig("xxx", "xxx", "xxxx"));
         assertThat(httpStatus.code(), is(equalTo(401)));
         assertThat(httpStatus.message(), is(equalTo("Unauthorized")));
