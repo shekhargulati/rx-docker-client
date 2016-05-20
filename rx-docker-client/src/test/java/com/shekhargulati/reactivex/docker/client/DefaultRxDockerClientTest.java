@@ -41,10 +41,13 @@ import rx.schedulers.Schedulers;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.*;
@@ -105,7 +108,7 @@ public class DefaultRxDockerClientTest {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")
                 .setCmd(Collections.singletonList("/bin/bash"))
-                .setVolumes(Arrays.asList("/tmp/data"))
+                .setVolumes(Stream.of(new SimpleEntry<>("/tmp/data", emptyMap())).collect(toMap(SimpleEntry::getKey, SimpleEntry::getValue)))
                 .createDockerContainerRequest();
         DockerContainerResponse response = client.createContainer(request);
         String containerId = response.getId();
@@ -385,6 +388,7 @@ public class DefaultRxDockerClientTest {
         assertThat(resultCapturer.toString(), equalTo("Completed!!!"));
     }
 
+    @Ignore
     @Test
     public void shouldBuildImageUsingRemoteDockerFile() throws Exception {
         String repository = "test_rx_docker/hello_world_remote";
@@ -437,9 +441,10 @@ public class DefaultRxDockerClientTest {
     }
 
     @Test
-    public void shouldReturnHttpStatus500WhenAuthConfigurationIsInvalid() throws Exception {
+    public void shouldReturnHttpStatus401WhenAuthConfigurationIsInvalid() throws Exception {
         HttpStatus httpStatus = client.checkAuth(AuthConfig.authConfig("xxx", "xxx", "xxxx"));
-        assertThat(httpStatus, is(equalTo(HttpStatus.SERVER_ERROR)));
+        assertThat(httpStatus.code(), is(equalTo(401)));
+        assertThat(httpStatus.message(), is(equalTo("Unauthorized")));
     }
 
     @Test
