@@ -64,7 +64,7 @@ public class DockerContainerRequest {
     @SerializedName("Image")
     private String image;
     @SerializedName("Volumes")
-    private List<String> volumes;
+    private Map<String, Object> volumes;
     @SerializedName("WorkingDir")
     private String workingDir;
     @SerializedName("Entrypoint")
@@ -161,7 +161,7 @@ public class DockerContainerRequest {
         return image;
     }
 
-    public List<String> getVolumes() {
+    public Map<String, Object> getVolumes() {
         return volumes;
     }
 

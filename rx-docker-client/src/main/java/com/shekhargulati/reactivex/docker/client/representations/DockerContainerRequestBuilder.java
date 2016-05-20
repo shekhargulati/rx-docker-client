@@ -44,7 +44,7 @@ public class DockerContainerRequestBuilder {
     List<String> env;
     List<String> cmd;
     String image;
-    List<String> volumes;
+    Map<String, Object> volumes;
     String workingDir;
     List<String> entrypoint;
     Boolean networkDisabled;
@@ -125,7 +125,7 @@ public class DockerContainerRequestBuilder {
         return this;
     }
 
-    public DockerContainerRequestBuilder setVolumes(List<String> volumes) {
+    public DockerContainerRequestBuilder setVolumes(Map<String, Object> volumes) {
         this.volumes = volumes;
         return this;
     }
