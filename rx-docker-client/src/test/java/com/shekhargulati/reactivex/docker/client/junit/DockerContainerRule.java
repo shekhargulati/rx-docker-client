@@ -2,14 +2,19 @@ package com.shekhargulati.reactivex.docker.client.junit;
 
 import com.shekhargulati.reactivex.docker.client.RxDockerClient;
 import com.shekhargulati.reactivex.docker.client.representations.*;
+import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.io.IOException;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 public class DockerContainerRule implements TestRule {
 
@@ -59,13 +64,23 @@ public class DockerContainerRule implements TestRule {
         }
         final HostConfig hostConfig = new HostConfigBuilder().setPortBindings(portBindings).createHostConfig();
 
-        DockerContainerRequest request = new DockerContainerRequestBuilder()
+        DockerContainerRequestBuilder dockerContainerRequestBuilder = new DockerContainerRequestBuilder()
                 .setImage(c.image())
                 .setCmd(Arrays.asList(c.command()))
                 .setAttachStdin(c.attachStdin())
                 .setTty(c.tty())
                 .addExposedPort(c.exposedPorts())
-                .setHostConfig(hostConfig)
+                .setHostConfig(hostConfig);
+        if (c.volume()) {
+            try {
+                TemporaryFolder temporaryFolder = new TemporaryFolder();
+                temporaryFolder.create();
+                dockerContainerRequestBuilder.setVolumes(Stream.of(new SimpleEntry<>(temporaryFolder.getRoot().toPath().toAbsolutePath().toString(), emptyMap())).collect(toMap(SimpleEntry::getKey, SimpleEntry::getValue)));
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+        DockerContainerRequest request = dockerContainerRequestBuilder
                 .createDockerContainerRequest();
 
         DockerContainerResponse response = client.createContainer(request, c.container());

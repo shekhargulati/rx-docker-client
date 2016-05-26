@@ -35,6 +35,8 @@ public @interface CreateDockerContainer {
 
     String[] hostPorts() default {};
 
+    boolean volume() default false;
+
 }
 
 

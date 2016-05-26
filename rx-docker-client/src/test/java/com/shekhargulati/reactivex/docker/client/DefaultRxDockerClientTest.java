@@ -639,6 +639,22 @@ public class DefaultRxDockerClientTest {
         assertThat(httpStatus, is(equalTo(HttpStatus.OK)));
     }
 
+    @Test
+    @CreateDockerContainer(container = CONTAINER_NAME, volume = true)
+    public void shouldListAllVolumes() throws Exception {
+        List<Volume> volumes = client.listAllVolumes();
+        assertThat(volumes, hasSize(greaterThan(0)));
+        volumes.forEach(System.out::println);
+    }
+
+    @Test
+    @CreateDockerContainer(container = CONTAINER_NAME, volume = true)
+    public void shouldListAllNonDanglingVolumes() throws Exception {
+        List<Volume> volumes = client.listVolumes(QueryParameter.of("dangling", "false"));
+        assertThat(volumes, hasSize(greaterThan(0)));
+        volumes.forEach(System.out::println);
+    }
+
     private DockerContainerResponse createContainer(String containerName) {
         DockerContainerRequest request = new DockerContainerRequestBuilder()
                 .setImage("ubuntu")

@@ -25,8 +25,7 @@
 package com.shekhargulati.reactivex.docker.client;
 
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.shekhargulati.reactivex.docker.client.representations.*;
 import com.shekhargulati.reactivex.docker.client.utils.Dates;
@@ -44,6 +43,8 @@ import rx.Subscriber;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
@@ -55,6 +56,8 @@ import static com.google.gson.FieldNamingPolicy.UPPER_CAMEL_CASE;
 import static com.shekhargulati.reactivex.docker.client.utils.StreamUtils.iteratorToStream;
 import static com.shekhargulati.reactivex.docker.client.utils.Validations.validate;
 import static com.shekhargulati.reactivex.rxokhttp.ClientConfig.defaultConfig;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -764,6 +767,47 @@ class DefaultRxDockerClient implements RxDockerClient {
     }
 
 
+    @Override
+    public List<Volume> listAllVolumes() {
+        return listAllVolumesObs().toList().toBlocking().single();
+    }
+
+    @Override
+    public Observable<Volume> listAllVolumesObs() {
+        return listVolumesObs();
+    }
+
+    @Override
+    public List<Volume> listVolumes(QueryParameter... params) {
+        return listVolumesObs(params).toList().toBlocking().single();
+    }
+
+    @Override
+    public Observable<Volume> listVolumesObs(QueryParameter... params) {
+        String endpoint = VolumeOperations.LIST_VOLUMES_ENDPOINT;
+        if (params != null) {
+            String json = new Gson().toJson(Arrays.stream(params).collect(toMap(QueryParameter::param, QueryParameter::value)));
+            try {
+                final String encoded = URLEncoder.encode(json, UTF_8.name());
+                endpoint = endpoint + "?filter=" + encoded;
+            } catch (UnsupportedEncodingException e) {
+                throw new IllegalArgumentException(String.format("unable to encode filter %s", json));
+            }
+        }
+        return httpClient
+                .get(endpoint,
+                        (StringResponseToCollectionTransformer<Volume>) json -> {
+                            logger.debug("Received json response {}", json);
+                            JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
+                            JsonElement volumesJsonElement = jsonObject.get("Volumes");
+                            return Optional.ofNullable(volumesJsonElement).map(v -> {
+                                List<Volume> volumes = gson.fromJson(v, new TypeToken<List<Volume>>() {
+                                }.getType());
+                                return volumes;
+                            }).orElse(emptyList());
+                        });
+    }
+
     private void writeToOutputDir(Observable<Buffer> bufferStream, final Path exportFilePath) {
         writeToOutputDir(bufferStream, exportFilePath.toAbsolutePath().toString());
     }
@@ -801,7 +845,6 @@ class DefaultRxDockerClient implements RxDockerClient {
             throw new RuntimeException(e);
         }
     }
-
 
 }
 
