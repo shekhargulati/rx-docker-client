@@ -27,7 +27,7 @@ package com.shekhargulati.reactivex.docker.client;
 import com.shekhargulati.reactivex.docker.client.representations.*;
 import com.shekhargulati.reactivex.rxokhttp.HttpStatus;
 import com.shekhargulati.reactivex.rxokhttp.QueryParameter;
-import com.squareup.okhttp.Response;
+import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -81,6 +81,14 @@ public interface ContainerOperations {
     DockerContainerResponse createContainer(DockerContainerRequest request);
 
     Observable<DockerContainerResponse> createContainerObs(DockerContainerRequest request, Optional<String> name);
+
+    Observable<DockerContainerResponse> createContainerObs(String jsonRequest, String name);
+
+    DockerContainerResponse createContainer(String jsonRequest, String name);
+
+    Observable<DockerContainerResponse> createContainerObs(String jsonRequest);
+
+    DockerContainerResponse createContainer(String jsonRequest);
 
     ContainerInspectResponse inspectContainer(String containerId);
 

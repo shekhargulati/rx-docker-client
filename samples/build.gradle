@@ -5,5 +5,5 @@ repositories {
 }
 
 dependencies {
-    compile 'com.shekhargulati.reactivex:rx-docker-client:0.2.0'
+    compile 'com.shekhargulati.reactivex:rx-docker-client:0.2.1'
 }

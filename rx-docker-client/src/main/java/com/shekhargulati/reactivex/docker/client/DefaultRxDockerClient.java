@@ -34,8 +34,8 @@ import com.shekhargulati.reactivex.docker.client.utils.StreamUtils;
 import com.shekhargulati.reactivex.docker.client.utils.Strings;
 import com.shekhargulati.reactivex.rxokhttp.*;
 import com.shekhargulati.reactivex.rxokhttp.functions.*;
-import com.squareup.okhttp.Response;
-import com.squareup.okhttp.ResponseBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import okio.Buffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -192,12 +192,7 @@ class DefaultRxDockerClient implements RxDockerClient {
 
     @Override
     public DockerContainerResponse createContainer(final DockerContainerRequest request, final String name) {
-        return createContainerObs(request, Optional.ofNullable(name)).toBlocking().single();
-    }
-
-    @Override
-    public Observable<DockerContainerResponse> createContainerObs(final DockerContainerRequest request, final String name) {
-        return createContainerObs(request, Optional.ofNullable(name));
+        return createContainerObs(request, name).toBlocking().single();
     }
 
     @Override
@@ -206,11 +201,46 @@ class DefaultRxDockerClient implements RxDockerClient {
     }
 
     @Override
+    public Observable<DockerContainerResponse> createContainerObs(final DockerContainerRequest request, final String name) {
+        return createContainerObs(request, Optional.ofNullable(name));
+    }
+
+    @Override
     public Observable<DockerContainerResponse> createContainerObs(final DockerContainerRequest request, final Optional<String> name) {
+        if (request == null) {
+            throw new IllegalArgumentException("DockerContainerRequest can't be null");
+        }
         String content = request.toJson();
-        logger.info("Creating container for json request >>\n'{}'", content);
+        return createContainerObs(content, name);
+    }
+
+    @Override
+    public Observable<DockerContainerResponse> createContainerObs(String jsonRequest) {
+        return createContainerObs(jsonRequest, Optional.empty());
+    }
+
+    @Override
+    public Observable<DockerContainerResponse> createContainerObs(String jsonRequest, String name) {
+        return createContainerObs(jsonRequest, Optional.ofNullable(name));
+    }
+
+    private Observable<DockerContainerResponse> createContainerObs(String jsonRequest, Optional<String> name) {
+        if (jsonRequest == null || jsonRequest.length() == 0) {
+            throw new IllegalArgumentException("jsonRequest can't be null or empty");
+        }
+        logger.info("Creating container for json request >>\n'{}'", jsonRequest);
         final String uri = name.isPresent() ? CREATE_CONTAINER_ENDPOINT + "?name=" + name.get() : CREATE_CONTAINER_ENDPOINT;
-        return httpClient.post(uri, content, (ResponseBody body) -> gson.fromJson(body.string(), DockerContainerResponse.class));
+        return httpClient.post(uri, jsonRequest, (ResponseBody body) -> gson.fromJson(body.string(), DockerContainerResponse.class));
+    }
+
+    @Override
+    public DockerContainerResponse createContainer(String jsonRequest) {
+        return createContainerObs(jsonRequest).toBlocking().last();
+    }
+
+    @Override
+    public DockerContainerResponse createContainer(String jsonRequest, String name) {
+        return createContainerObs(jsonRequest, name).toBlocking().last();
     }
 
     @Override
