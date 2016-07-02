@@ -42,7 +42,7 @@ For Apache Maven users, please add following to your pom.xml.
     <dependency>
         <groupId>com.shekhargulati.reactivex</groupId>
         <artifactId>rx-docker-client</artifactId>
-        <version>0.2.1</version>
+        <version>0.2.2</version>
         <type>jar</type>
     </dependency>
 </dependencies>
@@ -51,7 +51,7 @@ For Apache Maven users, please add following to your pom.xml.
 Gradle users can add following to their build.gradle file.
 
 ```
-compile(group: 'com.shekhargulati.reactivex', name: 'rx-docker-client', version: '0.2.1', ext: 'jar'){
+compile(group: 'com.shekhargulati.reactivex', name: 'rx-docker-client', version: '0.2.2', ext: 'jar'){
         transitive=true
 }
 ```
